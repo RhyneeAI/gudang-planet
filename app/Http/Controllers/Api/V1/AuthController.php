@@ -26,17 +26,16 @@ class AuthController extends Controller
             ]);
         }
 
-        // Hapus token lama (opsional, tapi disarankan)
-        $user->tokens()->delete();
+        $deviceName = $request->header('User-Agent', 'unknown-device');
+        $user->tokens()->where('name', $deviceName)->delete();
 
-        // Buat token baru
-        $token = $user->createToken('mobile-token')->plainTextToken;
+        $token = $user->createToken($deviceName)->plainTextToken;
 
         return response()->json([
             'success' => true,
             'message' => 'Login berhasil',
             'data' => [
-                'user' => new UserResource($user), // gunakan resource
+                'user' => new UserResource($user),
                 'token' => $token,
                 'token_type' => 'Bearer',
             ]
