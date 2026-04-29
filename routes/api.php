@@ -20,12 +20,14 @@ Route::prefix('v1')->group(function () {
     // Protected
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
-        Route::apiResource('categories', CategoryController::class)->parameters([
-            'categories' => 'category:uuid'
-        ]);    
-
-        Route::apiResource('units', UnitController::class)->parameters([
-            'units' => 'unit:uuid'
-        ]);     
+        Route::group(['middleware' => ['role:owner', 'role:admin']], function () {
+            Route::apiResource('categories', CategoryController::class)->parameters([
+                'categories' => 'category:uuid'
+            ]);    
+    
+            Route::apiResource('units', UnitController::class)->parameters([
+                'units' => 'unit:uuid'
+            ]);     
+        });
     });
 });
