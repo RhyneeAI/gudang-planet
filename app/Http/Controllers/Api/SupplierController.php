@@ -49,19 +49,11 @@ class SupplierController extends Controller
 
     public function update(SupplierRequest $request, Supplier $supplier)
     {
-        $data = [];
-
-        if ($request->has('name')) {
-            $data['name'] = $request->name;
-        }
-        if ($request->has('address')) {
-            $data['address'] = $request->address;
-        }
-        if ($request->has('phone')) {
-            $data['phone'] = $request->phone;
-        }
-
-        $supplier->update($data);
+        $supplier->update(array_filter([
+            'name'    => $request->has('name') ? $request->name : null,
+            'address' => $request->has('address') ? $request->address : null,
+            'phone'   => $request->has('phone') ? $request->phone : null,
+        ], fn($value) => !is_null($value)));
 
         return response()->json([
             'success' => true,
