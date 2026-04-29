@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CompanyScope;
 use App\Traits\HasUlid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -20,6 +21,11 @@ class SaleDetail extends Model
         'discount',
         'subtotal',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new CompanyScope());
+    }
 
     // Relationships
     public function saleTransaction()

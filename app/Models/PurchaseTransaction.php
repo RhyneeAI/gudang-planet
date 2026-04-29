@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CompanyScope;
 use App\Traits\HasUlid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,6 +25,11 @@ class PurchaseTransaction extends Model
     protected $casts = [
         'transaction_date' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new CompanyScope());
+    }
 
     // Relationships
     public function company()

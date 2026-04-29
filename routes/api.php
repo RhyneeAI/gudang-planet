@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CategoryController;
+use App\Http\Controllers\Api\V1\UnitController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -21,6 +22,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::apiResource('categories', CategoryController::class)->parameters([
             'categories' => 'category:uuid'
+        ]);    
+
+        Route::apiResource('units', UnitController::class)->parameters([
+            'units' => 'unit:uuid'
         ]);     
     });
 });

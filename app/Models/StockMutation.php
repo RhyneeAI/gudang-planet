@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\MutationType;
+use App\Models\Scopes\CompanyScope;
 use App\Traits\HasUlid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -28,6 +29,11 @@ class StockMutation extends Model
     protected $casts = [
         'type' => MutationType::class,
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new CompanyScope());
+    }
 
     // Relationships
     public function product()

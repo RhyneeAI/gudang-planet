@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CompanyScope;
 use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,13 +12,16 @@ class MarketingProduct extends Model
 {
     use HasFactory, SoftDeletes, HasUuid;
 
-    protected $table = 'marketing_products';
-
     protected $fillable = [
         'uuid',
         'product_id',
         'marketer_id',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new CompanyScope());
+    }
 
     // Relationships
     public function product()

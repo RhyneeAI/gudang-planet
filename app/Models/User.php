@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Role;
+use App\Models\Scopes\CompanyScope;
 use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -34,6 +35,11 @@ class User extends Authenticatable
         'role' => Role::class,
     ];
 
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new CompanyScope());
+    }
+
     // Relationships
     public function company()
     {
@@ -63,6 +69,6 @@ class User extends Authenticatable
 
     public function isMarketing(): bool
     {
-        return $this->role === Role::MARKETER;
+        return $this->role === Role::MARKETING;
     }
 }
