@@ -1,10 +1,7 @@
 <?php
-// routes/api.php
 
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\ProductController;
-use App\Http\Resources\ProductResource;
-use App\Models\Product;
+use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CategoryController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -14,6 +11,6 @@ Route::prefix('v1')->group(function () {
     // Protected
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
-        Route::apiResource('/products', ProductController::class);
+        Route::apiResource('/categories', CategoryController::class);
     });
 });
