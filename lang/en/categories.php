@@ -7,6 +7,7 @@ return [
     'list'     => 'Category list retrieved successfully.',
     'detail'   => 'Category detail retrieved successfully.',
     'not_found'=> 'Category not found.',
+    'has_products' => 'Category has products.',
     'unauthorized' => 'You are not authorized to access this category.',
 
     // ========== VALIDATION MESSAGES (untuk FormRequest) ==========

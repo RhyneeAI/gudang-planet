@@ -7,6 +7,7 @@ return [
     'list'     => 'Daftar kategori berhasil diambil.',
     'detail'   => 'Detail kategori berhasil diambil.',
     'not_found'=> 'Kategori tidak ditemukan.',
+    'has_products' => 'Kategori ini masih digunakan oleh produk.',
     'unauthorized' => 'Anda tidak memiliki izin mengakses kategori ini.',
 
     // ========== VALIDATION MESSAGES ==========
