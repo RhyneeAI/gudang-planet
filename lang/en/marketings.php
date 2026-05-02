@@ -7,14 +7,10 @@ return [
     'updated'       => 'Marketing updated successfully.',
     'deleted'       => 'Marketing deleted successfully.',
     'has_relations' => 'Marketing cannot be deleted because it is still related to products or transactions.',
-    'validation'    => [
-        'name_required'     => 'Marketing name is required.',
-        'username_required' => 'Username is required.',
-        'username_unique'   => 'Username already exists.',
-        'email_required'    => 'Email is required.',
-        'email_unique'      => 'Email already exists.',
-        'password_required' => 'Password is required.',
-        'password_min'      => 'Password must be at least 8 characters.',
-        'phone_max'         => 'Phone number must not exceed 20 characters.',
+    'validation' => [
+        'name_required' => 'Marketing name is required.',
+        'email_invalid' => 'Invalid email format.',
+        'email_unique'  => 'Email already exists.',
+        'phone_max'     => 'Phone number must not exceed 20 characters.',
     ],
 ];

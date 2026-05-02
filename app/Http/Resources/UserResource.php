@@ -11,13 +11,11 @@ class UserResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'uuid' => $this->uuid,
             'name' => $this->name,
-            'username' => $this->username,
+            // 'username' => $this->username,
             'email' => $this->email,
-            'role' => $this->role->value, 
-            'role_label' => $this->role->label(),
-            'company_id' => $this->company_id,
-            'company_name' => $this->whenLoaded('company', fn() => $this->company->name),
+            // 'role' => $this->role->value, 
             'created_at' => $this->created_at->toISOString(),
         ];
     }

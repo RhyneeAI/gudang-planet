@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MarketingRequest;
 use App\Http\Resources\UserResource;
@@ -20,7 +21,7 @@ class MarketingController extends Controller
                             : 'name';
         $orderByValue = strtoupper($request->input('order_by_value', 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
 
-        $marketings = User::where('role', 'marketing')
+        $marketings = User::where('role', ROLE::MARKETING)
             ->when($request->search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -40,14 +41,21 @@ class MarketingController extends Controller
 
     public function store(MarketingRequest $request)
     {
+        // Auto generate username dari name (lowercase, hapus spasi)
+        $baseUsername = strtolower(str_replace(' ', '', $request->name));
+        $username     = $this->generateUniqueUsername($baseUsername);
+
+        $randomDigits = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
+        $rawPassword  = strtolower(str_replace(' ', '', $request->name)) . $randomDigits;
+
         $marketing = User::create([
             'name'       => $request->name,
-            'username'   => $request->username,
+            'username'   => $username,
             'email'      => $request->email,
-            'password'   => Hash::make($request->password),
+            'password'   => Hash::make($rawPassword),
             'address'    => $request->address,
             'phone'      => $request->phone,
-            'role'       => 'marketing',
+            'role'       => Role::MARKETING,
             'company_id' => $request->user()->company_id,
         ]);
 
@@ -55,19 +63,37 @@ class MarketingController extends Controller
             'success' => true,
             'message' => __('marketings.stored'),
             'data'    => new UserResource($marketing),
+            'credentials' => [
+                'username' => $username,
+                'password' => $rawPassword,
+            ],
         ], 201);
     }
 
-    public function show(User $user)
+    private function generateUniqueUsername(string $base): string
+    {
+        $username = $base;
+        $counter  = 1;
+
+        // Jika username sudah ada, tambah angka di belakang
+        while (User::where('username', $username)->exists()) {
+            $username = $base . $counter;
+            $counter++;
+        }
+
+        return $username;
+    }
+
+    public function show(User $marketing)
     {
         return response()->json([
             'success' => true,
             'message' => __('marketings.detail'),
-            'data'    => new UserResource($user),
+            'data'    => new UserResource($marketing),
         ]);
     }
 
-    public function update(MarketingRequest $request, User $user)
+    public function update(MarketingRequest $request, User $marketing)
     {
         $data = $request->only(['name', 'username', 'email', 'address', 'phone']);
 
@@ -75,19 +101,19 @@ class MarketingController extends Controller
             $data['password'] = Hash::make($request->password);
         }
 
-        $user->update($data);
+        $marketing->update($data);
 
         return response()->json([
             'success' => true,
             'message' => __('marketings.updated'),
-            'data'    => new UserResource($user),
+            'data'    => new UserResource($marketing),
         ]);
     }
 
-    public function destroy(User $user)
+    public function destroy(User $marketing)
     {
-        $hasProducts     = $user->marketingProducts()->exists();
-        $hasTransactions = $user->salesTransactions()->exists();
+        $hasProducts     = $marketing->marketingProducts()->exists();
+        $hasTransactions = $marketing->salesTransactions()->exists();
 
         if ($hasProducts || $hasTransactions) {
             return response()->json([
@@ -97,7 +123,7 @@ class MarketingController extends Controller
             ], 422);
         }
 
-        $user->delete();
+        $marketing->delete();
 
         return response()->json([
             'success' => true,
