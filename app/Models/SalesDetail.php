@@ -20,6 +20,7 @@ class SalesDetail extends Model
         'sell_price',
         'discount',
         'subtotal',
+        'company_id'
     ];
 
     protected static function booted(): void

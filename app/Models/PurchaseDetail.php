@@ -19,6 +19,7 @@ class PurchaseDetail extends Model
         'quantity',
         'buy_price',
         'subtotal',
+        'company_id'
     ];
 
     protected static function booted(): void

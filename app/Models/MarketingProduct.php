@@ -15,8 +15,10 @@ class MarketingProduct extends Model
 
     protected $fillable = [
         'uuid',
+        'marketing_price',
         'product_id',
         'marketing_id',
+        'company_id'
     ];
 
     protected static function booted(): void

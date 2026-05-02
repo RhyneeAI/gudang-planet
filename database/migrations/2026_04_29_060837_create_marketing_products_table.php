@@ -6,13 +6,16 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+
     public function up(): void
     {
         Schema::create('marketing_products', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
+            $table->double('marketing_price')->default(0);
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
             $table->foreignId('marketing_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('company_id')->constrained('company')->onDelete('cascade');
             $table->softDeletes();
             $table->timestamps();
             
