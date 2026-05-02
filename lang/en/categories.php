@@ -15,5 +15,6 @@ return [
         'name_required' => 'The category name is required.',
         'name_string'   => 'The category name must be a string.',
         'name_max'      => 'The category name may not be greater than 255 characters.',
+        'name_unique'   => 'The category name has already been taken.',
     ],
 ];

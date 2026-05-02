@@ -15,5 +15,6 @@ return [
         'name_required' => 'Nama kategori wajib diisi.',
         'name_string'   => 'Nama kategori harus berupa teks.',
         'name_max'      => 'Nama kategori tidak boleh lebih dari 255 karakter.',
+        'name_unique'   => 'Nama kategori sudah ada.',
     ],
 ];

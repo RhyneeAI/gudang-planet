@@ -12,7 +12,12 @@ class CategoryController extends Controller
 {
     public function index(Request $request)
     {
-        $categories = Category::orderBy('name')
+        $categories = Category::when($request->search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('name')
             ->paginate($request->input('per_page', 15));
 
         return response()->json([
