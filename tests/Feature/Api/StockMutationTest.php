@@ -14,78 +14,128 @@ beforeEach(function () {
 });
 
 // =============================
-// INDEX
+// INDEX (List Products with mutations)
 // =============================
 
-it('can get stock mutation list', function () {
-    StockMutation::factory(5)->create(['company_id' => $this->company->id]);
+it('can get product list that has stock mutations', function () {
+    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    StockMutation::factory(5)->create([
+        'product_id' => $product->id,
+        'company_id' => $this->company->id,
+    ]);
 
     $this->actingAs($this->user)
-        ->getJson('/api/v1/stock-mutations')
+        ->getJson('/api/v1/stock-mutations/products') // ← route baru
         ->assertStatus(200)
         ->assertJsonStructure([
             'success',
             'message',
             'data' => [
-                '*' => ['ulid', 'type', 'quantity', 'stock_before', 'stock_after', 'created_at']
+                '*' => ['uuid', 'name', 'code', 'current_stock']
             ]
         ])
         ->assertJsonPath('success', true);
 });
 
-it('only returns stock mutations belonging to the same company', function () {
+it('only returns products belonging to the same company', function () {
     $otherCompany = Company::factory()->create();
-    StockMutation::factory(3)->create(['company_id' => $otherCompany->id]);
-    StockMutation::factory(2)->create(['company_id' => $this->company->id]);
+    $product1 = Product::factory()->create(['company_id' => $otherCompany->id]);
+    $product2 = Product::factory()->create(['company_id' => $this->company->id]);
+    
+    StockMutation::factory(3)->create(['product_id' => $product1->id, 'company_id' => $otherCompany->id]);
+    StockMutation::factory(2)->create(['product_id' => $product2->id, 'company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
-        ->getJson('/api/v1/stock-mutations');
-
-    expect($response->json('data'))->toHaveCount(2);
-});
-
-it('returns 401 when not authenticated on index', function () {
-    $this->getJson('/api/v1/stock-mutations')->assertStatus(401);
-});
-
-it('can filter stock mutations by date range', function () {
-    StockMutation::factory()->create([
-        'created_at' => '2026-01-15',
-        'company_id' => $this->company->id,
-    ]);
-    StockMutation::factory()->create([
-        'created_at' => '2026-02-15',
-        'company_id' => $this->company->id,
-    ]);
-    StockMutation::factory()->create([
-        'created_at' => '2026-03-15',
-        'company_id' => $this->company->id,
-    ]);
-
-    $response = $this->actingAs($this->user)
-        ->getJson('/api/v1/stock-mutations?date_from=2026-02-01&date_to=2026-02-28');
+        ->getJson('/api/v1/stock-mutations/products'); // ← route baru
 
     expect($response->json('data'))->toHaveCount(1);
 });
 
-it('can sort stock mutations', function () {
+it('returns 401 when not authenticated on index', function () {
+    $this->getJson('/api/v1/stock-mutations/products')->assertStatus(401); // ← route baru
+});
+
+it('can filter stock mutations by date range', function () {
+    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    
     StockMutation::factory()->create([
-        'quantity' => 10,
+        'product_id' => $product->id,
+        'created_at' => '2026-01-15',
         'company_id' => $this->company->id,
     ]);
     StockMutation::factory()->create([
-        'quantity' => 50,
+        'product_id' => $product->id,
+        'created_at' => '2026-02-15',
         'company_id' => $this->company->id,
     ]);
 
     $response = $this->actingAs($this->user)
-        ->getJson('/api/v1/stock-mutations?order_by_key=quantity&order_by_value=desc');
+        ->getJson('/api/v1/stock-mutations/products?date_from=2026-02-01&date_to=2026-02-28'); // ← route baru
 
-    expect($response->json('data.0.quantity'))->toBe(50);
+    // Tetap return product karena ada mutasi dalam range tanggal
+    expect($response->json('data'))->toHaveCount(1);
+});
+
+it('can sort products by name', function () {
+    $product1 = Product::factory()->create(['name' => 'Zebra', 'company_id' => $this->company->id]);
+    $product2 = Product::factory()->create(['name' => 'Apple', 'company_id' => $this->company->id]);
+    
+    StockMutation::factory()->create(['product_id' => $product1->id, 'company_id' => $this->company->id]);
+    StockMutation::factory()->create(['product_id' => $product2->id, 'company_id' => $this->company->id]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson('/api/v1/stock-mutations/products?order_by_key=product_name&order_by_value=asc'); // ← route baru
+
+    expect($response->json('data.0.name'))->toBe('Apple');
+    expect($response->json('data.1.name'))->toBe('Zebra');
 });
 
 // =============================
-// STORE
+// SHOW (Mutations per Product)
+// =============================
+
+it('can get stock mutations for a specific product', function () {
+    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    StockMutation::factory(5)->create([
+        'product_id' => $product->id,
+        'company_id' => $this->company->id,
+    ]);
+
+    $this->actingAs($this->user)
+        ->getJson("/api/v1/stock-mutations/products/{$product->uuid}") 
+        ->assertStatus(200)
+        ->assertJsonStructure([
+            'success',
+            'message',
+            'data' => [
+                'product' => ['uuid', 'name', 'code', 'current_stock'],
+                'mutations' => [
+                    'data' => [
+                        '*' => ['ulid', 'type_label', 'quantity', 'stock_before', 'stock_after']
+                    ]
+                ]
+            ]
+        ])
+        ->assertJsonPath('success', true);
+});
+
+it('returns 404 when product not found', function () {
+    $this->actingAs($this->user)
+        ->getJson('/api/v1/stock-mutations/products/invalid-uuid') // ← route baru
+        ->assertStatus(404);
+});
+
+it('returns 404 when accessing product from other company', function () {
+    $otherCompany = Company::factory()->create();
+    $product = Product::factory()->create(['company_id' => $otherCompany->id]);
+
+    $this->actingAs($this->user)
+        ->getJson("/api/v1/stock-mutations/products/{$product->uuid}") // ← route baru
+        ->assertStatus(404);
+});
+
+// =============================
+// STORE (Create Adjustment/Opname)
 // =============================
 
 it('can create ADJUST_IN stock mutation', function () {
@@ -98,7 +148,7 @@ it('can create ADJUST_IN stock mutation', function () {
         ->postJson('/api/v1/stock-mutations', [
             'type' => StockMutationType::ADJUST_IN->value,
             'quantity' => 50,
-            'product_id' => $product->id,
+            'product_uuid' => $product->uuid, // ← ganti product_id ke product_uuid
             'notes' => 'Adjustment tambah stok',
         ])
         ->assertStatus(201)
@@ -118,7 +168,7 @@ it('can create ADJUST_OUT stock mutation', function () {
         ->postJson('/api/v1/stock-mutations', [
             'type' => StockMutationType::ADJUST_OUT->value,
             'quantity' => 30,
-            'product_id' => $product->id,
+            'product_uuid' => $product->uuid, // ← ganti product_id ke product_uuid
         ])
         ->assertStatus(201)
         ->assertJsonPath('success', true);
@@ -137,7 +187,7 @@ it('can create OPNAME stock mutation', function () {
         ->postJson('/api/v1/stock-mutations', [
             'type' => StockMutationType::OPNAME->value,
             'quantity' => 120,
-            'product_id' => $product->id,
+            'product_uuid' => $product->uuid, // ← ganti product_id ke product_uuid
         ])
         ->assertStatus(201)
         ->assertJsonPath('success', true);
@@ -156,29 +206,29 @@ it('returns 422 when adjusting more stock than available', function () {
         ->postJson('/api/v1/stock-mutations', [
             'type' => StockMutationType::ADJUST_OUT->value,
             'quantity' => 100,
-            'product_id' => $product->id,
+            'product_uuid' => $product->uuid, // ← ganti product_id ke product_uuid
         ])
         ->assertStatus(422);
 });
 
-it('returns 422 when product not found', function () {
+it('returns 422 when product not found on store', function () {
     $this->actingAs($this->user)
         ->postJson('/api/v1/stock-mutations', [
             'type' => StockMutationType::ADJUST_IN->value,
             'quantity' => 50,
-            'product_id' => 99999,
+            'product_uuid' => 'invalid-uuid', // ← ganti
         ])
         ->assertStatus(422);
 });
 
-it('returns 422 when type is not allowed', function () {
+it('returns 422 when type is not allowed for manual creation', function () {
     $product = Product::factory()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->postJson('/api/v1/stock-mutations', [
             'type' => StockMutationType::PURCHASE_IN->value,
             'quantity' => 50,
-            'product_id' => $product->id,
+            'product_uuid' => $product->uuid, // ← ganti
         ])
         ->assertStatus(422);
 });
@@ -186,33 +236,4 @@ it('returns 422 when type is not allowed', function () {
 it('returns 401 when not authenticated on store', function () {
     $this->postJson('/api/v1/stock-mutations', [])
         ->assertStatus(401);
-});
-
-// =============================
-// SHOW
-// =============================
-
-it('can get stock mutation detail', function () {
-    $stockMutation = StockMutation::factory()->create(['company_id' => $this->company->id]);
-
-    $this->actingAs($this->user)
-        ->getJson("/api/v1/stock-mutations/{$stockMutation->ulid}")
-        ->assertStatus(200)
-        ->assertJsonPath('success', true)
-        ->assertJsonPath('data.ulid', (string) $stockMutation->ulid);
-});
-
-it('returns 404 when stock mutation not found', function () {
-    $this->actingAs($this->user)
-        ->getJson('/api/v1/stock-mutations/invalid-ulid')
-        ->assertStatus(404);
-});
-
-it('returns 404 when accessing from other company', function () {
-    $otherCompany = Company::factory()->create();
-    $stockMutation = StockMutation::factory()->create(['company_id' => $otherCompany->id]);
-
-    $this->actingAs($this->user)
-        ->getJson("/api/v1/stock-mutations/{$stockMutation->ulid}")
-        ->assertStatus(404);
 });
