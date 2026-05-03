@@ -28,47 +28,19 @@ class ProductRequest extends FormRequest
                     return $query->where('company_id', $this->user()->company_id);
                 })->ignore($this->product?->id),
             ],
-            'base_price' => [
-                'nullable',
-                'numeric',
-                'min:0',
-            ],
+            'base_price' => ['nullable', 'numeric', 'min:0'],
             'sales_price' => [
                 $this->isMethod('POST') ? 'required' : 'sometimes',
                 'numeric',
                 'min:0',
             ],
-            'last_purchase_price' => [
-                'nullable',
-                'numeric',
-                'min:0',
-            ],
-            'stock' => [
-                'nullable',
-                'integer',
-                'min:0',
-            ],
-            'min_stock' => [
-                'nullable',
-                'integer',
-                'min:0',
-            ],
-            'description' => [
-                'nullable',
-                'string',
-            ],
-            'is_active' => [
-                'nullable',
-                'boolean',
-            ],
-            'category_id' => [
-                'nullable',
-                'exists:categories,id',
-            ],
-            'unit_id' => [
-                'nullable',
-                'exists:units,id',
-            ],
+            'stock' => ['nullable', 'integer', 'min:0'],
+            'min_stock' => ['nullable', 'integer', 'min:0'],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['nullable', 'boolean'],
+            
+            'category_uuid' => ['nullable', 'exists:categories,uuid'],
+            'unit_uuid' => ['nullable', 'exists:units,uuid'],
         ];
     }
 
@@ -84,8 +56,9 @@ class ProductRequest extends FormRequest
             'sales_price.numeric' => __('products.validation.sales_price_numeric'),
             'stock.integer' => __('products.validation.stock_integer'),
             'min_stock.integer' => __('products.validation.min_stock_integer'),
-            'category_id.exists' => __('products.validation.category_exists'),
-            'unit_id.exists' => __('products.validation.unit_exists'),
+            
+            'category_uuid.exists' => __('products.validation.category_uuid_exists'),
+            'unit_uuid.exists' => __('products.validation.unit_uuid_exists'),
         ];
     }
 }

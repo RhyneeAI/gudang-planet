@@ -98,13 +98,33 @@ it('can create a product', function () {
             'sales_price' => 75000,
             'stock' => 10,
             'min_stock' => 5,
-            'category_id' => $category->id,
-            'unit_id' => $unit->id,
+            'category_uuid' => $category->uuid, 
+            'unit_uuid' => $unit->uuid,         
         ])
         ->assertStatus(201)
         ->assertJsonPath('success', true)
         ->assertJsonPath('data.name', 'Product Test')
         ->assertJsonPath('data.code', 'PRD-001');
+});
+
+it('returns 422 when category_uuid is invalid', function () {
+    $this->actingAs($this->user)
+        ->postJson('/api/v1/products', [
+            'name' => 'Product Test',
+            'sales_price' => 75000,
+            'category_uuid' => 'invalid-uuid',
+        ])
+        ->assertStatus(422);
+});
+
+it('returns 422 when unit_uuid is invalid', function () {
+    $this->actingAs($this->user)
+        ->postJson('/api/v1/products', [
+            'name' => 'Product Test',
+            'sales_price' => 75000,
+            'unit_uuid' => 'invalid-uuid',
+        ])
+        ->assertStatus(422);
 });
 
 it('returns 422 when name is empty on store', function () {

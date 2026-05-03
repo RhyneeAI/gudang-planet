@@ -22,8 +22,7 @@ return [
         'sales_price_numeric' => 'Harga jual harus berupa angka.',
         'stock_integer' => 'Stok harus berupa bilangan bulat.',
         'min_stock_integer' => 'Stok minimal harus berupa bilangan bulat.',
-        'category_exists' => 'Kategori yang dipilih tidak valid.',
-        'unit_exists' => 'Satuan yang dipilih tidak valid.',
-        'supplier_exists' => 'Supplier yang dipilih tidak valid.',
+        'category_uuid_exists' => 'Kategori yang dipilih tidak valid.',
+        'unit_uuid_exists' => 'Satuan yang dipilih tidak valid.',
     ],
 ];

@@ -22,8 +22,7 @@ return [
         'sales_price_numeric' => 'The sales price must be a number.',
         'stock_integer' => 'The stock must be an integer.',
         'min_stock_integer' => 'The minimum stock must be an integer.',
-        'category_exists' => 'The selected category does not exist.',
-        'unit_exists' => 'The selected unit does not exist.',
-        'supplier_exists' => 'The selected supplier does not exist.',
+        'category_uuid_exists' => 'Selected category does not exist.',
+        'unit_uuid_exists' => 'Selected unit does not exist.',
     ],
 ];

@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProductRequest;
 use App\Http\Resources\ProductResource;
+use App\Models\Category;
 use App\Models\Product;
+use App\Models\Unit;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -40,6 +42,10 @@ class ProductController extends Controller
 
     public function store(ProductRequest $request)
     {
+        // Cari category, unit berdasarkan UUID
+        $category = $request->category_uuid ? Category::where('uuid', $request->category_uuid)->first() : null;
+        $unit = $request->unit_uuid ? Unit::where('uuid', $request->unit_uuid)->first() : null;
+
         $product = Product::create([
             'name' => $request->name,
             'code' => $request->code,
@@ -50,8 +56,8 @@ class ProductController extends Controller
             'min_stock' => $request->min_stock ?? 0,
             'description' => $request->description,
             'is_active' => $request->is_active ?? true,
-            'category_id' => $request->category_id,
-            'unit_id' => $request->unit_id,
+            'category_id' => $category?->id, 
+            'unit_id' => $unit?->id,         
             'created_by' => $request->user()->id,
             'company_id' => $request->user()->company_id,
         ]);
@@ -74,6 +80,13 @@ class ProductController extends Controller
 
     public function update(ProductRequest $request, Product $product)
     {
+        $category = $request->has('category_uuid') 
+            ? Category::where('uuid', $request->category_uuid)->first() 
+            : null;
+        $unit = $request->has('unit_uuid') 
+            ? Unit::where('uuid', $request->unit_uuid)->first() 
+            : null;
+
         $data = array_filter([
             'name' => $request->has('name') ? $request->name : null,
             'code' => $request->has('code') ? $request->code : null,
@@ -84,8 +97,8 @@ class ProductController extends Controller
             'min_stock' => $request->has('min_stock') ? $request->min_stock : null,
             'description' => $request->has('description') ? $request->description : null,
             'is_active' => $request->has('is_active') ? $request->is_active : null,
-            'category_id' => $request->has('category_id') ? $request->category_id : null,
-            'unit_id' => $request->has('unit_id') ? $request->unit_id : null,
+            'category_id' => $category?->id,
+            'unit_id' => $unit?->id,
         ], fn($value) => !is_null($value));
 
         $product->update($data);
