@@ -16,7 +16,7 @@ class SupplierRequest extends FormRequest
     {
         return [
             'name'    => [
-                'required',
+                $this->isMethod('POST') ? 'required' : 'sometimes',
                 'string',
                 'max:255',
                 Rule::unique('suppliers')
