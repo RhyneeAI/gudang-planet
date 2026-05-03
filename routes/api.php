@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\MarketingController;
 use App\Http\Controllers\Api\MarketingProductController;
+use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\UnitController;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +33,10 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('units', UnitController::class)->parameters([
                 'units' => 'unit:uuid'
             ]);    
+
+            Route::apiResource('products', ProductController::class)->parameters([
+                'products' => 'product:uuid'
+            ]);
             
             Route::apiResource('suppliers', SupplierController::class)->parameters([
                 'suppliers' => 'supplier:uuid'
