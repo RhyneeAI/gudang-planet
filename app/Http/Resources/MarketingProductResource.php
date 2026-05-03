@@ -19,6 +19,11 @@ class MarketingProductResource extends JsonResource
                 'sales_price' => $this->product->sales_price,
                 'stock'       => $this->product->stock,
             ],
+            'created_by' => $this->whenLoaded('createdBy', function () {
+                return [
+                    'name' => $this->createdBy->name,
+                ];
+            }),
             'created_at'      => $this->created_at?->toISOString(),
             'updated_at'      => $this->updated_at?->toISOString(),
         ];

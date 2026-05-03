@@ -60,7 +60,7 @@ class ProductController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('products.stored'),
-            'data' => new ProductResource($product->load(['category', 'unit', 'supplier'])),
+            'data' => new ProductResource($product->load(['category', 'unit', 'supplier', 'createdBy'])),
         ], 201);
     }
 
@@ -69,7 +69,7 @@ class ProductController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('products.detail'),
-            'data' => new ProductResource($product->load(['category', 'unit', 'supplier'])),
+            'data' => new ProductResource($product->load(['category', 'unit', 'supplier', 'createdBy'])),
         ]);
     }
 
@@ -95,7 +95,7 @@ class ProductController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('products.updated'),
-            'data' => new ProductResource($product->load(['category', 'unit', 'supplier'])),
+            'data' => new ProductResource($product->load(['category', 'unit', 'supplier', 'createdBy'])),
         ]);
     }
 

@@ -44,6 +44,30 @@ it('only returns suppliers belonging to the same company', function () {
     expect($response->json('data'))->toHaveCount(2);
 });
 
+it('can filter suppliers by search name', function () {
+    Supplier::factory()->create(['name' => 'Laptop Gaming', 'company_id' => $this->company->id]);
+    Supplier::factory()->create(['name' => 'Mouse Wireless', 'company_id' => $this->company->id]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson('/api/v1/suppliers?search=laptop');
+
+    expect($response->json('data'))->toHaveCount(1);
+    expect($response->json('data.0.name'))->toBe('Laptop Gaming');
+});
+
+it('can sort suppliers by name', function () {
+    Supplier::factory()->create(['name' => 'Zebra', 'company_id' => $this->company->id]);
+    Supplier::factory()->create(['name' => 'Apple', 'company_id' => $this->company->id]);
+    Supplier::factory()->create(['name' => 'Banana', 'company_id' => $this->company->id]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson('/api/v1/suppliers?order_by_key=name&order_by_value=asc');
+
+    expect($response->json('data.0.name'))->toBe('Apple');
+    expect($response->json('data.1.name'))->toBe('Banana');
+    expect($response->json('data.2.name'))->toBe('Zebra');
+});
+
 it('can paginate suppliers with custom per_page', function () {
     Supplier::factory(20)->create(['company_id' => $this->company->id]);
 

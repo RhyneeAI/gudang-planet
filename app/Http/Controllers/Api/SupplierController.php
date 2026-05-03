@@ -10,15 +10,27 @@ use Illuminate\Http\Request;
 
 class SupplierController extends Controller
 {
+    protected array $sortableColumns = ['name', 'created_at'];
+
     public function index(Request $request)
     {
-        $suppliers = Supplier::orderBy('name')
+        $orderByKey = in_array($request->input('order_by_key', 'name'), $this->sortableColumns)
+            ? $request->input('order_by_key', 'name')
+            : 'name';
+        $orderByValue = strtoupper($request->input('order_by_value', 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
+
+        $suppliers = Supplier::query()
+            ->with(['createdBy'])
+            ->when($request->search, function ($query, $search) {
+                $query->where('name', 'like', "%{$search}%");
+            })
+            ->orderBy($orderByKey, $orderByValue)
             ->paginate($request->input('per_page', 15));
 
         return response()->json([
             'success' => true,
             'message' => __('suppliers.list'),
-            'data'    => SupplierResource::collection($suppliers),
+            'data' => SupplierResource::collection($suppliers),
         ]);
     }
 
@@ -32,6 +44,8 @@ class SupplierController extends Controller
             'company_id' => $request->user()->company_id,
         ]);
 
+        $supplier->load('createdBy');
+
         return response()->json([
             'success' => true,
             'message' => __('suppliers.stored'),
@@ -41,6 +55,8 @@ class SupplierController extends Controller
 
     public function show(Supplier $supplier)
     {
+        $supplier->loadMissing('createdBy');
+
         return response()->json([
             'success' => true,
             'message' => __('suppliers.detail'),
@@ -55,6 +71,8 @@ class SupplierController extends Controller
             'address' => $request->has('address') ? $request->address : null,
             'phone'   => $request->has('phone') ? $request->phone : null,
         ], fn($value) => !is_null($value)));
+
+        $supplier->load('createdBy');
 
         return response()->json([
             'success' => true,

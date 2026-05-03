@@ -19,7 +19,8 @@ class CustomerController extends Controller
                             : 'name';
         $orderByValue = strtoupper($request->input('order_by_value', 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
 
-        $customers = Customer::when($request->search, function ($query, $search) {
+        $customers = Customer::with(['createdBy'])
+                ->when($request->search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                       ->orWhere('phone', 'like', "%{$search}%");
@@ -46,6 +47,8 @@ class CustomerController extends Controller
             'company_id'       => $request->user()->company_id,
         ]);
 
+        $customer->load('createdBy');
+
         return response()->json([
             'success' => true,
             'message' => __('customers.stored'),
@@ -55,6 +58,8 @@ class CustomerController extends Controller
 
     public function show(Customer $customer)
     {
+        $customer->loadMissing('createdBy');
+
         return response()->json([
             'success' => true,
             'message' => __('customers.detail'),
@@ -70,6 +75,8 @@ class CustomerController extends Controller
             'phone'            => $request->has('phone') ? $request->phone : null,
             'customer_type_id' => $request->has('customer_type_id') ? $request->customer_type_id : null,
         ], fn($value) => !is_null($value)));
+
+        $customer->load('createdBy');
 
         return response()->json([
             'success' => true,

@@ -10,15 +10,27 @@ use Illuminate\Http\Request;
 
 class UnitController extends Controller
 {
+    protected array $sortableColumns = ['name', 'created_at'];
+
     public function index(Request $request)
     {
-        $units = Unit::orderBy('name')
+        $orderByKey = in_array($request->input('order_by_key', 'name'), $this->sortableColumns)
+            ? $request->input('order_by_key', 'name')
+            : 'name';
+        $orderByValue = strtoupper($request->input('order_by_value', 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
+
+        $units = Unit::query()
+            ->with(['createdBy'])
+            ->when($request->search, function ($query, $search) {
+                $query->where('name', 'like', "%{$search}%");
+            })
+            ->orderBy($orderByKey, $orderByValue)
             ->paginate($request->input('per_page', 15));
 
         return response()->json([
             'success' => true,
             'message' => __('units.list'),
-            'data'    => UnitResource::collection($units),
+            'data' => UnitResource::collection($units),
         ]);
     }
 
@@ -30,6 +42,8 @@ class UnitController extends Controller
             'company_id' => $request->user()->company_id,
         ]);
 
+        $unit->load('createdBy');
+
         return response()->json([
             'success' => true,
             'message' => __('units.stored'),
@@ -39,6 +53,8 @@ class UnitController extends Controller
 
     public function show(Unit $unit)
     {
+        $unit->loadMissing('createdBy');
+
         return response()->json([
             'success' => true,
             'message' => __('units.detail'),
@@ -51,6 +67,8 @@ class UnitController extends Controller
         if ($request->has('name')) {
             $unit->update(['name' => $request->name]);
         }
+
+        $unit->load('createdBy');
 
         return response()->json([
             'success' => true,

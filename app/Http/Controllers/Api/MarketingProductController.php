@@ -19,7 +19,7 @@ class MarketingProductController extends Controller
                             : 'created_at';
         $orderByValue = strtoupper($request->input('order_by_value', 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
 
-        $marketingProducts = MarketingProduct::with('product')
+        $marketingProducts = MarketingProduct::with(['product', 'createdBy'])
             ->join('products', 'products.id', '=', 'marketing_products.product_id')
             ->select('marketing_products.*', 'products.name as product_name') // hindari conflict kolom
             ->when($request->marketing_uuid, function ($query, $marketingUuid) {
@@ -55,6 +55,8 @@ class MarketingProductController extends Controller
             'company_id'      => $request->user()->company_id,
         ]);
 
+        $marketingProduct->load('product');
+
         return response()->json([
             'success' => true,
             'message' => __('marketing_product.stored'),
@@ -64,6 +66,8 @@ class MarketingProductController extends Controller
 
     public function show(MarketingProduct $marketingProduct)
     {
+        $marketingProduct->loadMissing('product');
+
         return response()->json([
             'success' => true,
             'message' => __('marketing_product.detail'),
@@ -76,6 +80,8 @@ class MarketingProductController extends Controller
         $marketingProduct->update(
             $request->only(['marketing_price'])
         );
+
+        $marketingProduct->load('product');
 
         return response()->json([
             'success' => true,

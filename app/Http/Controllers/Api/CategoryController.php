@@ -12,10 +12,9 @@ class CategoryController extends Controller
 {
     public function index(Request $request)
     {
-        $categories = Category::when($request->search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
-                });
+        $categories = Category::with('createdBy') 
+            ->when($request->search, function ($query, $search) {
+                $query->where('name', 'like', "%{$search}%");
             })
             ->orderBy('name')
             ->paginate($request->input('per_page', 15));
@@ -23,31 +22,35 @@ class CategoryController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('categories.list'),
-            'data'    => CategoryResource::collection($categories),
+            'data' => CategoryResource::collection($categories),
         ]);
     }
 
     public function store(CategoryRequest $request)
     {
         $category = Category::create([
-            'name'       => $request->name,
+            'name' => $request->name,
             'created_by' => $request->user()->id,
             'company_id' => $request->user()->company_id,
         ]);
 
+        $category->load('createdBy');
+
         return response()->json([
             'success' => true,
             'message' => __('categories.stored'),
-            'data'    => new CategoryResource($category),
+            'data' => new CategoryResource($category),
         ], 201);
     }
 
     public function show(Category $category)
     {
+        $category->loadMissing('createdBy');
+
         return response()->json([
             'success' => true,
             'message' => __('categories.detail'),
-            'data'    => new CategoryResource($category),
+            'data' => new CategoryResource($category),
         ]);
     }
 
@@ -57,10 +60,12 @@ class CategoryController extends Controller
             $category->update(['name' => $request->name]);
         }
 
+        $category->load('createdBy');
+
         return response()->json([
             'success' => true,
             'message' => __('categories.updated'),
-            'data'    => new CategoryResource($category),
+            'data' => new CategoryResource($category),
         ]);
     }
 
@@ -70,7 +75,7 @@ class CategoryController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => __('categories.has_products'),
-                'code'    => 422,
+                'code' => 422,
             ], 422);
         }
 

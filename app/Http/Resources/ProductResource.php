@@ -21,6 +21,11 @@ class ProductResource extends JsonResource
             'min_stock' => (int) $this->min_stock,
             'description' => $this->description,
             'is_active' => (bool) $this->is_active,
+            'created_by' => $this->whenLoaded('createdBy', function () {
+                return [
+                    'name' => $this->createdBy->name,
+                ];
+            }),
             'category' => $this->whenLoaded('category', function () {
                 return [
                     'id' => $this->category->id,

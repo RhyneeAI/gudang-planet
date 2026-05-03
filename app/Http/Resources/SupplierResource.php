@@ -14,8 +14,12 @@ class SupplierResource extends JsonResource
             'name'       => $this->name,
             'address'    => $this->address,
             'phone'      => $this->phone,
-            'created_by' => $this->created_by,
-            'company_id' => $this->company_id,
+            'created_by' => $this->whenLoaded('createdBy', function () {
+                return [
+                    'name' => $this->createdBy->name,
+                ];
+            }),
+            // 'company_id' => $this->company_id,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];
