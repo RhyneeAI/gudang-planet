@@ -23,6 +23,7 @@ class CustomerSeeder extends Seeder
                 'address' => $faker->address,
                 'phone' => $faker->phoneNumber,
                 'customer_type_id' => $faker->randomElement($customerTypeIds),
+                'created_by' => 1,
                 'company_id' => 1,
             ]);
         }

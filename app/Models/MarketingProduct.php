@@ -18,6 +18,7 @@ class MarketingProduct extends Model
         'marketing_price',
         'product_id',
         'marketing_id',
+        'created_by',
         'company_id'
     ];
 
@@ -36,5 +37,15 @@ class MarketingProduct extends Model
     {
         return $this->belongsTo(User::class)
                     ->where('role', Role::MARKETING);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
     }
 }

@@ -11,57 +11,28 @@ class CategorySeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            // Company 1
             [
                 'uuid' => (string) Str::uuid(),
                 'name' => 'Makanan',
+                'created_by' => 1,
                 'company_id' => 1,
             ],
             [
                 'uuid' => (string) Str::uuid(),
                 'name' => 'Minuman',
+                'created_by' => 1,
                 'company_id' => 1,
             ],
             [
                 'uuid' => (string) Str::uuid(),
                 'name' => 'Snack',
+                'created_by' => 1,
                 'company_id' => 1,
             ],
             [
                 'uuid' => (string) Str::uuid(),
                 'name' => 'Rokok',
-                'company_id' => 1,
-            ],
-            // Company 2
-            [
-                'uuid' => (string) Str::uuid(),
-                'name' => 'Elektronik',
-                'company_id' => 1,
-            ],
-            [
-                'uuid' => (string) Str::uuid(),
-                'name' => 'Aksesoris',
-                'company_id' => 1,
-            ],
-            [
-                'uuid' => (string) Str::uuid(),
-                'name' => 'Perlengkapan',
-                'company_id' => 1,
-            ],
-            // Company 3
-            [
-                'uuid' => (string) Str::uuid(),
-                'name' => 'Pakaian',
-                'company_id' => 1,
-            ],
-            [
-                'uuid' => (string) Str::uuid(),
-                'name' => 'Sepatu',
-                'company_id' => 1,
-            ],
-            [
-                'uuid' => (string) Str::uuid(),
-                'name' => 'Aksesoris Fashion',
+                'created_by' => 1,
                 'company_id' => 1,
             ],
         ];

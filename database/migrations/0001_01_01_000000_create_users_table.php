@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->string('password');
             $table->enum('role', ['SUPERADMIN', 'OWNER', 'MARKETING']);
+            $table->boolean('is_active')->default(true);
             $table->foreignId('company_id')->constrained()->onDelete('cascade');
             $table->rememberToken();
             $table->softDeletes();

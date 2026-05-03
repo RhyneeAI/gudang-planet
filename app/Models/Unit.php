@@ -15,6 +15,7 @@ class Unit extends Model
     protected $fillable = [
         'uuid',
         'name',
+        'created_by',
         'company_id',
     ];
 
@@ -27,6 +28,11 @@ class Unit extends Model
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function products()

@@ -13,6 +13,7 @@ class UnitResource extends JsonResource
             'id'         => $this->id,
             'uuid'       => $this->uuid,
             'name'       => $this->name,
+            'created_by' => $this->created_by,
             'company_id' => $this->company_id,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

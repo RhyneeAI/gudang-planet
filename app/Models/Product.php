@@ -26,7 +26,7 @@ class Product extends Model
         'category_id',
         'unit_id',
         'supplier_id',
-        'user_id',
+        'created_by',
         'company_id',
     ];
 
@@ -49,6 +49,11 @@ class Product extends Model
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function category()

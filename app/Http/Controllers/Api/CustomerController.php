@@ -42,6 +42,7 @@ class CustomerController extends Controller
             'address'          => $request->address,
             'phone'            => $request->phone,
             'customer_type_id' => $request->customer_type_id,
+            'created_by'       => $request->user()->id,
             'company_id'       => $request->user()->company_id,
         ]);
 

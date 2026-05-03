@@ -2,7 +2,8 @@
 
 namespace App\Models;
 
-use App\Enums\Role;
+use App\Enums\PaymentType;
+use App\Enums\TransactionStatus;
 use App\Models\Scopes\CompanyScope;
 use App\Traits\HasUlid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,14 +20,18 @@ class SalesTransaction extends Model
         'transaction_date',
         'discount',
         'total',
-        'user_id',
+        'paid',
+        'payment_type',
+        'transaction_status',
         'customer_id',
-        'marketing_id',
+        'created_by',
         'company_id',
     ];
 
     protected $casts = [
         'transaction_date' => 'datetime',
+        'payment_type' => PaymentType::class,
+        'transaction_status' => TransactionStatus::class
     ];
 
     protected static function booted(): void
@@ -40,20 +45,14 @@ class SalesTransaction extends Model
         return $this->belongsTo(Company::class);
     }
 
-    public function user()
+    public function createdBy()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function customer()
     {
         return $this->belongsTo(Customer::class);
-    }
-
-    public function marketing()
-    {
-        return $this->belongsTo(User::class)   
-                    ->where('role', Role::MARKETING);
     }
 
     public function details()

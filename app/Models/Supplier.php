@@ -17,6 +17,7 @@ class Supplier extends Model
         'name',
         'address',
         'phone',
+        'created_by',
         'company_id',
     ];
 
@@ -29,6 +30,11 @@ class Supplier extends Model
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function products()

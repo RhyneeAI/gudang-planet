@@ -26,6 +26,7 @@ class UnitController extends Controller
     {
         $unit = Unit::create([
             'name'       => $request->name,
+            'created_by' => $request->user()->id,
             'company_id' => $request->user()->company_id,
         ]);
 

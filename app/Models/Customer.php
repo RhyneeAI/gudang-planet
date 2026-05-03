@@ -23,6 +23,7 @@ class Customer extends Model
         'address',
         'phone',
         'customer_type_id',
+        'created_by',
         'company_id',
     ];
 
@@ -30,6 +31,16 @@ class Customer extends Model
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function customerType()
+    {
+        return $this->belongsTo(CustomerType::class);
     }
 
     public function salesTransactions()

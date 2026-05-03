@@ -42,7 +42,7 @@ class ProductSeeder extends Seeder
                 'category_id' => $categoryIds ? $faker->randomElement($categoryIds) : null,
                 'unit_id' => $unitIds ? $faker->randomElement($unitIds) : null,
                 'supplier_id' => $supplierIds ? $faker->randomElement($supplierIds) : null,
-                'user_id' => 1,   
+                'created_by' => 1,
                 'company_id' => $companyId,
                 'created_at' => now(),
                 'updated_at' => now(),

@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Company;
 use App\Models\Supplier;
 use App\Models\Unit;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ProductFactory extends Factory
@@ -25,6 +26,7 @@ class ProductFactory extends Factory
             'category_id'         => Category::factory(),
             'unit_id'             => Unit::factory(),
             'supplier_id'         => Supplier::factory(),
+            'created_by'          => User::factory(),
             'company_id'          => Company::factory(),
         ];
     }

@@ -21,6 +21,7 @@ class CustomerType extends Model
         'uuid',
         'type',
         'discount',
+        'created_by',
         'company_id',
     ];
 
@@ -32,5 +33,10 @@ class CustomerType extends Model
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

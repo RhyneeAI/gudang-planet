@@ -24,6 +24,8 @@ class User extends Authenticatable
         'phone',
         'password',
         'role',
+        'is_active',
+        'created_by',
         'company_id',
     ];
 
@@ -48,6 +50,10 @@ class User extends Authenticatable
         return $this->belongsTo(Company::class);
     }
 
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 
     public function marketingProducts()
     {

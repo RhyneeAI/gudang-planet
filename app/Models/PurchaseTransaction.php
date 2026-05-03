@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentType;
+use App\Enums\TransactionStatus;
 use App\Models\Scopes\CompanyScope;
 use App\Traits\HasUlid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,12 +20,18 @@ class PurchaseTransaction extends Model
         'transaction_date',
         'discount',
         'total',
+        'paid',
+        'payment_type',
+        'transaction_status',
         'supplier_id',
+        'created_by',
         'company_id',
     ];
 
     protected $casts = [
         'transaction_date' => 'datetime',
+        'payment_type' => PaymentType::class,
+        'transaction_status' => TransactionStatus::class
     ];
 
     protected static function booted(): void
@@ -35,6 +43,11 @@ class PurchaseTransaction extends Model
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function supplier()

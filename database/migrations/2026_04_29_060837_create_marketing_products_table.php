@@ -15,6 +15,7 @@ return new class extends Migration
             $table->double('marketing_price')->default(0);
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
             $table->foreignId('marketing_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('created_by')->constrained('users')->onDelete('restrict');
             $table->foreignId('company_id')->constrained()->onDelete('cascade');
             $table->softDeletes();
             $table->timestamps();

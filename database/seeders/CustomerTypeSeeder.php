@@ -21,6 +21,7 @@ class CustomerTypeSeeder extends Seeder
                 'uuid' => (string) Str::uuid(),
                 'type' => $discount['type'],
                 'discount' => $discount['discount'],
+                'created_by' => 1,
                 'company_id' => $discount['company_id'],
             ]);
         }

@@ -14,6 +14,7 @@ return new class extends Migration
             $table->string('name');
             $table->text('address')->nullable();
             $table->string('phone')->nullable();
+            $table->foreignId('created_by')->constrained('users')->onDelete('restrict');
             $table->foreignId('company_id')->constrained()->onDelete('cascade');
             $table->softDeletes();
             $table->timestamps();

@@ -28,6 +28,7 @@ class SupplierController extends Controller
             'name'       => $request->name,
             'address'    => $request->address,
             'phone'      => $request->phone,
+            'created_by' => $request->user()->id,
             'company_id' => $request->user()->company_id,
         ]);
 
