@@ -16,10 +16,12 @@ class UnitRequest extends FormRequest
     {
         return [
             'name' => [
-                'required',
+                $this->isMethod('POST') ? 'required' : 'sometimes',
                 'string',
                 'max:255',
-                Rule::unique('units')->ignore($this->unit?->id) 
+                Rule::unique('units')
+                ->where('company_id', $this->user()->company_id)
+                ->ignore($this->unit?->id)
             ],
         ];
     }

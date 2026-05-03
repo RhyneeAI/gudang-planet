@@ -10,7 +10,7 @@ class UnitFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'       => fake()->unique()->randomElement(['Pcs', 'Kg', 'Liter', 'Box', 'Lusin', 'Karton', 'Gram']),
+            'name'       => fake()->unique()->word(),
             'company_id' => Company::factory(),
         ];
     }
