@@ -41,7 +41,6 @@ class MarketingController extends Controller
 
     public function store(MarketingRequest $request)
     {
-        // Auto generate username dari name (lowercase, hapus spasi)
         $baseUsername = strtolower(str_replace(' ', '', $request->name));
         $username     = $this->generateUniqueUsername($baseUsername);
 

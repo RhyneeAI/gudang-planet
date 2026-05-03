@@ -55,6 +55,11 @@ class User extends Authenticatable
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'created_by');
+    }
+
     public function marketingProducts()
     {
         return $this->hasMany(MarketingProduct::class, 'marketing_id');
@@ -62,7 +67,7 @@ class User extends Authenticatable
 
     public function salesTransactions()
     {
-        return $this->hasMany(SalesTransaction::class, 'user_id');
+        return $this->hasMany(SalesTransaction::class, 'created_by', 'id');
     }
 
     public function createdStockMutations()

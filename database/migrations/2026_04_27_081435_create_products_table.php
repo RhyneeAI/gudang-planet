@@ -30,7 +30,7 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
             
-            $table->index(['company_id', 'user_id']);
+            $table->index(['company_id', 'created_by']);
             $table->index(['category_id', 'company_id']);
             $table->index(['supplier_id', 'company_id']);
             $table->index(['is_active']);

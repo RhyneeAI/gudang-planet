@@ -26,7 +26,7 @@ return new class extends Migration
             
             $table->index(['company_id', 'transaction_date']);
             $table->index('supplier_id');
-            $table->index('user_id');
+            $table->index('created_by');
         });
     }
 

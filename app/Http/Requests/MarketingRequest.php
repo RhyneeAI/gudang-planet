@@ -24,7 +24,9 @@ class MarketingRequest extends FormRequest
                 'sometimes',
                 'nullable',
                 'email',
-                Rule::unique('users', 'email')->ignore($this->user_model?->id),
+                Rule::unique('users', 'email')->where(function ($query) {
+                    return $query->where('company_id', $this->user()->company_id);
+                })->ignore($this->marketing?->id),
             ],
             'address' => ['sometimes', 'nullable', 'string'],
             'phone'   => ['sometimes', 'nullable', 'string', 'max:20'],

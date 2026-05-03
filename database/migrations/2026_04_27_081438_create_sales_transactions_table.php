@@ -25,7 +25,7 @@ return new class extends Migration
             $table->timestamps();
             
             $table->index(['company_id', 'transaction_date']);
-            $table->index(['user_id', 'company_id']);
+            $table->index(['created_by', 'company_id']);
             $table->index(['customer_id', 'company_id']);
         });
     }
