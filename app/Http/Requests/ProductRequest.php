@@ -39,8 +39,8 @@ class ProductRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
             
-            'category_uuid' => ['nullable', 'exists:categories,uuid'],
-            'unit_uuid' => ['nullable', 'exists:units,uuid'],
+            'category_uuid' => ['nullable', 'uuid', 'exists:categories,uuid'],
+            'unit_uuid' => ['nullable', 'uuid', 'exists:units,uuid'],
         ];
     }
 

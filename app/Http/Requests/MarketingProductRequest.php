@@ -25,12 +25,12 @@ class MarketingProductRequest extends FormRequest
         return [
             'product_uuid' => [
                 $this->isMethod('POST') ? 'required' : 'sometimes',
-                'string',
+                'uuid',
                 'exists:products,uuid',
             ],
             'marketing_uuid' => [
                 $this->isMethod('POST') ? 'required' : 'sometimes',
-                'string',
+                'uuid',
                 Rule::exists('users', 'uuid')
                     ->where('role', Role::MARKETING)
                     ->where('company_id', $this->user()->company_id),

@@ -14,7 +14,8 @@ class CategoryController extends Controller
     {
         $categories = Category::with('createdBy') 
             ->when($request->search, function ($query, $search) {
-                $query->where('name', 'like', "%{$search}%");
+                // Case-insensitive search using LOWER() for PostgreSQL and MySQL compatibility
+                $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
             })
             ->orderBy('name')
             ->paginate($request->input('per_page', 15));

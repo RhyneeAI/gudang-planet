@@ -21,9 +21,10 @@ class CustomerController extends Controller
 
         $customers = Customer::with(['createdBy'])
                 ->when($request->search, function ($query, $search) {
+                // Case-insensitive search using LOWER() for PostgreSQL and MySQL compatibility
                 $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('phone', 'like', "%{$search}%");
+                    $q->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%'])
+                      ->orWhereRaw('LOWER(phone) LIKE ?', ['%' . strtolower($search) . '%']);
                 });
             })
             ->orderBy($orderByKey, $orderByValue)

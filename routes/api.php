@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\MarketingController;
 use App\Http\Controllers\Api\MarketingProductController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\PurchaseTransactionController;
 use App\Http\Controllers\Api\StockMutationController;
 use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\UnitController;
@@ -61,5 +62,15 @@ Route::prefix('v1')->group(function () {
                 Route::get('/products/{product:uuid}', [StockMutationController::class, 'show']);
             });
         });
+
+        Route::group(['middleware' => ['role:OWNER,MARKETING']], function () {
+            Route::prefix('purchase-transactions')->group(function () {
+                Route::get('/', [PurchaseTransactionController::class, 'index']);
+                Route::post('/',[PurchaseTransactionController::class, 'store']);
+                Route::get('/{purchaseTransaction:ulid}', [PurchaseTransactionController::class, 'show']);
+                Route::patch('/{purchaseTransaction:ulid}/cancel', [PurchaseTransactionController::class, 'cancel']);
+            });
+        });
+
     });
 });
