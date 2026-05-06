@@ -126,10 +126,12 @@ it('can create a customer with customer type', function () {
     $this->actingAs($this->user)
         ->postJson('/api/v1/customers', [
             'name'             => 'Budi Santoso',
+            'address'          => 'Jl. Sudirman No. 1',
+            'phone'            => '08123456789',
             'customer_type_id' => $vipType->id,
         ])
         ->assertStatus(201)
-        ->assertJsonPath('data.customer_type_id', $vipType->id);
+        ->assertJsonPath('data.customer_type_id.name', $vipType->name);
 });
 
 it('returns 422 when name is empty on store', function () {
@@ -231,7 +233,7 @@ it('can update customer type', function () {
             'customer_type_id' => $vipType->id,
         ])
         ->assertStatus(200)
-        ->assertJsonPath('data.customer_type_id', $vipType->id);
+        ->assertJsonPath('data.customer_type_id.name', $vipType->name);
 });
 
 it('returns 404 when updating customer from other company', function () {

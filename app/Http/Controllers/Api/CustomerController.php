@@ -19,7 +19,7 @@ class CustomerController extends Controller
                             : 'name';
         $orderByValue = strtoupper($request->input('order_by_value', 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
 
-        $customers = Customer::with(['createdBy'])
+        $customers = Customer::with(['createdBy', 'customerType'])
                 ->when($request->search, function ($query, $search) {
                 // Case-insensitive search using LOWER() for PostgreSQL and MySQL compatibility
                 $query->where(function ($q) use ($search) {
@@ -37,6 +37,7 @@ class CustomerController extends Controller
         ]);
     }
 
+
     public function store(CustomerRequest $request)
     {
         $customer = Customer::create([
@@ -48,7 +49,7 @@ class CustomerController extends Controller
             'company_id'       => $request->user()->company_id,
         ]);
 
-        $customer->load('createdBy');
+        $customer->load(['createdBy', 'customerType']);
 
         return response()->json([
             'success' => true,
@@ -59,7 +60,7 @@ class CustomerController extends Controller
 
     public function show(Customer $customer)
     {
-        $customer->loadMissing('createdBy');
+        $customer->loadMissing(['createdBy', 'customerType']);
 
         return response()->json([
             'success' => true,
@@ -77,7 +78,7 @@ class CustomerController extends Controller
             'customer_type_id' => $request->has('customer_type_id') ? $request->customer_type_id : null,
         ], fn($value) => !is_null($value)));
 
-        $customer->load('createdBy');
+        $customer->load(['createdBy', 'customerType']);
 
         return response()->json([
             'success' => true,

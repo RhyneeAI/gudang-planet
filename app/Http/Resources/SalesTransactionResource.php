@@ -10,23 +10,44 @@ class SalesTransactionResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'ulid'               => $this->ulid,
+            'ulid'               => (string) $this->ulid,
             'transaction_code'   => $this->transaction_code,
             'transaction_date'   => $this->transaction_date?->toISOString(),
-            'discount'           => $this->discount,
-            'total'              => $this->total,
-            'paid'               => $this->paid,
+            'discount'           => (float) $this->discount,
+            'total'              => (float) $this->total,
+            'paid'               => (float) $this->paid,
             'payment_type'       => $this->payment_type?->value,
             'transaction_status' => $this->transaction_status?->value,
-            'customer_id'        => $this->customer_id,
-            'created_by' => $this->whenLoaded('createdBy', function () {
-                return [
-                    'name' => $this->createdBy->name,
-                ];
-            }),
-            // 'company_id'         => $this->company_id,
+            'customer'           => $this->whenLoaded('customer', fn() =>
+                $this->customer ? [
+                    // 'uuid' => $this->customer->uuid,
+                    'name' => $this->customer->name,
+                ] : null
+            ),
+            'marketing'          => $this->whenLoaded('marketing', fn() =>
+                $this->marketing ? [
+                    // 'uuid' => $this->marketing->uuid,
+                    'name' => $this->marketing->name,
+                ] : null
+            ),
+            'created_by'         => $this->whenLoaded('createdBy', fn() => [
+                'name' => $this->createdBy->name,
+            ]),
+            'items'              => $this->whenLoaded('details', fn() =>
+                $this->details->map(fn($detail) => [
+                    'ulid'       => (string) $detail->ulid,
+                    'product'    => [
+                        // 'uuid' => $detail->product->uuid,
+                        'name' => $detail->product->name,
+                        'code' => $detail->product->code,
+                    ],
+                    'quantity'   => (int) $detail->quantity,
+                    'sell_price' => (float) $detail->sell_price,
+                    // 'discount'   => (float) $detail->discount,
+                    'subtotal'   => (float) $detail->subtotal,
+                ])
+            ),
             'created_at'         => $this->created_at?->toISOString(),
-            'updated_at'         => $this->updated_at?->toISOString(),
         ];
     }
 }

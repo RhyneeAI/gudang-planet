@@ -23,6 +23,7 @@ class SalesTransaction extends Model
         'paid',
         'payment_type',
         'transaction_status',
+        'marketing_id',
         'customer_id',
         'created_by',
         'company_id',
