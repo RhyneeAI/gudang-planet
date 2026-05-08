@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\CustomerTypeController;
 use App\Http\Controllers\Api\MarketingController;
 use App\Http\Controllers\Api\MarketingProductController;
 use App\Http\Controllers\Api\ProductController;
@@ -48,6 +49,10 @@ Route::prefix('v1')->group(function () {
 
             Route::apiResource('customers', CustomerController::class)->parameters([
                 'customers' => 'customer:uuid'
+            ]);
+
+            Route::apiResource('customer-types', CustomerTypeController::class)->parameters([
+                'customer-types' => 'customerType:uuid'
             ]);
 
             Route::apiResource('marketings', MarketingController::class)->parameters([
