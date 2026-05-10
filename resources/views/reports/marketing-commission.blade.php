@@ -14,9 +14,9 @@
         .marketing-section { margin-bottom: 24px; page-break-inside: avoid; }
         .marketing-name { font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 6px; padding: 4px 8px; background-color: #f0f0f0; border-left: 4px solid #333; }
 
-        table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 6px; margin-left: -1.75px; }
         thead tr { background-color: #333; color: #fff; }
-        thead th { padding: 6px 8px; text-align: left; font-size: 10px; }
+        thead th { padding: 6px 8px; text-align: left; font-size: 10px; text-align: center;}
         tbody tr:nth-child(even) { background-color: #f9f9f9; }
         tbody td { padding: 5px 8px; font-size: 10px; border-bottom: 1px solid #eee; }
         td.number { text-align: right; }

@@ -6,6 +6,8 @@ use App\Enums\Role;
 use App\Enums\TransactionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MarketingCommissionRequest;
+use App\Http\Requests\SalesRevenueRequest;
+use App\Models\SalesDetail;
 use App\Models\SalesTransaction;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -140,7 +142,7 @@ class ReportController extends Controller
         ])->setPaper('a4', 'portrait');
 
         $filename    = 'laporan-komisi-marketing-' . now()->format('YmdHis') . '.pdf';
-        $storagePath = 'reports/' . $filename;
+        $storagePath = 'reports/marketing-commission/' . $filename;
 
         Storage::disk('public')->put($storagePath, $pdf->output());
 
@@ -150,6 +152,100 @@ class ReportController extends Controller
             'data'    => [
                 'period'       => $period,
                 'grand_total'  => $grandTotals,
+                'download_url' => Storage::disk('public')->url($storagePath),
+            ],
+        ]);
+    }
+
+    // Tambahkan method di dalam class ReportController
+    public function salesRevenue(SalesRevenueRequest $request)
+    {
+        $companyId = $request->user()->company_id;
+
+        // Ambil semua sales_details dalam rentang transaksi PAID
+        $details = SalesDetail::with([
+                'product:id,uuid,name,code',
+                'saleTransaction:id,transaction_code,transaction_date',
+            ])
+            ->whereHas('saleTransaction', function ($q) use ($companyId, $request) {
+                $q->where('company_id', $companyId)
+                ->where('transaction_status', TransactionStatus::PAID)
+                ->whereDate('transaction_date', '>=', $request->date_from)
+                ->whereDate('transaction_date', '<=', $request->date_to);
+            })
+            ->where('company_id', $companyId)
+            ->get();
+
+        // Build top 10 — kumulatif per produk
+        $topProducts = $details
+            ->groupBy('product_id')
+            ->map(function ($rows) {
+                $first    = $rows->first();
+                $qtySold  = $rows->sum('quantity');
+                $revenue  = $rows->sum(fn($r) => $r->quantity * $r->sell_price);
+
+                return [
+                    'product_id' => $first->product_id,
+                    'code'       => $first->product->code ?? '-',
+                    'name'       => $first->product->name ?? '-',
+                    'sell_price' => $rows->avg('sell_price'), // rata-rata harga jual
+                    'qty_sold'   => $qtySold,
+                    'revenue'    => $revenue,
+                ];
+            })
+            ->sortByDesc('qty_sold')
+            ->take(10)
+            ->values();
+
+        // Build detail rows — semua transaksi, tidak di-limit
+        $detailRows = $details
+            ->sortBy([
+                ['transaction_date', 'asc'],
+                fn($a, $b) => $a->saleTransaction->transaction_date <=> $b->saleTransaction->transaction_date,
+            ])
+            ->map(function ($row, $index) {
+                return [
+                    'code'             => $row->product->code ?? '-',
+                    'name'             => $row->product->name ?? '-',
+                    'transaction_code' => $row->saleTransaction->transaction_code,
+                    'date'             => $row->saleTransaction->transaction_date->format('d/m/Y'),
+                    'sell_price'       => $row->sell_price,
+                    'quantity'         => $row->quantity,
+                    'revenue'          => $row->quantity * $row->sell_price,
+                ];
+            })
+            ->values();
+
+        // Grand total
+        $grandTotal = [
+            'total_qty'     => $details->sum('quantity'),
+            'total_revenue' => $details->sum(fn($r) => $r->quantity * $r->sell_price),
+        ];
+
+        // Generate PDF
+        $period = [
+            'from' => Carbon::parse($request->date_from)->format('d M Y'),
+            'to'   => Carbon::parse($request->date_to)->format('d M Y'),
+        ];
+
+        $pdf = Pdf::loadView('reports.sales-revenue', [
+            'top_products' => $topProducts,
+            'details'      => $detailRows,
+            'grand_total'  => $grandTotal,
+            'period'       => $period,
+        ])->setPaper('a4', 'landscape');
+
+        $filename    = 'laporan-omset-penjualan-' . now()->format('YmdHis') . '.pdf';
+        $storagePath = 'reports/revenue/' . $filename;
+
+        Storage::disk('public')->put($storagePath, $pdf->output());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Laporan omset penjualan berhasil dibuat.',
+            'data'    => [
+                'period'       => $period,
+                'grand_total'  => $grandTotal,
                 'download_url' => Storage::disk('public')->url($storagePath),
             ],
         ]);

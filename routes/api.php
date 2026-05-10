@@ -88,9 +88,8 @@ Route::prefix('v1')->group(function () {
         });
             
         Route::prefix('reports')->group(function () {
-            Route::group(['middleware' => ['role:SUPERADMIN,OWNER,MARKETING']], function () {
-                Route::get('/marketing-commission', [ReportController::class, 'marketingCommission']);
-            });
+            Route::get('/marketing-commission', [ReportController::class, 'marketingCommission']);
+            Route::get('/sales-revenue',        [ReportController::class, 'salesRevenue']);
         });
     });
 });
