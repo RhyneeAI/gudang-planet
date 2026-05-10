@@ -76,6 +76,38 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::group(['middleware' => ['role:SUPERADMIN,OWNER,MARKETING']], function () {
+            Route::apiResource('categories', CategoryController::class)->parameters([
+                'categories' => 'category:uuid'
+            ])->only(['index', 'show']); 
+
+            Route::apiResource('units', UnitController::class)->parameters([
+                'units' => 'unit:uuid'
+            ])->only(['index', 'show']);
+
+            Route::apiResource('products', ProductController::class)->parameters([
+                'products' => 'product:uuid'
+            ])->only(['index', 'show']);
+
+            Route::apiResource('suppliers', SupplierController::class)->parameters([
+                'suppliers' => 'supplier:uuid'
+            ])->only(['index', 'show']);
+
+            Route::apiResource('customers', CustomerController::class)->parameters([
+                'customers' => 'customer:uuid'
+            ])->only(['index', 'show']);
+
+            Route::apiResource('customer-types', CustomerTypeController::class)->parameters([
+                'customer-types' => 'marketingProduct:uuid'
+            ])->only(['index', 'show']);
+
+            Route::apiResource('marketings', MarketingController::class)->parameters([
+                'marketings' => 'marketing:uuid'
+            ])->only(['index', 'show']);
+
+            Route::apiResource('marketing-products', MarketingProductController::class)->parameters([
+                'marketing-products' => 'customerType:uuid'
+            ])->only(['index', 'show']);
+
             Route::prefix('purchase-transactions')->group(function () {
                 Route::get('/', [PurchaseTransactionController::class, 'index']);
                 Route::post('/',[PurchaseTransactionController::class, 'store']);
@@ -90,11 +122,11 @@ Route::prefix('v1')->group(function () {
                 Route::patch('/{salesTransaction:ulid}/cancel', [SalesTransactionController::class, 'cancel']);
             });
 
+            Route::prefix('reports')->group(function () {
+                Route::get('/marketing-commission', [ReportController::class, 'marketingCommission']);
+                Route::get('/sales-revenue',        [ReportController::class, 'salesRevenue']);
+            });
         });
             
-        Route::prefix('reports')->group(function () {
-            Route::get('/marketing-commission', [ReportController::class, 'marketingCommission']);
-            Route::get('/sales-revenue',        [ReportController::class, 'salesRevenue']);
-        });
     });
 });

@@ -28,11 +28,19 @@ class StockMutationController extends Controller
             })
             ->when($request->date_to, function ($query, $dateTo) {
                 $query->whereDate('created_at', '<=', $dateTo);
+            })
+            ->when($request->search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->whereHas('product', function ($productQuery) use ($search) {
+                        $productQuery->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
+                    });
+                });
             });
 
         $productIds = $query->distinct()->pluck('product_id');
 
-        $products = Product::whereIn('id', $productIds);
+        $products = Product::with(['category', 'unit']) 
+            ->whereIn('id', $productIds);
 
         // Sorting by product name
         if ($orderByKey === 'product_name') {
@@ -54,7 +62,7 @@ class StockMutationController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('stock_mutations.product_list'),
-            'data' => StockMutationResource::collection($products),
+            'data' => StockMutationResource::collection($products), // Pastikan resource bisa handle eager loading
             'meta' => [
                 'current_page' => $products->currentPage(),
                 'per_page' => $products->perPage(),
