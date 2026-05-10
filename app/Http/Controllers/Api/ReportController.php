@@ -144,7 +144,7 @@ class ReportController extends Controller
         $filename    = 'laporan-komisi-marketing-' . now()->format('YmdHis') . '.pdf';
         $storagePath = 'reports/marketing-commission/' . $filename;
 
-        Storage::disk('public')->put($storagePath, $pdf->output());
+        $downloadUrl = $request->getSchemeAndHttpHost() . '/storage/' . $storagePath;
 
         return response()->json([
             'success' => true,
@@ -152,7 +152,7 @@ class ReportController extends Controller
             'data'    => [
                 'period'       => $period,
                 'grand_total'  => $grandTotals,
-                'download_url' => Storage::disk('public')->url($storagePath),
+                'download_url' => $downloadUrl,
             ],
         ]);
     }
@@ -165,7 +165,8 @@ class ReportController extends Controller
         // Ambil semua sales_details dalam rentang transaksi PAID
         $details = SalesDetail::with([
                 'product:id,uuid,name,code',
-                'saleTransaction:id,transaction_code,transaction_date',
+                'saleTransaction:id,transaction_code,transaction_date,created_by',
+                'saleTransaction.createdBy:id,name'
             ])
             ->whereHas('saleTransaction', function ($q) use ($companyId, $request) {
                 $q->where('company_id', $companyId)
@@ -198,23 +199,23 @@ class ReportController extends Controller
             ->values();
 
         // Build detail rows — semua transaksi, tidak di-limit
-        $detailRows = $details
-            ->sortBy([
-                ['transaction_date', 'asc'],
-                fn($a, $b) => $a->saleTransaction->transaction_date <=> $b->saleTransaction->transaction_date,
-            ])
-            ->map(function ($row, $index) {
-                return [
-                    'code'             => $row->product->code ?? '-',
-                    'name'             => $row->product->name ?? '-',
-                    'transaction_code' => $row->saleTransaction->transaction_code,
-                    'date'             => $row->saleTransaction->transaction_date->format('d/m/Y'),
-                    'sell_price'       => $row->sell_price,
-                    'quantity'         => $row->quantity,
-                    'revenue'          => $row->quantity * $row->sell_price,
-                ];
-            })
-            ->values();
+        $detailTransactions = $details->groupBy('saleTransaction.id')->map(function ($items, $transactionId) {
+            $firstItem = $items->first();
+            return [
+                'transaction_code' => $firstItem->saleTransaction->transaction_code,
+                'date'             => $firstItem->saleTransaction->transaction_date->format('d/m/Y'),
+                'cashier'          => $firstItem->saleTransaction->createdBy->name ?? '-',
+                'items'            => $items->map(function ($row) {
+                    return [
+                        'code'       => $row->product->code ?? '-',
+                        'name'       => $row->product->name ?? '-',
+                        'sell_price' => $row->sell_price,
+                        'quantity'   => $row->quantity,
+                        'revenue'    => $row->quantity * $row->sell_price,
+                    ];
+                })->values(),
+            ];
+        })->values();
 
         // Grand total
         $grandTotal = [
@@ -230,7 +231,7 @@ class ReportController extends Controller
 
         $pdf = Pdf::loadView('reports.sales-revenue', [
             'top_products' => $topProducts,
-            'details'      => $detailRows,
+            'details'      => $detailTransactions,
             'grand_total'  => $grandTotal,
             'period'       => $period,
         ])->setPaper('a4', 'landscape');
@@ -240,13 +241,15 @@ class ReportController extends Controller
 
         Storage::disk('public')->put($storagePath, $pdf->output());
 
+        $downloadUrl = $request->getSchemeAndHttpHost() . '/storage/' . $storagePath;
+     
         return response()->json([
             'success' => true,
             'message' => 'Laporan omset penjualan berhasil dibuat.',
             'data'    => [
                 'period'       => $period,
                 'grand_total'  => $grandTotal,
-                'download_url' => Storage::disk('public')->url($storagePath),
+                'download_url' => $downloadUrl,
             ],
         ]);
     }

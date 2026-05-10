@@ -12,6 +12,8 @@
         .header h2 { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
         .header p { font-size: 11px; color: #555; }
 
+        .warning-box { background-color: #FFF3CD; border-left: 4px solid #FFC107; padding: 8px 12px; margin: 0 0 16px 0; font-size: 10px; color: #856404; border-radius: 4px; }
+
         .section-title { font-size: 13px; font-weight: bold; margin: 16px 0 8px; padding: 4px 8px; background-color: #f0f0f0; border-left: 4px solid #333; }
 
         table { width: 100%; border-collapse: collapse; margin-bottom: 16px; margin-left: -1.75px; }
@@ -36,6 +38,12 @@
     <div class="header">
         <h2>Laporan Omset Penjualan</h2>
         <p>Periode: {{ $period['from'] }} s/d {{ $period['to'] }}</p>
+    </div>
+
+    <div class="warning-box">
+        <strong>Informasi Penting :</strong> <br><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Harga jual pada laporan ini adalah harga saat transaksi dilakukan, 
+        Perubahan harga pada master data tidak akan mempengaruhi data historis penjualan untuk menjaga keaslian laporan.
     </div>
 
     {{-- Tabel Atas: Top 10 Produk Terlaris --}}
@@ -79,6 +87,7 @@
                 <th style="width:30px">No</th>
                 <th>Kode Transaksi</th>
                 <th>Tanggal Transaksi</th>
+                <th>Kasir</th>
                 <th>Kode Produk</th>
                 <th>Nama Produk</th>
                 <th class="number">Harga Jual</th>
@@ -87,17 +96,27 @@
             </tr>
         </thead>
         <tbody>
-            @foreach ($details as $index => $row)
-            <tr>
-                <td class="center">{{ $index + 1 }}</td>
-                <td>{{ $row['transaction_code'] }}</td>
-                <td>{{ $row['date'] }}</td>
-                <td>{{ $row['code'] }}</td>
-                <td>{{ $row['name'] }}</td>
-                <td class="number">Rp {{ number_format($row['sell_price'], 0, ',', '.') }}</td>
-                <td class="number">{{ number_format($row['quantity'], 0, ',', '.') }}</td>
-                <td class="number">Rp {{ number_format($row['revenue'], 0, ',', '.') }}</td>
-            </tr>
+            @foreach ($details as $transaction)
+                @php $itemCount = count($transaction['items']); @endphp
+                
+                @foreach ($transaction['items'] as $itemIndex => $item)
+                    <tr>
+                        @if ($itemIndex === 0)
+                            {{-- Baris pertama: tampilkan info transaksi dengan rowspan --}}
+                            <td class="center" rowspan="{{ $itemCount }}">{{ $loop->parent->iteration }}</td>
+                            <td rowspan="{{ $itemCount }}">{{ $transaction['transaction_code'] }}</td>
+                            <td rowspan="{{ $itemCount }}">{{ $transaction['date'] }}</td>
+                            <td rowspan="{{ $itemCount }}">{{ $transaction['cashier'] }}</td>
+                        @endif
+                        
+                        {{-- Detail produk (selalu tampil) --}}
+                        <td>{{ $item['code'] }}</td>
+                        <td>{{ $item['name'] }}</td>
+                        <td class="number">Rp {{ number_format($item['sell_price'], 0, ',', '.') }}</td>
+                        <td class="number">{{ number_format($item['quantity'], 0, ',', '.') }}</td>
+                        <td class="number">Rp {{ number_format($item['revenue'], 0, ',', '.') }}</td>
+                    </tr>
+                @endforeach
             @endforeach
         </tbody>
     </table>
