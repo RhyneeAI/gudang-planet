@@ -185,6 +185,104 @@ it('respects pagination per_page parameter', function () {
     expect($response->json('data'))->toHaveCount(5);
 });
 
+it('can search purchase transactions by transaction code', function () {
+    $supplier = Supplier::factory()->create(['company_id' => $this->company->id]);
+    
+    PurchaseTransaction::factory()->create([
+        'transaction_code' => 'PO-ABC-123',
+        'supplier_id' => $supplier->id,
+        'company_id' => $this->company->id,
+        'created_by' => $this->user->id,
+    ]);
+    PurchaseTransaction::factory()->create([
+        'transaction_code' => 'PO-XYZ-789',
+        'supplier_id' => $supplier->id,
+        'company_id' => $this->company->id,
+        'created_by' => $this->user->id,
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson('/api/v1/purchase-transactions?search=ABC');
+
+    $response->assertStatus(200);
+    expect($response->json('data'))->toHaveCount(1);
+    expect($response->json('data.0.transaction_code'))->toBe('PO-ABC-123');
+});
+
+it('can search purchase transactions by supplier name', function () {
+    $supplier1 = Supplier::factory()->create([
+        'name' => 'PT Sumber Makmur',
+        'company_id' => $this->company->id,
+    ]);
+    $supplier2 = Supplier::factory()->create([
+        'name' => 'CV Maju Jaya',
+        'company_id' => $this->company->id,
+    ]);
+    
+    PurchaseTransaction::factory()->create([
+        'supplier_id' => $supplier1->id,
+        'company_id' => $this->company->id,
+        'created_by' => $this->user->id,
+    ]);
+    PurchaseTransaction::factory()->create([
+        'supplier_id' => $supplier2->id,
+        'company_id' => $this->company->id,
+        'created_by' => $this->user->id,
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson('/api/v1/purchase-transactions?search=Sumber');
+
+    $response->assertStatus(200);
+    expect($response->json('data'))->toHaveCount(1);
+});
+
+it('can search purchase transactions by supplier name with case insensitive', function () {
+    $supplier = Supplier::factory()->create([
+        'name' => 'PT SUMBER MAKMUR',
+        'company_id' => $this->company->id,
+    ]);
+    
+    PurchaseTransaction::factory()->create([
+        'supplier_id' => $supplier->id,
+        'company_id' => $this->company->id,
+        'created_by' => $this->user->id,
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson('/api/v1/purchase-transactions?search=sumber');
+
+    $response->assertStatus(200);
+    expect($response->json('data'))->toHaveCount(1);
+});
+
+it('can search purchase transactions by transaction code and supplier name together', function () {
+    $supplier = Supplier::factory()->create([
+        'name' => 'PT Sumber Makmur',
+        'company_id' => $this->company->id,
+    ]);
+    
+    PurchaseTransaction::factory()->create([
+        'transaction_code' => 'PO-ABC-123',
+        'supplier_id' => $supplier->id,
+        'company_id' => $this->company->id,
+        'created_by' => $this->user->id,
+    ]);
+    PurchaseTransaction::factory()->create([
+        'transaction_code' => 'PO-DEF-456',
+        'supplier_id' => $supplier->id,
+        'company_id' => $this->company->id,
+        'created_by' => $this->user->id,
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson('/api/v1/purchase-transactions?search=ABC');
+
+    $response->assertStatus(200);
+    expect($response->json('data'))->toHaveCount(1);
+    expect($response->json('data.0.transaction_code'))->toBe('PO-ABC-123');
+});
+
 // =============================
 // STORE
 // =============================

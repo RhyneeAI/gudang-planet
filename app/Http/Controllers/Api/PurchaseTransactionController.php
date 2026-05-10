@@ -26,19 +26,22 @@ class PurchaseTransactionController extends Controller
                             : 'transaction_date';
         $orderByValue = strtoupper($request->input('order_by_value', 'DESC')) === 'DESC' ? 'DESC' : 'ASC';
 
+
         $transactions = PurchaseTransaction::with(['supplier', 'createdBy'])
-            ->when($request->search, fn($q, $search) =>
-                $q->where('transaction_code', 'like', "%{$search}%")
-            )
             ->when($request->date_from, fn($q, $date) =>
                 $q->whereDate('transaction_date', '>=', $date)
             )
             ->when($request->date_to, fn($q, $date) =>
                 $q->whereDate('transaction_date', '<=', $date)
             )
-            // ->when($request->status, fn($q, $status) =>
-            //     $q->where('transaction_status', $status)
-            // )
+            ->when($request->search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->whereRaw('transaction_code LIKE ?', ['%' . strtolower($search) . '%'])
+                    ->orWhereHas('supplier', function ($supplierQuery) use ($search) {
+                        $supplierQuery->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
+                    });
+                });
+            })
             ->orderBy($orderByKey, $orderByValue)
             ->paginate($request->input('per_page', 15));
 
