@@ -47,7 +47,7 @@ class ReportController extends Controller
                 'details.product:id,uuid,name,code,base_price,sales_price',
             ])
             ->where('company_id', $companyId)
-            ->whereIn('created_by', $marketingUserIds) // ← hanya transaksi oleh marketing
+            ->whereIn('created_by', $marketingUserIds) 
             ->where('transaction_status', TransactionStatus::PAID)
             ->whereDate('transaction_date', '>=', $request->date_from)
             ->whereDate('transaction_date', '<=', $request->date_to)

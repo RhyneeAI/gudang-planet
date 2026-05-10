@@ -46,7 +46,7 @@
                         <th>Tanggal</th>
                         <th>No. Transaksi</th>
                         <th>Pelanggan</th>
-                        <th>Payment</th>
+                        <th>Metode pembayaran</th>
                         <th class="number">Total Penjualan</th>
                         <th class="number">Diskon</th>
                         {{-- <th class="number">Setelah Diskon</th> --}}
@@ -79,9 +79,9 @@
 
     <div class="grand-total">
         TOTAL KESELURUHAN
-        <span>Penjualan: Rp {{ number_format($grand_total['total_sales'], 0, ',', '.') }}</span>
-        <span>Diskon: Rp {{ number_format($grand_total['total_discount'], 0, ',', '.') }}</span>
-        <span>Komisi: Rp {{ number_format($grand_total['total_commission'], 0, ',', '.') }}</span>
+        <span>Penjualan : Rp {{ number_format($grand_total['total_sales'], 0, ',', '.') }}</span>
+        <span>Diskon : Rp {{ number_format($grand_total['total_discount'], 0, ',', '.') }}</span>
+        <span>Komisi : Rp {{ number_format($grand_total['total_commission'], 0, ',', '.') }}</span>
     </div>
 
     <div class="footer">

@@ -27,7 +27,8 @@ class MarketingCommissionReportSeeder extends Seeder
         // ================================
         // Ambil atau buat Company
         // ================================
-        $company = Company::first() ?? Company::factory()->create([
+        $company = Company::factory()->create([
+            'uuid'       => (string) Str::uuid(),
             'name' => 'Toko Maju Jaya',
             'code' => 'TMJ-001',
         ]);
@@ -35,19 +36,20 @@ class MarketingCommissionReportSeeder extends Seeder
         // ================================
         // Ambil atau buat Owner
         // ================================
-        $owner = User::where('role', Role::OWNER)
-            ->where('company_id', $company->id)
-            ->first();
+        // $owner = User::where('role', Role::OWNER)
+        //     ->where('company_id', $company->id)
+        //     ->first();
 
-        if (!$owner) {
+        // if (!$owner) {
             $owner = User::factory()->owner()->create([
+                'uuid'       => (string) Str::uuid(),
                 'name'       => 'Owner',
-                'username'   => 'owner',
+                'username'   => 'owner_gp2',
                 'email'      => 'owner@example.com',
-                'password'   => Hash::make('password'),
+                'password'   => Hash::make('owner_gp2'),
                 'company_id' => $company->id,
             ]);
-        }
+        // }
 
         // ================================
         // Buat Marketing Users
@@ -344,7 +346,7 @@ class MarketingCommissionReportSeeder extends Seeder
                 'payment_type'       => $sale['payment'],
                 'transaction_status' => TransactionStatus::PAID,
                 'customer_id'        => $sale['customer']?->id,
-                'created_by'         => $owner->id,
+                'created_by'         => $sale['marketing']->id,
                 'company_id'         => $company->id,
             ]);
 

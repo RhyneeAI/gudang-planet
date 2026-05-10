@@ -43,7 +43,6 @@ it('only returns marketings belonging to the same company', function () {
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/marketings');
-
     $response->assertStatus(200);
     expect($response->json('data'))->toHaveCount(2);
 });
