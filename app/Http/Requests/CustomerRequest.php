@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\CustomerType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -25,21 +26,45 @@ class CustomerRequest extends FormRequest
             ],
             'address'          => ['sometimes', 'nullable', 'string'],
             'phone'            => ['sometimes', 'nullable', 'string', 'max:20'],
-            'customer_type_id' => [
-                $this->isMethod('POST') ? 'required' : 'sometimes', 
-                'integer', 
-                'exists:customer_types,id'
+            'customer_type_uuid' => [
+                $this->isMethod('POST') ? 'required' : 'sometimes',
+                'string',
+                'uuid',
+                function ($attribute, $value, $fail) {
+                    if (!$value) return; // nullable
+
+                    if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $value)) {
+                        return; // uuid rule handles error
+                    }
+
+                    $customerTypeExists = CustomerType::where('uuid', $value)
+                        ->where('company_id', $this->user()->company_id)
+                        ->exists();
+
+                    if (!$customerTypeExists) {
+                        $fail(__('customers.validation.customer_type_not_found'));
+                    }
+                }
             ],
         ];
+    }
+
+    public function getCustomerTypeId(): ?int
+    {
+        if (!$this->customer_type_uuid) return null;
+
+        return CustomerType::where('uuid', $this->customer_type_uuid)
+            ->where('company_id', $this->user()->company_id)
+            ->value('id');
     }
 
     public function messages(): array
     {
         return [
-            'name.required'           => __('customers.validation.name_required'),
-            'name.unique'             => __('customers.validation.name_unique'),
-            'phone.max'               => __('customers.validation.phone_max'),
-            'customer_type_id.exists' => __('customers.validation.customer_type_not_found'),
+            'name.required'              => __('customers.validation.name_required'),
+            'name.unique'                => __('customers.validation.name_unique'),
+            'phone.max'                  => __('customers.validation.phone_max'),
+            'customer_type_uuid.uuid'    => __('customers.validation.customer_type_uuid_invalid'),
         ];
     }
 }

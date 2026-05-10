@@ -16,8 +16,9 @@ class CustomerResource extends JsonResource
             'phone'            => $this->phone,
             'customer_type_id' => $this->whenLoaded('customerType', function() {
                 return [
-                    'type'      => $this->customerType->type,
-                    'discount'  => $this->customerType->discount,
+                    'uuid'     => $this->customerType->uuid,
+                    'type'     => $this->customerType->type,
+                    'discount' => $this->customerType->discount,
                 ];
             }),
             'created_by' => $this->whenLoaded('createdBy', function () {

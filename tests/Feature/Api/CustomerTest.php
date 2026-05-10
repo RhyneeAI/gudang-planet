@@ -95,10 +95,10 @@ it('returns 401 when not authenticated on index', function () {
 it('can create a customer', function () {
     $this->actingAs($this->user)
         ->postJson('/api/v1/customers', [
-            'name'             => 'Budi Santoso',
-            'address'          => 'Jl. Sudirman No. 1',
-            'phone'            => '08123456789',
-            'customer_type_id' => $this->customerType->id,
+            'name'                 => 'Budi Santoso',
+            'address'              => 'Jl. Sudirman No. 1',
+            'phone'                => '08123456789',
+            'customer_type_uuid'   => $this->customerType->uuid,
         ])
         ->assertStatus(201)
         ->assertJsonPath('success', true)
@@ -108,8 +108,8 @@ it('can create a customer', function () {
 it('can create a customer without optional fields', function () {
     $this->actingAs($this->user)
         ->postJson('/api/v1/customers', [
-            'name'             => 'Budi Santoso',
-            'customer_type_id' => $this->customerType->id,
+            'name'               => 'Budi Santoso',
+            'customer_type_uuid' => $this->customerType->uuid,
         ])
         ->assertStatus(201)
         ->assertJsonPath('data.address', null)
@@ -125,10 +125,10 @@ it('can create a customer with customer type', function () {
 
     $this->actingAs($this->user)
         ->postJson('/api/v1/customers', [
-            'name'             => 'Budi Santoso',
-            'address'          => 'Jl. Sudirman No. 1',
-            'phone'            => '08123456789',
-            'customer_type_id' => $vipType->id,
+            'name'               => 'Budi Santoso',
+            'address'            => 'Jl. Sudirman No. 1',
+            'phone'              => '08123456789',
+            'customer_type_uuid' => $vipType->uuid,
         ])
         ->assertStatus(201)
         ->assertJsonPath('data.customer_type_id.name', $vipType->name);
@@ -150,8 +150,8 @@ it('returns 422 when name exceeds 255 characters', function () {
 it('returns 422 when customer_type_id does not exist', function () {
     $this->actingAs($this->user)
         ->postJson('/api/v1/customers', [
-            'name'             => 'Budi Santoso',
-            'customer_type_id' => 99999,
+            'name'               => 'Budi Santoso',
+            'customer_type_uuid' => '00000000-0000-0000-0000-000000000000',
         ])
         ->assertStatus(422);
 });
@@ -230,7 +230,7 @@ it('can update customer type', function () {
 
     $this->actingAs($this->user)
         ->patchJson("/api/v1/customers/{$customer->uuid}", [
-            'customer_type_id' => $vipType->id,
+            'customer_type_uuid' => $vipType->uuid,
         ])
         ->assertStatus(200)
         ->assertJsonPath('data.customer_type_id.name', $vipType->name);

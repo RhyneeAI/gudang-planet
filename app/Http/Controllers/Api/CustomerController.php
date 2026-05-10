@@ -40,11 +40,13 @@ class CustomerController extends Controller
 
     public function store(CustomerRequest $request)
     {
+        $customerTypeId = $request->getCustomerTypeId();
+
         $customer = Customer::create([
             'name'             => $request->name,
             'address'          => $request->address,
             'phone'            => $request->phone,
-            'customer_type_id' => $request->customer_type_id,
+            'customer_type_id' => $customerTypeId,
             'created_by'       => $request->user()->id,
             'company_id'       => $request->user()->company_id,
         ]);
@@ -71,12 +73,14 @@ class CustomerController extends Controller
 
     public function update(CustomerRequest $request, Customer $customer)
     {
-        $customer->update(array_filter([
+        $updateData = array_filter([
             'name'             => $request->has('name') ? $request->name : null,
             'address'          => $request->has('address') ? $request->address : null,
             'phone'            => $request->has('phone') ? $request->phone : null,
-            'customer_type_id' => $request->has('customer_type_id') ? $request->customer_type_id : null,
-        ], fn($value) => !is_null($value)));
+            'customer_type_id' => $request->has('customer_type_uuid') ? $request->getCustomerTypeId() : null,
+        ], fn($value) => !is_null($value));
+
+        $customer->update($updateData);
 
         $customer->load(['createdBy', 'customerType']);
 
