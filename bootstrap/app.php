@@ -27,6 +27,13 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
+            'telescope.auth' => \App\Http\Middleware\TelescopeAuth::class,
+        ]);
+
+        // Apply TelescopeAuth middleware globally ke semua requests
+        // Middleware ini akan smart check untuk /telescope requests saja
+        $middleware->web(append: [
+            \App\Http\Middleware\TelescopeAuth::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

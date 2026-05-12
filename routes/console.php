@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 
 // Clean old reports every day at 2 AM
 Schedule::command('reports:clean --days=3')->dailyAt('02:00');
+Schedule::command('telescope:prune --hours=48')->daily();

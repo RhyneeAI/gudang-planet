@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
+use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Telescope\IncomingEntry;
 use Laravel\Telescope\Telescope;
 use Laravel\Telescope\TelescopeApplicationServiceProvider;
@@ -29,6 +31,9 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
                    $entry->isScheduledTask() ||
                    $entry->hasMonitoredTag();
         });
+
+        // Setup gate dan auth untuk Telescope
+        $this->authorization();
     }
 
     /**
@@ -56,10 +61,36 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
      */
     protected function gate(): void
     {
-        Gate::define('viewTelescope', function (User $user) {
-            return in_array($user->email, [
-                //
+        Gate::define('viewTelescope', function ($user = null) {
+            // Cek token dari session
+            $token = session('telescope_token');
+
+            if (!$token) {
+                return false;
+            }
+
+            // Verifikasi token via Sanctum
+            $accessToken = PersonalAccessToken::findToken($token);
+
+            if (!$accessToken || !$accessToken->tokenable) {
+                return false;
+            }
+
+            $tokenUser = $accessToken->tokenable;
+
+            // Hanya superadmin
+            return in_array($tokenUser->role->value, [
+                Role::SUPERADMIN->value,
             ]);
         });
+    }
+
+    protected function authorization()
+    {
+        $this->gate();
+
+        // Middleware TelescopeAuth akan handle authorization
+        // Jadi tidak perlu Telescope::auth() callback
+        // Hanya keep gate definition untuk reference
     }
 }
