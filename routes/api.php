@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\MarketingController;
 use App\Http\Controllers\Api\MarketingProductController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\PurchaseTransactionController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SalesTransactionController;
@@ -27,13 +28,21 @@ Route::prefix('v1')->group(function () {
         ], 403);
     })->name('login');
 
+    Route::prefix('forgot-password')->group(function () {
+        Route::post('/verify', [AuthController::class, 'forgotPasswordVerify']);
+        Route::post('/reset',  [AuthController::class, 'forgotPasswordReset'])->middleware('auth:sanctum');
+    });
     
     // Protected
     Route::middleware(['auth:sanctum'])->group(function () {
+        // Auth
+        Route::post('/reset-password', [AuthController::class, 'resetPassword']);
         Route::post('/logout', [AuthController::class, 'logout']);
         
         // Dashboard/Home
-        Route::get('/home', [HomeController::class, 'index']);
+        Route::get('/home',            [HomeController::class, 'index']);
+        Route::get('/profile',         [ProfileController::class, 'show']);
+        Route::patch('/profile',       [ProfileController::class, 'update']);
 
         Route::group(['middleware' => ['role:SUPERADMIN,OWNER']], function () {
             Route::apiResource('categories', CategoryController::class)->parameters([

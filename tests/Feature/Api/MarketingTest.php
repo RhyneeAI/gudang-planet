@@ -27,7 +27,7 @@ it('can get marketing list', function () {
             'success',
             'message',
             'data' => [
-                '*' => ['id', 'uuid', 'name', 'email', 'role']
+                '*' => ['uuid', 'name', 'email', 'role']
             ]
         ])
         ->assertJsonPath('success', true);
