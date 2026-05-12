@@ -84,8 +84,7 @@ it('can search customer types by type name', function () {
         ->getJson('/api/v1/customer-types?search=vip');
         
         
-        $response->assertStatus(200);
-        dump($response->json()); // Lihat isi response
+    $response->assertStatus(200);
     expect($response->json('data'))->toHaveCount(1);
     expect($response->json('data.0.type'))->toBe('VIP');
     expect($response->json('data.0.uuid'))->toBe($vipCustomerType->uuid);
