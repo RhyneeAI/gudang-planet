@@ -1,4 +1,4 @@
-name: Laravel 12 CI
+name: Gudang Planet BE CI
 
 on:
   push:
@@ -11,19 +11,20 @@ jobs:
     runs-on: ubuntu-latest
     
     services:
-      postgres:
-        image: postgres:16-alpine
+      mysql:
+        image: mysql:8.0
         env:
-          POSTGRES_DB: gudang_planet_testing
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          MYSQL_DATABASE: gudang_planet_testing
+          MYSQL_USER: laravel
+          MYSQL_PASSWORD: laravel
+          MYSQL_ROOT_PASSWORD: root
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
         ports:
-          - 5432:5432
+          - 3306:3306
     
     steps:
     - uses: actions/checkout@v4
@@ -32,7 +33,7 @@ jobs:
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.3'
-        extensions: bcmath, pdo_pgsql
+        extensions: bcmath, pdo_mysql
         coverage: none
     
     - name: Install Composer dependencies
@@ -46,21 +47,21 @@ jobs:
     
     - name: Run migrations
       env:
-        DB_CONNECTION: pgsql
+        DB_CONNECTION: mysql
         DB_HOST: 127.0.0.1
-        DB_PORT: 5432
+        DB_PORT: 3306
         DB_DATABASE: gudang_planet_testing
-        DB_USERNAME: postgres
-        DB_PASSWORD: postgres
+        DB_USERNAME: root
+        DB_PASSWORD: root
       run: php artisan migrate --force
     
     - name: Run tests
       env:
-        DB_CONNECTION: pgsql
+        DB_CONNECTION: mysql
         DB_HOST: 127.0.0.1
-        DB_PORT: 5432
+        DB_PORT: 3306
         DB_DATABASE: gudang_planet_testing
-        DB_USERNAME: postgres
-        DB_PASSWORD: postgres
+        DB_USERNAME: root
+        DB_PASSWORD: root
         APP_ENV: testing
       run: php artisan test
