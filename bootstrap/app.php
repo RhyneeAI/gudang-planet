@@ -95,10 +95,16 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (Throwable $e, Request $request) {
-            return response()->json([
-                'success' => false,
-                'message' => app()->isProduction() ? 'Internal server error.' : $e->getMessage(),
-                'code' => 500
-            ], 500);
-        });
+		    \Log::error('Telescope error: ' . $e->getMessage(), [
+		        'file' => $e->getFile(),
+		        'line' => $e->getLine(),
+		        'trace' => $e->getTraceAsString()
+		    ]);
+		    
+		    return response()->json([
+		        'success' => false,
+		        'message' => app()->isProduction() ? 'Internal Server Error.' : $e->getMessage(),
+		        'code' => 500
+		    ], 500);
+		});
     })->create();
