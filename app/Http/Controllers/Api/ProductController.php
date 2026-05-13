@@ -14,6 +14,35 @@ class ProductController extends Controller
 {
     protected array $sortableColumns = ['name', 'code', 'sales_price', 'stock', 'created_at'];
 
+    public function generateCode(Request $request)
+    {
+        $user = $request->user();
+        $company = $user->company;
+        
+        // Get all codes for this company
+        $products = Product::where('company_id', $company->id)
+            ->where('code', 'LIKE', $company->code . '-%')
+            ->pluck('code');
+        
+        $maxSequence = 0;
+        foreach ($products as $code) {
+            $parts = explode('-', $code);
+            $sequence = (int) end($parts);
+            if ($sequence > $maxSequence) {
+                $maxSequence = $sequence;
+            }
+        }
+        
+        $sequence = $maxSequence + 1;
+        $code = sprintf('%s-%06d', $company->code, $sequence);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Product code generated',
+            'data' => ['code' => $code]
+        ]);
+    }
+
     public function index(Request $request)
     {
         // Sorting

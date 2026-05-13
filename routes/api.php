@@ -53,6 +53,7 @@ Route::prefix('v1')->group(function () {
                 'units' => 'unit:uuid'
             ]);    
 
+            Route::get('products/generate-code', [ProductController::class, 'generateCode']);
             Route::apiResource('products', ProductController::class)->parameters([
                 'products' => 'product:uuid'
             ]);
@@ -93,6 +94,7 @@ Route::prefix('v1')->group(function () {
                 'units' => 'unit:uuid'
             ])->only(['index', 'show']);
 
+            Route::get('products/generate-code', [ProductController::class, 'generateCode']);
             Route::apiResource('products', ProductController::class)->parameters([
                 'products' => 'product:uuid'
             ])->only(['index', 'show']);
