@@ -8,91 +8,155 @@ use App\Models\Company;
 use App\Models\CustomerType;
 use App\Models\Unit;
 use App\Models\User;
-use Hash;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Str;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class ProductionSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $company = Company::create([
+        // ================================
+        // Company 1 — Gudang Planet (Production)
+        // ================================
+        $gp = Company::create([
+            'uuid'       => Str::uuid(),
             'name'    => 'Gudang Planet',
             'address' => '-',
             'code'    => 'GPL',
         ]);
 
-        $owner = User::create([
+        User::create([
             'uuid'       => Str::uuid(),
-            'name'       => 'Owner',
-            'username'   => 'ownergp',
-            'email'      => 'owner_gp@gmail.com',
-            'password'   => Hash::make('ownergp2026'),
+            'name'       => 'Owner Gudang Planet',
+            'username'   => 'gp_owner',
+            'email'      => 'owner@gudangplanet.com',
+            'password'   => Hash::make('gp_owner'),
             'role'       => Role::OWNER,
-            'company_id' => $company->id,
+            'company_id' => $gp->id,
         ]);
 
-        $cashier = User::create([
+        User::create([
             'uuid'       => Str::uuid(),
-            'name'       => 'Kasir Sejahtera',
-            'username'   => 'marketinggp',
-            'email'      => 'marketing_gp@sejahtera.com',
-            'password'   => Hash::make('marketinggp2026'),
+            'name'       => 'Marketing Gudang Planet',
+            'username'   => 'gp_marketing',
+            'email'      => 'marketing@gudangplanet.com',
+            'password'   => Hash::make('gp_marketing'),
             'role'       => Role::MARKETING,
-            'company_id' => $company->id,
+            'company_id' => $gp->id,
         ]);
 
+        $this->seedMasterData($gp->id, 1); // owner id = 1
+
         // ================================
-        // Master Data
+        // Company 2 — Gudang Planet 2 (Production 2)
         // ================================
-        $category = Category::create([
+        $gp2 = Company::create([
+            'uuid'       => Str::uuid(),
+            'name'    => 'Gudang Planet 2',
+            'address' => '-',
+            'code'    => 'GPL2',
+        ]);
+
+        User::create([
+            'uuid'       => Str::uuid(),
+            'name'       => 'Owner Gudang Planet 2',
+            'username'   => 'gp2_owner',
+            'email'      => 'owner@gudangplanet2.com',
+            'password'   => Hash::make('gp2_owner'),
+            'role'       => Role::OWNER,
+            'company_id' => $gp2->id,
+        ]);
+
+        User::create([
+            'uuid'       => Str::uuid(),
+            'name'       => 'Marketing Gudang Planet 2',
+            'username'   => 'gp2_marketing',
+            'email'      => 'marketing@gudangplanet2.com',
+            'password'   => Hash::make('gp2_marketing'),
+            'role'       => Role::MARKETING,
+            'company_id' => $gp2->id,
+        ]);
+
+        $this->seedMasterData($gp2->id, 3); // owner id = 3
+
+        // ================================
+        // Company 3 — Gudang Planet Test (Internal)
+        // ================================
+        $gpTest = Company::create([
+            'uuid'       => Str::uuid(),
+            'name'    => 'Gudang Planet Test',
+            'address' => '-',
+            'code'    => 'GPLTEST',
+        ]);
+
+        User::create([
+            'uuid'       => Str::uuid(),
+            'name'       => 'SuperAdmin GP Test',
+            'username'   => 'gp_superadmin',
+            'email'      => 'superadmin@gudangplanet.com',
+            'password'   => Hash::make('gp_superadmin'),
+            'role'       => Role::SUPERADMIN,
+            'company_id' => $gpTest->id,
+        ]);
+
+        User::create([
+            'uuid'       => Str::uuid(),
+            'name'       => 'Owner GP Test',
+            'username'   => 'gptest_owner',
+            'email'      => 'owner@gudangplanettest.com',
+            'password'   => Hash::make('gptest_owner'),
+            'role'       => Role::OWNER,
+            'company_id' => $gpTest->id,
+        ]);
+
+        User::create([
+            'uuid'       => Str::uuid(),
+            'name'       => 'Marketing GP Test',
+            'username'   => 'gptest_marketing',
+            'email'      => 'marketing@gudangplanettest.com',
+            'password'   => Hash::make('gptest_marketing'),
+            'role'       => Role::MARKETING,
+            'company_id' => $gpTest->id,
+        ]);
+
+        $this->seedMasterData($gpTest->id, 5); // owner id = 5
+    }
+
+    // ================================
+    // Master Data per Company
+    // ================================
+    private function seedMasterData(int $companyId, int $ownerId): void
+    {
+        Category::create([
             'uuid'       => Str::uuid(),
             'name'       => 'T-Shirt',
-            'created_by' => $owner->id,
-            'company_id' => $company->id,
+            'created_by' => $ownerId,
+            'company_id' => $companyId,
         ]);
 
-        $unit = Unit::create([
+        Unit::create([
             'uuid'       => Str::uuid(),
             'name'       => 'Pcs',
-            'created_by' => $owner->id,
-            'company_id' => $company->id,
+            'created_by' => $ownerId,
+            'company_id' => $companyId,
         ]);
 
-        $customerType = CustomerType::create([
-            'uuid'       => Str::uuid(),
-            'type'       => 'Regular',
-            'discount'   => 0,
-            'created_by' => $owner->id,
-            'company_id' => $company->id,
-        ]);
+        $customerTypes = [
+            ['type' => 'Regular', 'discount' => 0],
+            ['type' => 'Family',  'discount' => 2],
+            ['type' => 'Member',  'discount' => 5],
+            ['type' => 'VIP',     'discount' => 10],
+        ];
 
-        $customerType = CustomerType::create([
-            'uuid'       => Str::uuid(),
-            'type'       => 'FAMILY',
-            'discount'   => 2,
-            'created_by' => $owner->id,
-            'company_id' => $company->id,
-        ]);
-
-        $customerType = CustomerType::create([
-            'uuid'       => Str::uuid(),
-            'type'       => 'MEMBER',
-            'discount'   => 5,
-            'created_by' => $owner->id,
-            'company_id' => $company->id,
-        ]);
-
-        $customerType = CustomerType::create([
-            'uuid'       => Str::uuid(),
-            'type'       => 'VIP',
-            'discount'   => 10,
-            'created_by' => $owner->id,
-            'company_id' => $company->id,
-        ]);
+        foreach ($customerTypes as $ct) {
+            CustomerType::create([
+                'uuid'       => Str::uuid(),
+                'type'       => $ct['type'],
+                'discount'   => $ct['discount'],
+                'created_by' => $ownerId,
+                'company_id' => $companyId,
+            ]);
+        }
     }
 }
