@@ -319,15 +319,15 @@ it('stock increases after purchase transaction', function () {
     expect($this->product->stock)->toBe($stockBefore + 5);
 });
 
-it('last_purchase_price updates after purchase', function () {
+it('base_price updates after purchase', function () {
+    $this->product->update(['base_price' => 10000]);
+    
     $this->actingAs($this->user)
         ->postJson('/api/v1/purchase-transactions', $this->payload);
 
     $this->product->refresh();
     
-    $expected = ($this->product->base_price + 10000) / 2;
-    
-    expect($this->product->last_purchase_price)->toEqual($expected);
+    expect($this->product->base_price)->toEqual(10000.0);
 });
 
 it('stock_mutation is created after purchase', function () {

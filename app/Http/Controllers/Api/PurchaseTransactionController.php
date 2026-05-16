@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\InstallmentStatus;
+use App\Enums\PaymentType;
 use App\Enums\StockMutationType;
 use App\Enums\TransactionStatus;
 use App\Http\Controllers\Controller;
@@ -9,6 +11,7 @@ use App\Http\Requests\PurchaseTransactionRequest;
 use App\Http\Resources\PurchaseTransactionResource;
 use App\Models\Product;
 use App\Models\PurchaseDetail;
+use App\Models\PurchaseInstallmentPlan;
 use App\Models\PurchaseTransaction;
 use App\Models\StockMutation;
 use Illuminate\Http\Request;
@@ -109,8 +112,9 @@ class PurchaseTransactionController extends Controller
                 ]);
 
                 $product->update([
-                    'stock'               => $stockAfter,
-                    'last_purchase_price' => ($product->base_price + $item['buy_price']) / 2
+                    'stock'                 => $stockAfter,
+                    'base_price'            => ($product->base_price + $item['buy_price']) / 2,
+                    'last_purchase_price'   => $item['buy_price']
                 ]);
 
                 StockMutation::create([
@@ -123,6 +127,19 @@ class PurchaseTransactionController extends Controller
                     'company_id'   => $request->user()->company_id,
                     'reference_id' => $detail->id,
                     'created_by'   => $request->user()->id,
+                ]);
+            }
+
+            if ($request->payment_type === PaymentType::CICIL->value) {
+                PurchaseInstallmentPlan::create([
+                    'ulid'                      => Str::ulid(),
+                    'purchase_transaction_id'   => $transaction->id,
+                    'supplier_id'               => $supplierId,
+                    'total_amount'              => $request->total,
+                    'paid_amount'               => 0,
+                    'start_date'                => now()->toDateString(),
+                    'status'                    => InstallmentStatus::ACTIVE,
+                    'company_id'                => $request->user()->company_id,
                 ]);
             }
 

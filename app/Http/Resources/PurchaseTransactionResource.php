@@ -27,11 +27,12 @@ class PurchaseTransactionResource extends JsonResource
             ]),
             'items'              => $this->whenLoaded('details', fn() =>
                 $this->details->map(fn($detail) => [
-                    'ulid'      => (string) $detail->ulid,
+                    // 'ulid'      => (string) $detail->ulid,
                     'product'   => [
                         'uuid' => $detail->product->uuid,
                         'name' => $detail->product->name,
                         'code' => $detail->product->code,
+                        'base_price' => $detail->product->base_price,
                     ],
                     'quantity'  => (int) $detail->quantity,
                     'buy_price' => (float) $detail->buy_price,

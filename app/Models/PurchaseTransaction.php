@@ -59,4 +59,9 @@ class PurchaseTransaction extends Model
     {
         return $this->hasMany(PurchaseDetail::class, 'purchase_id');
     }
+
+    public function installmentPlan()
+    {
+        return $this->hasOne(PurchaseInstallmentPlan::class);
+    }
 }

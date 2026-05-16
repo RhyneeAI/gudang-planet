@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\MarketingController;
 use App\Http\Controllers\Api\MarketingProductController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\PurchaseInstallmentController;
 use App\Http\Controllers\Api\PurchaseTransactionController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SalesInstallmentController;
@@ -125,6 +126,12 @@ Route::prefix('v1')->group(function () {
                 Route::post('/',[PurchaseTransactionController::class, 'store']);
                 Route::get('/{purchaseTransaction:ulid}', [PurchaseTransactionController::class, 'show']);
                 Route::patch('/{purchaseTransaction:ulid}/cancel', [PurchaseTransactionController::class, 'cancel']);
+            });
+
+            Route::prefix('purchase-installments')->group(function () {
+                Route::get('/',                                    [PurchaseInstallmentController::class, 'index']);
+                Route::get('/{purchaseInstallmentPlan:ulid}',      [PurchaseInstallmentController::class, 'show']);
+                Route::post('/{purchaseInstallmentPlan:ulid}/pay', [PurchaseInstallmentController::class, 'pay']);
             });
 
             Route::prefix('sales-transactions')->group(function () {

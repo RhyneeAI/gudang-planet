@@ -8,15 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('sales_installment_plans', function (Blueprint $table) {
+        Schema::create('purchase_installment_plans', function (Blueprint $table) {
             $table->id();
             $table->char('ulid', 26)->unique();
-            $table->foreignId('sales_transaction_id')->constrained()->onDelete('cascade');
-            $table->foreignId('customer_id')->constrained()->onDelete('restrict');
+            $table->foreignId('purchase_transaction_id')->constrained()->onDelete('cascade');
+            $table->foreignId('supplier_id')->constrained()->onDelete('restrict');
             $table->double('total_amount');
             $table->double('paid_amount')->default(0);
-            // $table->date('paid_date')->nullable()->change();
-            $table->integer('tenor');
             $table->date('start_date');
             $table->enum('status', ['ACTIVE', 'COMPLETED', 'OVERDUE'])->default('ACTIVE');
             $table->foreignId('company_id')->constrained()->onDelete('cascade');
@@ -24,13 +22,13 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['company_id', 'status']);
-            $table->index(['sales_transaction_id', 'company_id']);
-            $table->index(['customer_id', 'company_id']);
+            $table->index(['purchase_transaction_id', 'company_id']);
+            $table->index(['supplier_id', 'company_id']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('sales_installment_plans');
+        Schema::dropIfExists('purchase_installment_plans');
     }
 };

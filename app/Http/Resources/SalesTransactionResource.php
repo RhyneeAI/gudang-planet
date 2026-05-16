@@ -28,7 +28,7 @@ class SalesTransactionResource extends JsonResource
             ]),
             'items'              => $this->whenLoaded('details', fn() =>
                 $this->details->map(fn($detail) => [
-                    'ulid'       => (string) $detail->ulid,
+                    // 'ulid'       => (string) $detail->ulid,
                     'product'    => [
                         // 'uuid' => $detail->product->uuid,
                         'name' => $detail->product->name,
@@ -36,7 +36,7 @@ class SalesTransactionResource extends JsonResource
                     ],
                     'quantity'   => (int) $detail->quantity,
                     'sell_price' => (float) $detail->sell_price,
-                    // 'discount'   => (float) $detail->discount,
+                    'discount'   => (float) $detail->discount,
                     'subtotal'   => (float) $detail->subtotal,
                 ])
             ),
