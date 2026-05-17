@@ -98,7 +98,7 @@ class SalesTransactionController extends Controller
                 }
             }
 
-            $transactionCode = 'SO-' . $request->user()->company->code . '-' . now()->format('Ymd');
+            $transactionCode = 'SO-' . $request->user()->company->code . '-' . now()->format('YmdHis');
 
             $transaction = SalesTransaction::create([
                 'transaction_code'   => $transactionCode,
