@@ -22,15 +22,15 @@ class MarketingProductController extends Controller
         $marketingProducts = MarketingProduct::with(['product', 'createdBy', 'marketing'])
             ->join('products', 'products.id', '=', 'marketing_products.product_id')
             ->select('marketing_products.*', 'products.name as product_name') // hindari conflict kolom
-            // ->when($request->marketing_uuid, function ($query, $marketingUuid) {
-            //     $query->whereHas('marketing', fn($q) =>
-            //         $q->where('uuid', $marketingUuid)
-            //     );
-            // })
+            ->when($request->marketing_uuid, function ($query, $marketingUuid) {
+                $query->whereHas('marketing', fn($q) =>
+                    $q->where('uuid', $marketingUuid)
+                );
+            })
             ->when($request->search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('products.name', 'like', "%{$search}%")
-                    ->orWhere('products.code', 'like', "%{$search}%");
+                    $q->whereRaw('LOWER(products.name) LIKE ?', ["%" . strtolower($search) . "%"])
+                    ->orWhereRaw('LOWER(products.code) LIKE ?', ["%" . strtolower($search) . "%"]);
                 });
             })
             ->orderBy(
