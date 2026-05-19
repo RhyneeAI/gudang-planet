@@ -16,7 +16,7 @@ class SalesInstallmentController extends Controller
 {
     public function index(Request $request)
     {
-        $plans = SalesInstallmentPlan::with(['customer', 'salesTransaction'])
+        $plans = SalesInstallmentPlan::with(['customer', 'salesTransaction', 'salesTransaction.createdBy'])
             ->when($request->status, fn($q, $status) =>
                 $q->where('status', $status)
             )
@@ -46,7 +46,7 @@ class SalesInstallmentController extends Controller
             'success' => true,
             'message' => __('installments.detail'),
             'data'    => new SalesInstallmentPlanResource(
-                $salesInstallmentPlan->load(['customer', 'salesTransaction', 'payments'])
+                $salesInstallmentPlan->load(['customer', 'salesTransaction', 'salesTransaction.createdBy', 'payments'])
             ),
         ]);
     }
@@ -134,7 +134,7 @@ class SalesInstallmentController extends Controller
                     ? __('installments.completed')
                     : __('installments.payment_recorded'),
                 'data'    => new SalesInstallmentPlanResource(
-                    $salesInstallmentPlan->fresh()->load(['customer', 'salesTransaction', 'payments'])
+                    $salesInstallmentPlan->fresh()->load(['customer', 'salesTransaction', 'salesTransaction.createdBy', 'payments'])
                 ),
             ]);
 

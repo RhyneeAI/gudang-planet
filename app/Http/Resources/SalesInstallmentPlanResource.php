@@ -19,8 +19,16 @@ class SalesInstallmentPlanResource extends JsonResource
             'tenor'          => $this->tenor,
             'start_date'     => $this->start_date?->toDateString(),
             'is_overdue'     => $this->isOverdue(),
+            'created_by'     => $this->whenLoaded('salesTransaction', fn() =>
+                $this->salesTransaction->relationLoaded('createdBy')
+                    ? [
+                        'uuid' => $this->salesTransaction->createdBy->uuid,
+                        'name' => $this->salesTransaction->createdBy->name,
+                    ]
+                    : null
+            ),
             'customer'       => $this->whenLoaded('customer', fn() => [
-                // 'uuid' => $this->customer->uuid,
+                'uuid' => $this->customer->uuid,
                 'name' => $this->customer->name,
             ]),
             'transaction'    => $this->whenLoaded('salesTransaction', fn() => [
