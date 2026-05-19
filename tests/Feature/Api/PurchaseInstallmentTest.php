@@ -2,6 +2,7 @@
 
 use App\Enums\InstallmentStatus;
 use App\Enums\PaymentType;
+use App\Enums\Role;
 use App\Enums\TransactionStatus;
 use App\Models\Category;
 use App\Models\Company;
@@ -94,6 +95,71 @@ it('can filter by status', function () {
 
     $response->assertStatus(200);
     expect($response->json('data'))->toHaveCount(1);
+});
+
+it('can filter by created_by_uuid', function () {
+    $admin = User::factory()->create([
+        'role'       => Role::MARKETING,
+        'company_id' => $this->company->id,
+    ]);
+
+    // Plan by owner
+    ($this->makePlan)();
+
+    // Plan by admin
+    $trxByAdmin = PurchaseTransaction::factory()->create([
+        'total'              => 200000,
+        'paid'               => 0,
+        'payment_type'       => PaymentType::CICIL,
+        'transaction_status' => TransactionStatus::PENDING,
+        'supplier_id'        => $this->supplier->id,
+        'created_by'         => $admin->id,
+        'company_id'         => $this->company->id,
+    ]);
+
+    PurchaseInstallmentPlan::create([
+        'ulid'                    => Str::ulid(),
+        'purchase_transaction_id' => $trxByAdmin->id,
+        'supplier_id'             => $this->supplier->id,
+        'total_amount'            => 200000,
+        'paid_amount'             => 0,
+        'tenor'                   => 2,
+        'start_date'              => now()->toDateString(),
+        'status'                  => InstallmentStatus::ACTIVE,
+        'company_id'              => $this->company->id,
+    ]);
+
+    $response = $this->actingAs($this->owner)
+        ->getJson("/api/v1/purchase-installments?created_by_uuid={$admin->uuid}");
+
+    $response->assertStatus(200);
+    expect($response->json('data'))->toHaveCount(1);
+});
+
+it('returns all plans when created_by_uuid is not provided', function () {
+    ($this->makePlan)();
+    ($this->makePlan)();
+
+    $response = $this->actingAs($this->owner)
+        ->getJson('/api/v1/purchase-installments');
+
+    $response->assertStatus(200);
+    expect($response->json('data'))->toHaveCount(2);
+});
+
+it('returns empty when created_by_uuid has no purchase plans', function () {
+    ($this->makePlan)();
+
+    $otherUser = User::factory()->create([
+        'role'       => Role::OWNER,
+        'company_id' => $this->company->id,
+    ]);
+
+    $response = $this->actingAs($this->owner)
+        ->getJson("/api/v1/purchase-installments?created_by_uuid={$otherUser->uuid}");
+
+    $response->assertStatus(200);
+    expect($response->json('data'))->toHaveCount(0);
 });
 
 it('returns 401 when not authenticated', function () {

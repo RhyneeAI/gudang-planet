@@ -283,6 +283,82 @@ it('can search purchase transactions by transaction code and supplier name toget
     expect($response->json('data.0.transaction_code'))->toBe('PO-ABC-123');
 });
 
+// tests/Feature/Api/PurchaseTransactionTest.php — tambahkan di bagian INDEX
+
+it('can filter by created_by_uuid', function () {
+    $admin = User::factory()->create([
+        'role'       => \App\Enums\Role::OWNER,
+        'company_id' => $this->company->id,
+    ]);
+
+    // Transaksi oleh owner (user utama)
+    PurchaseTransaction::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'created_by'  => $this->user->id,
+        'company_id'  => $this->company->id,
+    ]);
+
+    // Transaksi oleh admin lain
+    PurchaseTransaction::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'created_by'  => $admin->id,
+        'company_id'  => $this->company->id,
+    ]);
+    PurchaseTransaction::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'created_by'  => $admin->id,
+        'company_id'  => $this->company->id,
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson("/api/v1/purchase-transactions?created_by_uuid={$admin->uuid}");
+
+    $response->assertStatus(200);
+    expect($response->json('data'))->toHaveCount(2);
+});
+
+it('returns all purchase transactions when created_by_uuid is not provided', function () {
+    $admin = User::factory()->create([
+        'role'       => \App\Enums\Role::OWNER,
+        'company_id' => $this->company->id,
+    ]);
+
+    PurchaseTransaction::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'created_by'  => $this->user->id,
+        'company_id'  => $this->company->id,
+    ]);
+    PurchaseTransaction::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'created_by'  => $admin->id,
+        'company_id'  => $this->company->id,
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson('/api/v1/purchase-transactions');
+
+    $response->assertStatus(200);
+    expect($response->json('data'))->toHaveCount(2);
+});
+
+it('returns empty when created_by_uuid has no purchase transactions', function () {
+    PurchaseTransaction::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'created_by'  => $this->user->id,
+        'company_id'  => $this->company->id,
+    ]);
+
+    $marketing = User::factory()->marketing()->create([
+        'company_id' => $this->company->id,
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson("/api/v1/purchase-transactions?created_by_uuid={$marketing->uuid}");
+
+    $response->assertStatus(200);
+    expect($response->json('data'))->toHaveCount(0);
+});
+
 // =============================
 // STORE
 // =============================

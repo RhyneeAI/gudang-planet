@@ -143,6 +143,80 @@ it('can filter by date range', function () {
     expect($response->json('data'))->toHaveCount(0);
 });
 
+// tests/Feature/Api/SalesTransactionTest.php — tambahkan di bagian INDEX
+
+it('can filter by created_by_uuid', function () {
+    $marketing = User::factory()->marketing()->create([
+        'company_id' => $this->company->id,
+    ]);
+
+    // Transaksi oleh owner
+    SalesTransaction::factory()->create([
+        'customer_id' => $this->customer->id,
+        'created_by'  => $this->user->id,
+        'company_id'  => $this->company->id,
+    ]);
+
+    // Transaksi oleh marketing
+    SalesTransaction::factory()->create([
+        'customer_id' => $this->customer->id,
+        'created_by'  => $marketing->id,
+        'company_id'  => $this->company->id,
+    ]);
+    SalesTransaction::factory()->create([
+        'customer_id' => $this->customer->id,
+        'created_by'  => $marketing->id,
+        'company_id'  => $this->company->id,
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson("/api/v1/sales-transactions?created_by_uuid={$marketing->uuid}");
+
+    $response->assertStatus(200);
+    expect($response->json('data'))->toHaveCount(2);
+});
+
+it('returns all transactions when created_by_uuid is not provided', function () {
+    $marketing = User::factory()->marketing()->create([
+        'company_id' => $this->company->id,
+    ]);
+
+    SalesTransaction::factory()->create([
+        'customer_id' => $this->customer->id,
+        'created_by'  => $this->user->id,
+        'company_id'  => $this->company->id,
+    ]);
+    SalesTransaction::factory()->create([
+        'customer_id' => $this->customer->id,
+        'created_by'  => $marketing->id,
+        'company_id'  => $this->company->id,
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson('/api/v1/sales-transactions');
+
+    $response->assertStatus(200);
+    expect($response->json('data'))->toHaveCount(2);
+});
+
+it('returns empty when created_by_uuid has no transactions', function () {
+    SalesTransaction::factory()->create([
+        'customer_id' => $this->customer->id,
+        'created_by'  => $this->user->id,
+        'company_id'  => $this->company->id,
+    ]);
+
+    $marketing = User::factory()->marketing()->create([
+        'company_id' => $this->company->id,
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson("/api/v1/sales-transactions?created_by_uuid={$marketing->uuid}");
+
+    $response->assertStatus(200);
+    expect($response->json('data'))->toHaveCount(0);
+});
+
 it('returns 401 when not authenticated on index', function () {
     $this->getJson('/api/v1/sales-transactions')->assertStatus(401);
 });

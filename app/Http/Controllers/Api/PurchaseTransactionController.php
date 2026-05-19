@@ -47,6 +47,11 @@ class PurchaseTransactionController extends Controller
                     });
                 });
             })
+            ->when($request->created_by_uuid, fn($q, $uuid) =>
+                $q->whereHas('createdBy', fn($u) =>
+                    $u->where('uuid', $uuid)
+                )
+            )
             ->orderBy($orderByKey, $orderByValue)
             ->paginate($request->input('per_page', 15));
 

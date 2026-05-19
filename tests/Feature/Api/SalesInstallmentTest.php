@@ -2,6 +2,7 @@
 
 use App\Enums\InstallmentStatus;
 use App\Enums\PaymentType;
+use App\Enums\Role;
 use App\Enums\TransactionStatus;
 use App\Models\Category;
 use App\Models\Company;
@@ -96,6 +97,73 @@ it('can filter by status', function () {
 
     $response->assertStatus(200);
     expect($response->json('data'))->toHaveCount(1);
+});
+
+it('can filter by created_by_uuid', function () {
+    $cashier = User::factory()->create([
+        'role'       => Role::MARKETING,
+        'company_id' => $this->company->id,
+    ]);
+
+    // Plan dibuat oleh owner
+    ($this->makePlan)();
+
+    // Plan dibuat oleh MARKETING — buat via SalesTransaction dengan created_by MARKETING
+    $trxByCashier = SalesTransaction::factory()->create([
+        'total'              => 200000,
+        'paid'               => 0,
+        'payment_type'       => PaymentType::CICIL,
+        'transaction_status' => TransactionStatus::PENDING,
+        'customer_id'        => $this->customer->id,
+        'created_by'         => $cashier->id,
+        'company_id'         => $this->company->id,
+    ]);
+
+    SalesInstallmentPlan::create([
+        'ulid'                 => Str::ulid(),
+        'sales_transaction_id' => $trxByCashier->id,
+        'customer_id'          => $this->customer->id,
+        'total_amount'         => 200000,
+        'paid_amount'          => 0,
+        'tenor'                => 2,
+        'start_date'           => now()->toDateString(),
+        'status'               => InstallmentStatus::ACTIVE,
+        'company_id'           => $this->company->id,
+    ]);
+
+    // Filter hanya milik cashier
+    $response = $this->actingAs($this->owner)
+        ->getJson("/api/v1/sales-installments?created_by_uuid={$cashier->uuid}");
+
+    $response->assertStatus(200);
+    expect($response->json('data'))->toHaveCount(1);
+});
+
+it('returns all plans when created_by_uuid is not provided', function () {
+    ($this->makePlan)();
+    ($this->makePlan)();
+    ($this->makePlan)();
+
+    $response = $this->actingAs($this->owner)
+        ->getJson('/api/v1/sales-installments');
+
+    $response->assertStatus(200);
+    expect($response->json('data'))->toHaveCount(3);
+});
+
+it('returns empty when created_by_uuid has no plans', function () {
+    ($this->makePlan)();
+
+    $otherUser = User::factory()->create([
+        'role'       => Role::OWNER,
+        'company_id' => $this->company->id,
+    ]);
+
+    $response = $this->actingAs($this->owner)
+        ->getJson("/api/v1/sales-installments?created_by_uuid={$otherUser->uuid}");
+
+    $response->assertStatus(200);
+    expect($response->json('data'))->toHaveCount(0);
 });
 
 it('returns 401 when not authenticated', function () {

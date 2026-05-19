@@ -31,7 +31,7 @@ class SalesTransactionController extends Controller
                             : 'transaction_date';
         $orderByValue = strtoupper($request->input('order_by_value', 'DESC')) === 'DESC' ? 'DESC' : 'ASC';
 
-        $transactions = SalesTransaction::with(['customer', 'createdBy', 'details', 'details.product'])
+        $transactions = SalesTransaction::with(['customer', 'createdBy'])
             ->when($request->search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('transaction_code', 'like', "%{$search}%")
@@ -48,6 +48,11 @@ class SalesTransactionController extends Controller
             )
             ->when($request->status, fn($q, $status) =>
                 $q->where('transaction_status', $status)
+            )
+            ->when($request->created_by_uuid, fn($q, $uuid) =>
+                $q->whereHas('createdBy', fn($u) =>
+                    $u->where('uuid', $uuid)
+                )
             )
             ->orderBy($orderByKey, $orderByValue)
             ->paginate($request->input('per_page', 15));

@@ -25,6 +25,11 @@ class SalesInstallmentController extends Controller
                     $c->where('name', 'like', "%{$search}%")
                 )
             )
+            ->when($request->created_by_uuid, fn($q, $uuid) =>
+                $q->whereHas('salesTransaction.createdBy', fn($u) =>
+                    $u->where('uuid', $uuid)
+                )
+            )
             ->orderBy('created_at', 'DESC')
             ->paginate($request->input('per_page', 15));
 
