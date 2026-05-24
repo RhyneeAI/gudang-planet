@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Carbon\Carbon;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\RateLimiter;
@@ -35,6 +36,24 @@ class AppServiceProvider extends ServiceProvider
                 
                 return $limit->by($request->user()?->id ?: $request->ip());
             }
+        });
+
+        Carbon::macro('shortDiffForHumans', function () {
+            $locale = app()->getLocale();
+            $minutes = (int) $this->diffInMinutes(now()); 
+            
+            if ($minutes < 60) {
+                return $minutes . 'm ' . ($locale === 'id' ? 'lalu' : 'ago');
+            }
+            
+            $hours = (int) ($minutes / 60);
+            if ($hours < 24) {
+                $unit = $locale === 'id' ? 'j' : 'h';
+                return $hours . $unit . ' ' . ($locale === 'id' ? 'lalu' : 'ago');
+            }
+            
+            $days = (int) ($hours / 24);
+            return $days . 'h ' . ($locale === 'id' ? 'lalu' : 'ago');
         });
     }
 }

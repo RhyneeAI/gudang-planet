@@ -48,7 +48,7 @@ class StockMutationResource extends JsonResource
             //         'name' => $this->creator->name,
             //     ];
             // }),
-            'created_at' => $this->created_at?->toISOString(),
+            'created_at' => $this->created_at?->shortDiffForHumans(),
         ];
     }
 
