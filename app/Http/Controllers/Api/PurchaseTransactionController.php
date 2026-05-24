@@ -20,7 +20,7 @@ use Illuminate\Support\Str;
 
 class PurchaseTransactionController extends Controller
 {
-    protected array $sortableColumns = ['transaction_code', 'transaction_date', 'transaction_status'];
+    protected array $sortableColumns = ['transaction_code', 'transaction_date', 'transaction_status', 'total'];
 
     public function index(Request $request)
     {
