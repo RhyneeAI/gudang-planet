@@ -36,6 +36,7 @@ class StockMutationResource extends JsonResource
     {
         return [
             'ulid' => (string) $this->ulid,
+            'type' => $this->type->value,
             'type_label' => $this->type->label(),
             'quantity' => (int) $this->quantity,
             'stock_before' => (int) $this->stock_before,

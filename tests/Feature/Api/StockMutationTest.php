@@ -119,6 +119,164 @@ it('can get stock mutations for a specific product', function () {
         ->assertJsonPath('success', true);
 });
 
+it('can filter stock mutations by date range (show)', function () {
+    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    
+    // Mutasi di tanggal 15 Januari
+    StockMutation::factory()->create([
+        'product_id' => $product->id,
+        'company_id' => $this->company->id,
+        'created_at' => '2026-01-15 10:00:00',
+    ]);
+    
+    // Mutasi di tanggal 20 Januari
+    StockMutation::factory()->create([
+        'product_id' => $product->id,
+        'company_id' => $this->company->id,
+        'created_at' => '2026-01-20 14:00:00',
+    ]);
+    
+    // Mutasi di tanggal 25 Januari
+    StockMutation::factory()->create([
+        'product_id' => $product->id,
+        'company_id' => $this->company->id,
+        'created_at' => '2026-01-25 09:00:00',
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson("/api/v1/stock-mutations/products/{$product->uuid}?date_from=2026-01-16&date_to=2026-01-22");
+
+    $response->assertStatus(200);
+    expect($response->json('data.mutations.data'))->toHaveCount(1);
+    expect($response->json('data.mutations.data.0.created_at'))->toContain('2026-01-20');
+});
+
+it('can filter stock mutations by type (show)', function () {
+    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    
+    StockMutation::factory()->create([
+        'product_id' => $product->id,
+        'company_id' => $this->company->id,
+        'type' => StockMutationType::PURCHASE_IN,
+    ]);
+    
+    StockMutation::factory()->create([
+        'product_id' => $product->id,
+        'company_id' => $this->company->id,
+        'type' => StockMutationType::SALES_OUT,
+    ]);
+    
+    StockMutation::factory()->create([
+        'product_id' => $product->id,
+        'company_id' => $this->company->id,
+        'type' => StockMutationType::ADJUST_IN,
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson("/api/v1/stock-mutations/products/{$product->uuid}?type=" . StockMutationType::PURCHASE_IN->value);
+
+    $response->assertStatus(200);
+    expect($response->json('data.mutations.data'))->toHaveCount(1);
+    expect($response->json('data.mutations.data.0.type'))->toBe(StockMutationType::PURCHASE_IN->value);
+});
+
+it('can search stock mutations by notes (show)', function () {
+    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    
+    StockMutation::factory()->create([
+        'product_id' => $product->id,
+        'company_id' => $this->company->id,
+        'notes' => 'Pembelian awal dari supplier',
+    ]);
+    
+    StockMutation::factory()->create([
+        'product_id' => $product->id,
+        'company_id' => $this->company->id,
+        'notes' => 'Penjualan ke customer',
+    ]);
+    
+    StockMutation::factory()->create([
+        'product_id' => $product->id,
+        'company_id' => $this->company->id,
+        'notes' => 'Adjustment stok opname',
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson("/api/v1/stock-mutations/products/{$product->uuid}?search=pembelian");
+
+    $response->assertStatus(200);
+    expect($response->json('data.mutations.data'))->toHaveCount(1);
+    expect($response->json('data.mutations.data.0.notes'))->toContain('Pembelian');
+});
+
+it('can sort stock mutations by quantity (show)', function () {
+    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    
+    StockMutation::factory()->create([
+        'product_id' => $product->id,
+        'company_id' => $this->company->id,
+        'quantity' => 10,
+    ]);
+    
+    StockMutation::factory()->create([
+        'product_id' => $product->id,
+        'company_id' => $this->company->id,
+        'quantity' => 50,
+    ]);
+    
+    StockMutation::factory()->create([
+        'product_id' => $product->id,
+        'company_id' => $this->company->id,
+        'quantity' => 25,
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson("/api/v1/stock-mutations/products/{$product->uuid}?order_by_key=quantity&order_by_value=asc");
+
+    $response->assertStatus(200);
+    $quantities = collect($response->json('data.mutations.data'))->pluck('quantity');
+    expect($quantities[0])->toBe(10);
+    expect($quantities[1])->toBe(25);
+    expect($quantities[2])->toBe(50);
+});
+
+it('can combine multiple filters (date range, type, search) (show)', function () {
+    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    
+    // Data yang cocok: PURCHASE_IN, notes mengandung "supplier", tanggal 20 Jan
+    StockMutation::factory()->create([
+        'product_id' => $product->id,
+        'company_id' => $this->company->id,
+        'type' => StockMutationType::PURCHASE_IN,
+        'notes' => 'Pembelian dari supplier utama',
+        'created_at' => '2026-01-20 10:00:00',
+    ]);
+    
+    // Data yang tidak cocok: type SALES_OUT
+    StockMutation::factory()->create([
+        'product_id' => $product->id,
+        'company_id' => $this->company->id,
+        'type' => StockMutationType::SALES_OUT,
+        'notes' => 'Pembelian dari supplier utama',
+        'created_at' => '2026-01-20 10:00:00',
+    ]);
+    
+    // Data yang tidak cocok: tanggal di luar range
+    StockMutation::factory()->create([
+        'product_id' => $product->id,
+        'company_id' => $this->company->id,
+        'type' => StockMutationType::PURCHASE_IN,
+        'notes' => 'Pembelian dari supplier utama',
+        'created_at' => '2026-01-30 10:00:00',
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson("/api/v1/stock-mutations/products/{$product->uuid}?date_from=2026-01-15&date_to=2026-01-25&type=" . StockMutationType::PURCHASE_IN->value . "&search=supplier");
+
+    $response->assertStatus(200);
+    expect($response->json('data.mutations.data'))->toHaveCount(1);
+});
+
 it('returns 404 when product not found', function () {
     $this->actingAs($this->user)
         ->getJson('/api/v1/stock-mutations/products/invalid-uuid') // ← route baru

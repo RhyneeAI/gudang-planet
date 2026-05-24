@@ -26,7 +26,7 @@ class StockMutationFactory extends Factory
             'quantity' => $quantity,
             'stock_before' => $stockBefore,
             'stock_after' => $stockAfter,
-            'notes' => fake()->optional()->sentence(),
+            'notes' => fake()->sentence(),
             'product_id' => Product::factory(),
             'company_id' => Company::factory(),
             'reference_id' => null,

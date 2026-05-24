@@ -134,6 +134,9 @@ class StockMutationController extends Controller
     public function show(Request $request, Product $product)
     {
         $type = $request->input('type'); 
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+        $search = $request->input('search');
         
         $orderByKey = in_array($request->input('order_by_key', 'created_at'), ['created_at', 'type', 'quantity'])
             ? $request->input('order_by_key', 'created_at')
@@ -144,6 +147,19 @@ class StockMutationController extends Controller
             ->where('product_id', $product->id)
             ->when($type, function ($query, $type) {
                 $query->where('type', $type);
+            })
+            ->when($dateFrom, function ($query, $dateFrom) {
+                $query->whereDate('created_at', '>=', $dateFrom);
+            })
+            ->when($dateTo, function ($query, $dateTo) {
+                $query->whereDate('created_at', '<=', $dateTo);
+            })
+            ->when($search, function ($query, $search) {
+                $searchLower = strtolower($search);
+                $query->where(function ($q) use ($searchLower) {
+                    $q->whereRaw('LOWER(type) LIKE ?', ["%{$searchLower}%"])
+                    ->orWhereRaw('LOWER(notes) LIKE ?', ["%{$searchLower}%"]);
+                });
             })
             ->orderBy($orderByKey, $orderByValue)
             ->paginate($request->input('per_page', 15));
