@@ -97,7 +97,7 @@ class PurchaseTransactionController extends Controller
                 'paid'               => $request->paid,
                 'payment_type'       => $request->payment_type,
                 'transaction_status' => $request->payment_type === PaymentType::CICIL->value
-                                                                ? TransactionStatus::PENDING  
+                                                                ? TransactionStatus::UNPAID  
                                                                 : TransactionStatus::PAID,
                 'supplier_id'        => $supplierId,
                 'created_by'         => $request->user()->id,

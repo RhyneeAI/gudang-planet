@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\InstallmentPaymentRequest;
 use App\Http\Resources\PurchaseInstallmentPlanResource;
 use App\Models\PurchaseInstallmentPlan;
+use App\Models\PurchaseTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -105,6 +106,11 @@ class PurchaseInstallmentController extends Controller
                 $purchaseInstallmentPlan->purchaseTransaction->update([
                     'transaction_status' => TransactionStatus::PAID,
                     'paid'               => $purchaseInstallmentPlan->total_amount,
+                ]);
+            } else {
+                $purchaseInstallmentPlan->purchaseTransaction()->update([
+                    'transaction_status'    => TransactionStatus::PROCESS,
+                    'paid'                  => $newPaidAmount,
                 ]);
             }
 
