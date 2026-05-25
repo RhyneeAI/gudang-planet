@@ -43,12 +43,13 @@
             <table>
                 <thead>
                     <tr>
+                        <th>No</th>
                         <th>Tanggal</th>
                         <th>No. Transaksi</th>
                         <th>Pelanggan</th>
                         <th>Metode pembayaran</th>
                         <th class="number">Total Penjualan</th>
-                        <th class="number">Diskon</th>
+                        {{-- <th class="number">Diskon</th> --}}
                         {{-- <th class="number">Setelah Diskon</th> --}}
                         <th class="number">Komisi</th>
                     </tr>
@@ -56,14 +57,15 @@
                 <tbody>
                     @foreach ($item['transactions'] as $trx)
                     <tr>
+                        <td nowrap>{{ $loop->parent->iteration }}</td>
                         <td>{{ $trx['date'] }}</td>
                         <td>{{ $trx['transaction_code'] }}</td>
                         <td>{{ $trx['customer'] }}</td>
                         <td>{{ $trx['payment_type'] }}</td>
-                        <td class="number">{{ number_format($trx['total'], 0, ',', '.') }}</td>
-                        <td class="number">{{ number_format($trx['discount'], 0, ',', '.') }}</td>
+                        <td class="number">Rp. {{ number_format($trx['total'], 0, ',', '.') }}</td>
+                        {{-- <td class="number">Rp. {{ number_format($trx['discount'], 0, ',', '.') }}</td> --}}
                         {{-- <td class="number">{{ number_format($trx['total_after_discount'], 0, ',', '.') }}</td> --}}
-                        <td class="number">{{ number_format($trx['commission'], 0, ',', '.') }}</td>
+                        <td class="number">Rp. {{ number_format($trx['commission'], 0, ',', '.') }}</td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -79,9 +81,9 @@
 
     <div class="grand-total">
         TOTAL KESELURUHAN
-        <span>Penjualan : Rp {{ number_format($grand_total['total_sales'], 0, ',', '.') }}</span>
-        <span>Diskon : Rp {{ number_format($grand_total['total_discount'], 0, ',', '.') }}</span>
-        <span>Komisi : Rp {{ number_format($grand_total['total_commission'], 0, ',', '.') }}</span>
+        <span>Total Penjualan : Rp {{ number_format($grand_total['total_sales'], 0, ',', '.') }}</span>
+        {{-- <span>Diskon : Rp {{ number_format($grand_total['total_discount'], 0, ',', '.') }}</span> --}}
+        <span>Total Komisi : Rp {{ number_format($grand_total['total_commission'], 0, ',', '.') }}</span>
     </div>
 
     <div class="footer">
