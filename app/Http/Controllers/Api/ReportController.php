@@ -174,7 +174,7 @@ class ReportController extends Controller
             ])
             ->whereHas('saleTransaction', function ($q) use ($companyId, $request, $marketingId) {
                 $q->where('company_id', $companyId)
-                ->whereIn('transaction_status', [TransactionStatus::PAID, TransactionStatus::PENDING])
+                ->whereIn('transaction_status', [TransactionStatus::PAID, TransactionStatus::PROCESS, TransactionStatus::UNPAID])
                 ->whereDate('transaction_date', '>=', $request->date_from)
                 ->whereDate('transaction_date', '<=', $request->date_to);
                 
