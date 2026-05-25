@@ -16,6 +16,7 @@ use App\Models\SalesDetail;
 use App\Models\SalesTransaction;
 use App\Models\StockMutation;
 use App\Models\SalesInstallmentPlan;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -119,7 +120,7 @@ class SalesTransactionController extends Controller
 
             $transaction = SalesTransaction::create([
                 'transaction_code'   => $transactionCode,
-                'transaction_date'   => $request->transaction_date,
+                'transaction_date'   => Carbon::parse($request->transaction_date)->format('Y-m-d H:i:s'),
                 'discount'           => $discount,
                 'additional_cost'      => $request->additional_cost ?? 0,    
                 'additional_cost_note' => $request->additional_cost_note,    
@@ -127,7 +128,7 @@ class SalesTransactionController extends Controller
                 'paid'               => $request->payment_type === PaymentType::CICIL->value ? 0 : $request->paid,
                 'payment_type'       => $request->payment_type,
                 'transaction_status' => $request->payment_type === PaymentType::CICIL->value
-                                                                ? TransactionStatus::PENDING  
+                                                                ? TransactionStatus::UNPAID  
                                                                 : TransactionStatus::PAID,
                 'customer_id'        => $customerId,
                 'created_by'         => $request->user()->id,
@@ -143,7 +144,7 @@ class SalesTransactionController extends Controller
                 $sellPrice = $item['sell_price'];
                 $marketingPrice = $item['marketing_price'];
 
-                $subtotal    = ($item['quantity'] * $sellPrice) - $itemDiscount;
+                $subtotal    = $item['quantity'] * ($sellPrice - $itemDiscount);
                 $stockBefore = $product->stock;
                 $stockAfter  = $stockBefore - $item['quantity'];
 

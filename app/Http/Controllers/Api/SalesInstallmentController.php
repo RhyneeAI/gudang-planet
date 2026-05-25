@@ -124,6 +124,11 @@ class SalesInstallmentController extends Controller
                     'transaction_status' => TransactionStatus::PAID,
                     'paid'               => $salesInstallmentPlan->total_amount,
                 ]);
+            } else {
+                $salesInstallmentPlan->salesTransaction->update([
+                    'transaction_status' => TransactionStatus::PROCESS,
+                    'paid'               => $newPaidAmount
+                ]);
             }
 
             DB::commit();
