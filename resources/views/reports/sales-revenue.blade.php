@@ -166,9 +166,9 @@
                 <th style="width:30px">No</th>
                 <th>Kode Produk</th>
                 <th>Nama Produk</th>
-                <th class="text-right">Harga Jual</th>
+                {{-- <th class="text-right">Harga Jual</th> --}}
                 <th class="text-right">Qty Terjual</th>
-                <th class="text-right">Omset</th>
+                {{-- <th class="text-right">Omset</th> --}}
             </tr>
         </thead>
         <tbody>
@@ -183,9 +183,9 @@
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td>{{ $item['code'] }}</td>
                 <td>{{ $item['name'] }}</td>
-                <td class="text-right">Rp {{ number_format($item['sell_price'], 0, ',', '.') }}</td>
-                <td class="text-right">{{ number_format($item['qty_sold'], 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format($item['revenue'], 0, ',', '.') }}</td>
+                {{-- <td class="text-right">Rp {{ number_format($item['sell_price'], 0, ',', '.') }}</td> --}}
+                <td class="text-right">{{ number_format($item['qty_sold'], 0, ',', '.') . ' ' .  $item['unit'] }}</td>
+                {{-- <td class="text-right">Rp {{ number_format($item['revenue'], 0, ',', '.') }}</td> --}}
             </tr>
             @endforeach
         </tbody>
@@ -201,14 +201,15 @@
                 <th>Tanggal Transaksi</th>
                 <th>Tipe Pembayaran</th>
                 <th>Kasir</th>
-                <th>Kode Produk</th>
+                {{-- <th>Kode Produk</th> --}}
                 <th>Nama Produk</th>
-                <th class="text-right">Harga Jual</th>
-                <th class="text-right">Qty</th>
-                <th class="text-right">Subtotal</th>
-                <th class="text-right">Total (Omset)</th>
-                <th class="text-right">Kekurangan (CICIL)</th>
-                <th class="text-right">Keuntungan</th>  
+                <th>Harga Modal</th>
+                <th>Harga Jual</th>
+                <th>Qty</th>
+                <th>Subtotal</th>
+                <th>Total (Omset)</th>
+                <th>Keuntungan</th>  
+                <th>Kekurangan (CICIL)</th>
             </tr>
         </thead>
         <tbody>
@@ -219,8 +220,8 @@
                     <tr>
                         @if ($itemIndex === 0)
                             {{-- Baris pertama: info transaksi dengan rowspan --}}
-                            <td class="text-center" rowspan="{{ $itemCount }}">{{ $loop->parent->iteration }}</td>
-                            <td rowspan="{{ $itemCount }}">{{ $transaction['transaction_code'] }}</td>
+                            <td nowrap class="text-center" rowspan="{{ $itemCount }}">{{ $loop->parent->iteration }}</td>
+                            <td nowrap rowspan="{{ $itemCount }}">{{ $transaction['transaction_code'] }}</td>
                             <td rowspan="{{ $itemCount }}">{{ $transaction['date'] }}</td>
                             <td rowspan="{{ $itemCount }}">
                                 {{ $transaction['payment_type'] }}
@@ -234,14 +235,15 @@
                         @endif
 
                         {{-- Detail produk --}}
-                        <td>{{ $item['code'] }}</td>
-                        <td>{{ $item['name'] }}</td>
-                        <td class="text-right">Rp {{ number_format($item['sell_price'], 0, ',', '.') }}</td>
-                        <td class="text-right">{{ number_format($item['quantity'], 0, ',', '.') }}</td>
-                        <td class="text-right">Rp {{ number_format($item['subtotal'], 0, ',', '.') }}</td>
+                        {{-- <td>{{ $item['code'] }}</td> --}}
+                        <td nowrap>{{ $item['code'] . ' - ' . $item['name'] }}</td>
+                        <td nowrap class="text-right">Rp {{ number_format($item['base_price'], 0, ',', '.') }}</td>
+                        <td nowrap class="text-right">Rp {{ number_format($item['sell_price'], 0, ',', '.') }}</td>
+                        <td nowrap class="text-right">{{ number_format($item['quantity'], 0, ',', '.') . ' ' .  $item['unit'] }}</td>
+                        <td nowrap class="text-right">Rp {{ number_format($item['subtotal'], 0, ',', '.') }}</td>
 
                         @if ($itemIndex === 0)
-                            <td class="text-right" rowspan="{{ $itemCount }}">
+                            <td nowrap class="text-right" rowspan="{{ $itemCount }}">
                                 @if($transaction['is_cicil'] && $transaction['cicil_info']['remaining_amount'] > 0)
                                     <span class="text-danger">
                                         Rp {{ number_format($transaction['total'] - $transaction['cicil_info']['remaining_amount'], 0, ',', '.') }}
@@ -250,7 +252,10 @@
                                     Rp {{ number_format($transaction['total'], 0, ',', '.') }}
                                 @endif
                             </td>
-                            <td class="text-right" rowspan="{{ $itemCount }}">
+                            <td nowrap class="text-right" rowspan="{{ $itemCount }}">
+                                Rp {{ number_format($transaction['profit'], 0, ',', '.') }}
+                            </td>
+                            <td nowrap class="text-right" rowspan="{{ $itemCount }}">
                                 @if($transaction['is_cicil'] && $transaction['cicil_info']['remaining_amount'] > 0)
                                     <span class="text-danger">
                                         Rp {{ number_format($transaction['cicil_info']['remaining_amount'], 0, ',', '.') }}
@@ -258,9 +263,6 @@
                                 @else
                                     -
                                 @endif
-                            </td>
-                            <td class="text-right" rowspan="{{ $itemCount }}">
-                                Rp {{ number_format($transaction['profit'], 0, ',', '.') }}
                             </td>
                         @endif
                     </tr>
@@ -270,9 +272,10 @@
     </table>
 
     <div class="summary">
-        TOTAL OMSET KESELURUHAN
+        TOTAL KESELURUHAN
         <span>Total Qty : {{ number_format($grand_total['total_qty'], 0, ',', '.') }}</span>
         <span>Total Omset : Rp {{ number_format($grand_total['total_revenue'], 0, ',', '.') }}</span>
+        <span>Total Keuntungan : Rp {{ number_format($grand_total['total_profit'], 0, ',', '.') }}</span>
         @if($grand_total['total_remaining'] > 0)
             <span class="text-danger">
                 Total Kekurangan: Rp {{ number_format($grand_total['total_remaining'], 0, ',', '.') }}
