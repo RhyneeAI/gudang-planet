@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\RateLimiter;
@@ -22,6 +23,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Relation::enforceMorphMap([
+            'ops_incomes' => \App\Models\OpsIncome::class,
+            'ops_expenses' => \App\Models\OpsExpense::class,
+            'ops_mandor_expenses' => \App\Models\OpsExpense::class,
+        ]);
+
         RateLimiter::for('api', function ($request) {
             if (!app()->environment('testing')) {
                 $method = $request->method();
