@@ -19,18 +19,17 @@ class OpsNotificationResource extends JsonResource
             'action' => [
                 'notifiable_type' => $this->notifiable_type,
                 'notifiable_id' => $this->notifiable_id,
-                'transfer_confirmation' => $this->when(
-                    $this->notifiable_type === 'ops_transfer_confirmations'
-                        && $this->relationLoaded('notifiable')
-                        && $this->notifiable,
-                    fn() => $this->when('notifiable', fn() => OpsTransferConfirmationResource::make($this->notifiable))
-                ),
-                'expense' => $this->when(
-                    $this->notifiable_type === 'ops_expenses'
-                        && $this->relationLoaded('notifiable')
-                        && $this->notifiable,
-                    fn() => $this->notifiable
-                ),
+                'transfer_confirmation' => $this->notifiable_type === 'ops_transfer_confirmations'
+                    && $this->relationLoaded('notifiable')
+                    && $this->notifiable
+                    ? OpsTransferConfirmationResource::make($this->notifiable)
+                    : null,
+
+                'expense' => $this->notifiable_type === 'ops_expenses'
+                    && $this->relationLoaded('notifiable')
+                    && $this->notifiable
+                    ? $this->notifiable
+                    : null,
             ],
             'created_at' => $this->created_at?->toISOString(),
         ];

@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api\Operational;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Operational\OpsNotificationResource;
+use App\Models\OpsExpense;
 use App\Models\OpsNotification;
+use App\Models\OpsTransferConfirmation;
 use App\Services\Operational\OpsNotificationService;
 use Illuminate\Http\Request;
 
@@ -16,7 +18,12 @@ class OpsNotificationController extends Controller
 
     public function index(Request $request)
     {
-        $notifications = OpsNotification::with('notifiable.confirmable')
+        $notifications = OpsNotification::with(['notifiable' => function ($morphTo) {
+            $morphTo->morphWith([
+                OpsTransferConfirmation::class => ['confirmable'],
+                OpsExpense::class => [],
+            ]);
+        }])
             ->where('user_id', $request->user()->id)
             ->when($request->boolean('unread_only') == true, fn($q) => $q->where('is_read', false))
             ->orderByDesc('created_at')
