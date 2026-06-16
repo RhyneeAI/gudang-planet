@@ -84,9 +84,9 @@ class User extends Authenticatable
         return $this->hasMany(OpsWallet::class, 'mandor_id');
     }
 
-    public function opsSubCompanies()
+    public function subCompanies()
     {
-        return $this->hasMany(OpsSubCompany::class, 'mandor_id');
+        return $this->hasMany(SubCompany::class, 'mandor_id');
     }
 
     public function mandorIncomes()

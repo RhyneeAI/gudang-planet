@@ -4,14 +4,14 @@ namespace Database\Seeders;
 
 use App\Enums\Role;
 use App\Models\User;
-use App\Services\Operational\OpsSubCompanyService;
+use App\Services\SubCompanyService;
 use Illuminate\Database\Seeder;
 
-class OpsSubCompanySeeder extends Seeder
+class SubCompanySeeder extends Seeder
 {
     public function run(): void
     {
-        $service = app(OpsSubCompanyService::class);
+        $service = app(SubCompanyService::class);
 
         User::withoutGlobalScopes()
             ->where('company_id', 1)

@@ -1,15 +1,16 @@
 <?php
 
-namespace App\Services\Operational;
+namespace App\Services;
 
 use App\Enums\Role;
 use App\Models\Company;
 use App\Models\OpsConfiguration;
-use App\Models\OpsSubCompany;
+use App\Models\SubCompany;
 use App\Models\User;
+use App\Services\Operational\OpsWalletService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
-class OpsSubCompanyService
+class SubCompanyService
 {
     public const KEY_MAX_SUB_COMPANIES_PER_MANDOR = 'max_sub_companies_per_mandor';
 
@@ -32,16 +33,16 @@ class OpsSubCompanyService
 
     public function countForMandor(int $mandorId): int
     {
-        return OpsSubCompany::where('mandor_id', $mandorId)->count();
+        return SubCompany::where('mandor_id', $mandorId)->count();
     }
 
-    public function createDefaultForMandor(User $mandor, ?User $createdBy = null): OpsSubCompany
+    public function createDefaultForMandor(User $mandor, ?User $createdBy = null): SubCompany
     {
         if ($mandor->role !== Role::MANDOR) {
             throw new \InvalidArgumentException('User must have MANDOR role.');
         }
 
-        $existing = OpsSubCompany::where('mandor_id', $mandor->id)->first();
+        $existing = SubCompany::where('mandor_id', $mandor->id)->first();
         if ($existing) {
             return $existing;
         }
@@ -55,7 +56,7 @@ class OpsSubCompanyService
 
         $company = Company::findOrFail($mandor->company_id);
 
-        $subCompany = OpsSubCompany::create([
+        $subCompany = SubCompany::create([
             'name' => $company->name,
             'code' => $this->generateUniqueCode($company),
             'address' => $company->address,
@@ -70,21 +71,21 @@ class OpsSubCompanyService
         return $subCompany;
     }
 
-    public function ensureDefaultForMandor(User $mandor, ?User $createdBy = null): OpsSubCompany
+    public function ensureDefaultForMandor(User $mandor, ?User $createdBy = null): SubCompany
     {
         return $this->createDefaultForMandor($mandor, $createdBy);
     }
 
     protected function generateUniqueCode(Company $company): string
     {
-        $sequence = OpsSubCompany::withoutGlobalScopes()
+        $sequence = SubCompany::withoutGlobalScopes()
             ->where('company_id', $company->id)
             ->count() + 1;
 
         $code = $company->code . '-' . str_pad((string) $sequence, 2, '0', STR_PAD_LEFT);
 
         while (
-            OpsSubCompany::withoutGlobalScopes()
+            SubCompany::withoutGlobalScopes()
                 ->where('company_id', $company->id)
                 ->where('code', $code)
                 ->exists()
@@ -96,17 +97,17 @@ class OpsSubCompanyService
         return $code;
     }
 
-    public function resolveForMandor(string $uuid, User $mandor): OpsSubCompany
+    public function resolveForMandor(string $uuid, User $mandor): SubCompany
     {
-        return OpsSubCompany::where('uuid', $uuid)
+        return SubCompany::where('uuid', $uuid)
             ->where('mandor_id', $mandor->id)
             ->where('is_active', true)
             ->firstOrFail();
     }
 
-    public function resolveForAdmin(string $uuid, int $companyId, ?int $mandorId = null): OpsSubCompany
+    public function resolveForAdmin(string $uuid, int $companyId, ?int $mandorId = null): SubCompany
     {
-        return OpsSubCompany::where('uuid', $uuid)
+        return SubCompany::where('uuid', $uuid)
             ->where('company_id', $companyId)
             ->when($mandorId, fn ($query) => $query->where('mandor_id', $mandorId))
             ->where('is_active', true)

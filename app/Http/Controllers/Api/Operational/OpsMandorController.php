@@ -6,7 +6,7 @@ use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Operational\OpsMandorStoreRequest;
 use App\Http\Resources\Operational\OpsMandorResource;
-use App\Http\Resources\Operational\OpsSubCompanyResource;
+use App\Http\Resources\SubCompanyResource;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -78,13 +78,13 @@ class OpsMandorController extends Controller
 
             DB::commit();
 
-            $mandor->load(['opsSubCompanies.wallet']);
+            $mandor->load(['subCompanies.wallet']);
 
             return response()->json([
                 'success' => true,
                 'message' => __('operational.mandors.stored'),
                 'data' => new OpsMandorResource($mandor),
-                'sub_company' => new OpsSubCompanyResource($mandor->opsSubCompanies->first()),
+                'sub_company' => new SubCompanyResource($mandor->subCompanies->first()),
                 'credentials' => [
                     'phone' => $mandor->phone,
                     'password' => $rawPassword,

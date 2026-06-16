@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\CustomerTypeController;
 use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\MarketingController;
 use App\Http\Controllers\Api\MarketingProductController;
+use App\Http\Controllers\Api\SubCompanyController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\PurchaseInstallmentController;
@@ -45,6 +46,11 @@ Route::prefix('v1')->middleware(['throttle:api'])->group(function () {
         Route::get('/home',            [HomeController::class, 'index']);
         Route::get('/profile',         [ProfileController::class, 'show']);
         Route::patch('/profile',       [ProfileController::class, 'update']);
+
+        Route::middleware(['role:SUPERADMIN,OWNER,ADMIN,MANDOR'])->group(function () {
+            Route::get('/sub-companies', [SubCompanyController::class, 'index']);
+            Route::get('/sub-companies/{subCompany:uuid}', [SubCompanyController::class, 'show']);
+        });
 
         Route::group(['middleware' => ['role:SUPERADMIN,OWNER']], function () {
             Route::apiResource('categories', CategoryController::class)->parameters([

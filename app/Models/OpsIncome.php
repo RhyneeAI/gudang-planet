@@ -55,7 +55,7 @@ class OpsIncome extends Model
 
     public function subCompany()
     {
-        return $this->belongsTo(OpsSubCompany::class, 'sub_company_id');
+        return $this->belongsTo(SubCompany::class, 'sub_company_id');
     }
 
     public function transferConfirmation()

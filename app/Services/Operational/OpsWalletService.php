@@ -3,7 +3,7 @@
 namespace App\Services\Operational;
 
 use App\Enums\OpsWalletTransactionType;
-use App\Models\OpsSubCompany;
+use App\Models\SubCompany;
 use App\Models\OpsWallet;
 use App\Models\OpsWalletTransaction;
 use App\Models\User;
@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class OpsWalletService
 {
-    public function getOrCreateWallet(User $mandor, OpsSubCompany $subCompany): OpsWallet
+    public function getOrCreateWallet(User $mandor, SubCompany $subCompany): OpsWallet
     {
         if ($subCompany->mandor_id !== $mandor->id) {
             throw new \InvalidArgumentException('Sub company does not belong to mandor.');

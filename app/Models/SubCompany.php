@@ -8,9 +8,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class OpsSubCompany extends Model
+class SubCompany extends Model
 {
     use HasFactory, SoftDeletes, HasUuid;
+
+    protected $table = 'ops_sub_companies';
 
     protected $fillable = [
         'uuid',

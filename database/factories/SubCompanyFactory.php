@@ -3,13 +3,13 @@
 namespace Database\Factories;
 
 use App\Models\Company;
-use App\Models\OpsSubCompany;
+use App\Models\SubCompany;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class OpsSubCompanyFactory extends Factory
+class SubCompanyFactory extends Factory
 {
-    protected $model = OpsSubCompany::class;
+    protected $model = SubCompany::class;
 
     public function definition(): array
     {

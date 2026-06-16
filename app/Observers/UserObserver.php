@@ -4,12 +4,12 @@ namespace App\Observers;
 
 use App\Enums\Role;
 use App\Models\User;
-use App\Services\Operational\OpsSubCompanyService;
+use App\Services\SubCompanyService;
 
 class UserObserver
 {
     public function __construct(
-        protected OpsSubCompanyService $subCompanyService,
+        protected SubCompanyService $subCompanyService,
     ) {}
 
     public function created(User $user): void

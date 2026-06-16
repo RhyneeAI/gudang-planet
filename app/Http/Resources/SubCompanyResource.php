@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Http\Resources\Operational;
+namespace App\Http\Resources;
 
+use App\Http\Resources\Operational\OpsWalletResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class OpsSubCompanyResource extends JsonResource
+class SubCompanyResource extends JsonResource
 {
     public function toArray(Request $request): array
     {

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Operational\OpsWalletResource;
 use App\Http\Resources\Operational\OpsWalletTransactionResource;
 use App\Models\OpsWalletTransaction;
-use App\Services\Operational\OpsSubCompanyService;
+use App\Services\SubCompanyService;
 use App\Services\Operational\OpsWalletService;
 use Illuminate\Http\Request;
 
@@ -16,7 +16,7 @@ class OpsWalletController extends Controller
 
     public function __construct(
         protected OpsWalletService $walletService,
-        protected OpsSubCompanyService $subCompanyService,
+        protected SubCompanyService $subCompanyService,
     ) {}
 
     public function show(Request $request)

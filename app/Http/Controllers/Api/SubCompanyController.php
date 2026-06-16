@@ -1,20 +1,20 @@
 <?php
 
-namespace App\Http\Controllers\Api\Operational;
+namespace App\Http\Controllers\Api;
 
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\Operational\OpsSubCompanyResource;
-use App\Models\OpsSubCompany;
+use App\Http\Resources\SubCompanyResource;
+use App\Models\SubCompany;
 use Illuminate\Http\Request;
 
-class OpsSubCompanyController extends Controller
+class SubCompanyController extends Controller
 {
     public function index(Request $request)
     {
         $user = $request->user();
 
-        $subCompanies = OpsSubCompany::with(['mandor', 'createdBy', 'wallet'])
+        $subCompanies = SubCompany::with(['mandor', 'createdBy', 'wallet'])
             ->when($user->role === Role::MANDOR, fn ($query) => $query->where('mandor_id', $user->id))
             ->when(
                 $request->mandor_uuid && $user->role !== Role::MANDOR,
@@ -37,24 +37,24 @@ class OpsSubCompanyController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('operational.sub_companies.list'),
-            'data' => OpsSubCompanyResource::collection($subCompanies),
+            'data' => SubCompanyResource::collection($subCompanies),
         ]);
     }
 
-    public function show(OpsSubCompany $opsSubCompany)
+    public function show(SubCompany $subCompany)
     {
-        $this->authorizeSubCompanyAccess($opsSubCompany);
+        $this->authorizeSubCompanyAccess($subCompany);
 
         return response()->json([
             'success' => true,
             'message' => __('operational.sub_companies.detail'),
-            'data' => new OpsSubCompanyResource(
-                $opsSubCompany->load(['mandor', 'createdBy', 'wallet'])
+            'data' => new SubCompanyResource(
+                $subCompany->load(['mandor', 'createdBy', 'wallet'])
             ),
         ]);
     }
 
-    protected function authorizeSubCompanyAccess(OpsSubCompany $subCompany): void
+    protected function authorizeSubCompanyAccess(SubCompany $subCompany): void
     {
         $user = request()->user();
 

@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
             PurchaseTransactionSeeder::class,
             OperationalUserSeeder::class,
             OpsConfigurationSeeder::class,
-            OpsSubCompanySeeder::class,
+            SubCompanySeeder::class,
 
             MarketingCommissionReportSeeder::class,
             SalesRevenueReportSeeder::class,

@@ -6,12 +6,10 @@ use App\Http\Controllers\Api\Operational\OpsExpenseController;
 use App\Http\Controllers\Api\Operational\OpsIncomeController;
 use App\Http\Controllers\Api\Operational\OpsMandorController;
 use App\Http\Controllers\Api\Operational\OpsNotificationController;
-use App\Http\Controllers\Api\Operational\OpsSubCompanyController;
 use App\Http\Controllers\Api\Operational\OpsTransferConfirmationController;
 use App\Http\Controllers\Api\Operational\OpsWalletController;
 use Illuminate\Support\Facades\Route;
 
-// Route::prefix('v1/operational')->middleware(['throttle:api'])->group(function () {
 Route::prefix('v1/operational')->group(function () {
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::middleware(['role:SUPERADMIN,OWNER,ADMIN,MANDOR'])->group(function () {
@@ -28,9 +26,6 @@ Route::prefix('v1/operational')->group(function () {
         });
 
         Route::group(['middleware' => ['role:SUPERADMIN,OWNER,ADMIN']], function () {
-            Route::get('/sub-companies', [OpsSubCompanyController::class, 'index']);
-            Route::get('/sub-companies/{opsSubCompany:uuid}', [OpsSubCompanyController::class, 'show']);
-
             Route::get('/mandors', [OpsMandorController::class, 'index']);
             Route::post('/mandors', [OpsMandorController::class, 'store']);
 
@@ -47,9 +42,6 @@ Route::prefix('v1/operational')->group(function () {
         });
 
         Route::group(['middleware' => ['role:MANDOR']], function () {
-            Route::get('/sub-companies', [OpsSubCompanyController::class, 'index']);
-            Route::get('/sub-companies/{opsSubCompany:uuid}', [OpsSubCompanyController::class, 'show']);
-
             Route::get('/wallet', [OpsWalletController::class, 'show']);
             Route::get('/wallet/transactions', [OpsWalletController::class, 'transactions']);
 

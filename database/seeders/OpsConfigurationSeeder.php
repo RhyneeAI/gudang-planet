@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\OpsConfiguration;
-use App\Services\Operational\OpsSubCompanyService;
+use App\Services\SubCompanyService;
 use Illuminate\Database\Seeder;
 
 class OpsConfigurationSeeder extends Seeder
@@ -13,7 +13,7 @@ class OpsConfigurationSeeder extends Seeder
         OpsConfiguration::withoutGlobalScopes()->updateOrCreate(
             [
                 'company_id' => 1,
-                'key' => OpsSubCompanyService::KEY_MAX_SUB_COMPANIES_PER_MANDOR,
+                'key' => SubCompanyService::KEY_MAX_SUB_COMPANIES_PER_MANDOR,
             ],
             [
                 'value' => '10',

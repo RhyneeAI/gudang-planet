@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Operational;
 
-use App\Models\OpsSubCompany;
+use App\Models\SubCompany;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Log;
 
@@ -21,7 +21,7 @@ class OpsExpenseStoreRequest extends FormRequest
                 'string',
                 'uuid',
                 function ($attribute, $value, $fail) {
-                    $exists = OpsSubCompany::where('uuid', $value)
+                    $exists = SubCompany::where('uuid', $value)
                         ->where('company_id', $this->user()->company_id)
                         ->where('mandor_id', $this->user()->id)
                         ->where('is_active', true)

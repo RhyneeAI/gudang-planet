@@ -94,6 +94,6 @@ class Company extends Model
 
     public function opsSubCompanies()
     {
-        return $this->hasMany(OpsSubCompany::class);
+        return $this->hasMany(SubCompany::class);
     }
 }

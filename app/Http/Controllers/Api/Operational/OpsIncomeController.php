@@ -13,7 +13,7 @@ use App\Models\OpsIncome;
 use App\Models\OpsTransferConfirmation;
 use App\Services\Operational\OpsFileService;
 use App\Services\Operational\OpsNotificationService;
-use App\Services\Operational\OpsSubCompanyService;
+use App\Services\SubCompanyService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +27,7 @@ class OpsIncomeController extends Controller
     public function __construct(
         protected OpsFileService $fileService,
         protected OpsNotificationService $notificationService,
-        protected OpsSubCompanyService $subCompanyService,
+        protected SubCompanyService $subCompanyService,
     ) {}
 
     public function index(Request $request)

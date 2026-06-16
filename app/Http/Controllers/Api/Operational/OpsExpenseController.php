@@ -13,7 +13,7 @@ use App\Models\OpsEditLog;
 use App\Models\OpsExpense;
 use App\Services\Operational\OpsFileService;
 use App\Services\Operational\OpsNotificationService;
-use App\Services\Operational\OpsSubCompanyService;
+use App\Services\SubCompanyService;
 use App\Services\Operational\OpsWalletService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -29,7 +29,7 @@ class OpsExpenseController extends Controller
         protected OpsFileService $fileService,
         protected OpsWalletService $walletService,
         protected OpsNotificationService $notificationService,
-        protected OpsSubCompanyService $subCompanyService,
+        protected SubCompanyService $subCompanyService,
     ) {}
 
     public function index(Request $request)

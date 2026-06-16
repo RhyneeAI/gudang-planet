@@ -50,7 +50,7 @@ class OpsIncomeStoreRequest extends FormRequest
                         return;
                     }
 
-                    $exists = \App\Models\OpsSubCompany::where('uuid', $value)
+                    $exists = \App\Models\SubCompany::where('uuid', $value)
                         ->where('company_id', $this->user()->company_id)
                         ->where('mandor_id', $mandorId)
                         ->where('is_active', true)

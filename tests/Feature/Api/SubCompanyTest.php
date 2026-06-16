@@ -2,7 +2,7 @@
 
 use App\Enums\Role;
 use App\Models\Company;
-use App\Models\OpsSubCompany;
+use App\Models\SubCompany;
 use App\Models\OpsWallet;
 use App\Models\User;
 
@@ -34,18 +34,17 @@ it('auto creates sub company from company when mandor is created via api', funct
     $mandor = User::where('phone', '081234567890')->first();
 
     expect($mandor->role)->toBe(Role::MANDOR);
-    expect(OpsSubCompany::where('mandor_id', $mandor->id)->count())->toBe(1);
+    expect(SubCompany::where('mandor_id', $mandor->id)->count())->toBe(1);
     expect(OpsWallet::whereHas('subCompany', fn ($q) => $q->where('mandor_id', $mandor->id))->exists())->toBeTrue();
 });
 
 it('does not allow manual sub company creation', function () {
-    $mandor = User::factory()->mandor()->create([
+    User::factory()->mandor()->create([
         'company_id' => $this->company->id,
     ]);
 
     $this->actingAs($this->admin)
-        ->postJson('/api/v1/operational/sub-companies', [
-            'mandor_uuid' => $mandor->uuid,
+        ->postJson('/api/v1/sub-companies', [
             'name' => 'Cabang Manual',
             'code' => 'MAN-01',
         ])
@@ -57,14 +56,14 @@ it('lists only own sub companies for mandor', function () {
         'company_id' => $this->company->id,
     ]);
 
-    $ownSubCompany = OpsSubCompany::where('mandor_id', $mandor->id)->first();
+    $ownSubCompany = SubCompany::where('mandor_id', $mandor->id)->first();
 
-    $otherMandor = User::factory()->mandor()->create([
+    User::factory()->mandor()->create([
         'company_id' => $this->company->id,
     ]);
 
     $response = $this->actingAs($mandor)
-        ->getJson('/api/v1/operational/sub-companies');
+        ->getJson('/api/v1/sub-companies');
 
     $response->assertOk();
     expect($response->json('data'))->toHaveCount(1);
@@ -87,7 +86,7 @@ it('returns wallet for selected sub company', function () {
         'company_id' => $this->company->id,
     ]);
 
-    $subCompany = OpsSubCompany::where('mandor_id', $mandor->id)->first();
+    $subCompany = SubCompany::where('mandor_id', $mandor->id)->first();
 
     $this->actingAs($mandor)
         ->getJson('/api/v1/operational/wallet?sub_company_uuid=' . $subCompany->uuid)
