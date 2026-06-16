@@ -6,20 +6,18 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class ForgotPasswordVerifyRequest extends FormRequest
 {
-    public function authorize(): bool { return true; }
-
     public function rules(): array
     {
         return [
-            'username' => ['required', 'string', 'exists:users,username'],
+            'phone' => 'required|string|exists:users,phone', 
         ];
     }
 
     public function messages(): array
     {
         return [
-            'username.required' => __('auth.validation.username_required'),
-            'username.exists'   => __('auth.validation.username_not_found'),
+            'phone.required' => __('auth.phone_required'),
+            'phone.exists'   => __('auth.phone_not_found'),
         ];
     }
 }

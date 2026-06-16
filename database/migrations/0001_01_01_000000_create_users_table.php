@@ -6,19 +6,16 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->string('name');
-            $table->string('username')->unique();
+            // $table->string('username')->unique(); // ← HAPUS atau COMMENT
             $table->string('email')->nullable();
             $table->string('address')->nullable();
-            $table->string('phone')->nullable();
+            $table->string('phone')->unique()->nullable(); // ← TAMBAHKAN unique
             $table->string('password');
             $table->enum('role', ['SUPERADMIN', 'OWNER', 'MARKETING']);
             $table->boolean('is_active')->default(true);
@@ -27,7 +24,7 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
 
-             $table->unique(['email', 'company_id']); 
+            $table->unique(['email', 'company_id']); 
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -46,9 +43,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('users');

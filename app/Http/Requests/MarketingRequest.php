@@ -14,22 +14,28 @@ class MarketingRequest extends FormRequest
 
     public function rules(): array
     {
+        $userId = $this->marketing?->id;
+        $companyId = $this->user()->company_id;
+
         return [
-            'name'    => [
+            'name'    => [$this->isMethod('POST') ? 'required' : 'sometimes', 'string', 'max:255'],
+            'phone'   => [
                 $this->isMethod('POST') ? 'required' : 'sometimes',
                 'string',
-                'max:255',
+                'max:20',
+                Rule::unique('users', 'phone')
+                    ->where('company_id', $companyId) // ← tambahkan company filter
+                    ->ignore($userId),
             ],
             'email'   => [
                 'sometimes',
                 'nullable',
                 'email',
-                Rule::unique('users', 'email')->where(function ($query) {
-                    return $query->where('company_id', $this->user()->company_id);
-                })->ignore($this->marketing?->id),
+                Rule::unique('users', 'email')
+                    ->where('company_id', $companyId) // ← tambahkan company filter
+                    ->ignore($userId),
             ],
             'address' => ['sometimes', 'nullable', 'string'],
-            'phone'   => ['sometimes', 'nullable', 'string', 'max:20'],
         ];
     }
 
@@ -37,9 +43,12 @@ class MarketingRequest extends FormRequest
     {
         return [
             'name.required' => __('marketings.validation.name_required'),
+            'name.max'      => __('marketings.validation.name_max'),
+            'phone.required' => __('marketings.validation.phone_required'),
+            'phone.unique'  => __('marketings.validation.phone_unique'),
+            'phone.max'     => __('marketings.validation.phone_max'),
             'email.email'   => __('marketings.validation.email_invalid'),
             'email.unique'  => __('marketings.validation.email_unique'),
-            'phone.max'     => __('marketings.validation.phone_max'),
         ];
     }
 }

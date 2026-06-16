@@ -9,8 +9,8 @@ return [
     'forgot_password_verified' => 'Username found. Please reset your password.',
     'invalid_reset_token'      => 'Invalid or expired reset token.',
     'validation'               => [
-        'username_required'              => 'Username is required.',
-        'username_not_found'             => 'Username not found.',
+        'phone_required'                 => 'Phone is required.',
+        'phone_not_found'                => 'Phone not found.',
         'password_required'              => 'Password is required.',
         'password_min'                   => 'Password must be at least 8 characters.',
         'password_confirmed'             => 'Password confirmation does not match.',
@@ -19,5 +19,6 @@ return [
         'email_invalid'                  => 'Invalid email format.',
         'email_unique'                   => 'Email already exists.',
         'phone_max'                      => 'Phone number must not exceed 20 characters.',
+        'phone_unique'  => 'This phone number is already in use.',
     ],
 ];

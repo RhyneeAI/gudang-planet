@@ -7,6 +7,7 @@ enum Role: string
     case SUPERADMIN = 'SUPERADMIN';
     case OWNER = 'OWNER';
     case ADMIN = 'ADMIN';
+    case MARKETING_LEADER = 'MARKETING_LEADER';
     case MARKETING = 'MARKETING';
     case KASIR = 'KASIR';
     case MANDOR = 'MANDOR';
@@ -23,6 +24,7 @@ enum Role: string
             self::SUPERADMIN => 'SUPERADMIN',
             self::OWNER => 'OWNER',
             self::ADMIN => 'ADMIN',
+            self::MARKETING_LEADER => 'MARKETING_LEADER',
             self::MARKETING => 'MARKETING',
             self::KASIR => 'KASIR',
             self::MANDOR => 'MANDOR',

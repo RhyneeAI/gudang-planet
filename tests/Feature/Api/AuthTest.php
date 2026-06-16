@@ -3,14 +3,15 @@
 use App\Models\User;
 use App\Models\Company;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 
 // uses(RefreshDatabase::class);
 // uses(TestCase::class);
 
 beforeEach(function () {
     $this->company = Company::factory()->create();
-    $this->user    = User::factory()->create([
-        'username'   => 'testuser',
+    $this->user = User::factory()->create([
+        'phone'      => '081234567890',
         'password'   => bcrypt('password123'),
         'company_id' => $this->company->id,
     ]);
@@ -22,7 +23,7 @@ beforeEach(function () {
 
 it('can login with valid credentials', function () {
     $response = $this->postJson('/api/v1/login', [
-        'username' => 'testuser',
+        'phone'    => '081234567890',
         'password' => 'password123',
     ]);
 
@@ -42,20 +43,20 @@ it('can login with valid credentials', function () {
 
 it('returns 422 with invalid credentials', function () {
     $response = $this->postJson('/api/v1/login', [
-        'username' => 'testuser',
+        'phone'    => '081234567890',
         'password' => 'wrongpassword',
     ]);
 
     $response->assertStatus(422)
         ->assertJsonPath('success', false)
         ->assertJsonStructure([
-            'errors' => ['username']
+            'errors' => ['phone']
         ]);
 });
 
-it('returns 422 when username not found', function () {
+it('returns 422 when phone not found', function () {
     $response = $this->postJson('/api/v1/login', [
-        'username' => 'tidakada',
+        'phone'    => '089999999999',
         'password' => 'password123',
     ]);
 
@@ -63,9 +64,9 @@ it('returns 422 when username not found', function () {
         ->assertJsonPath('success', false);
 });
 
-it('returns 422 when username is empty', function () {
+it('returns 422 when phone is empty', function () {
     $response = $this->postJson('/api/v1/login', [
-        'username' => '',
+        'phone'    => '',
         'password' => 'password123',
     ]);
 
@@ -74,7 +75,7 @@ it('returns 422 when username is empty', function () {
 
 it('returns 422 when password is empty', function () {
     $response = $this->postJson('/api/v1/login', [
-        'username' => 'testuser',
+        'phone'    => '081234567890',
         'password' => '',
     ]);
 
@@ -90,13 +91,13 @@ it('returns 422 when both fields are empty', function () {
 it('replaces existing token for same device on login', function () {
     // Login pertama
     $this->postJson('/api/v1/login', [
-        'username' => 'testuser',
+        'phone'    => '081234567890',
         'password' => 'password123',
     ], ['User-Agent' => 'TestDevice']);
 
     // Login kedua dengan device yang sama
     $this->postJson('/api/v1/login', [
-        'username' => 'testuser',
+        'phone'    => '081234567890',
         'password' => 'password123',
     ], ['User-Agent' => 'TestDevice']);
 
@@ -117,7 +118,6 @@ it('can logout when authenticated', function () {
     $response->assertStatus(200)
         ->assertJsonPath('success', true);
 
-    // Token harus sudah terhapus
     expect($this->user->tokens()->count())->toBe(0);
 });
 
@@ -140,12 +140,10 @@ it('can reset password when authenticated', function () {
         ->assertStatus(200)
         ->assertJsonPath('success', true);
 
-    // Password harus berubah
     expect(Hash::check('newpassword123', $this->user->fresh()->password))->toBeTrue();
 });
 
 it('other device tokens are deleted after reset password', function () {
-    // Buat token device lain
     $this->user->createToken('device-lain');
     $this->user->createToken('device-lain-2');
 
@@ -160,7 +158,6 @@ it('other device tokens are deleted after reset password', function () {
         ])
         ->assertStatus(200);
 
-    // Hanya token current yang tersisa
     expect($this->user->tokens()->count())->toBe(1);
 });
 
@@ -193,9 +190,9 @@ it('returns 401 when not authenticated on reset password', function () {
 // FORGOT PASSWORD — STEP 1: VERIFY
 // =============================
 
-it('can verify username for forgot password', function () {
+it('can verify phone for forgot password', function () {
     $this->postJson('/api/v1/forgot-password/verify', [
-        'username' => 'testuser',
+        'phone' => '081234567890',
     ])
     ->assertStatus(200)
     ->assertJsonPath('success', true)
@@ -204,26 +201,24 @@ it('can verify username for forgot password', function () {
     ]);
 });
 
-it('returns 422 when username not found on verify', function () {
+it('returns 422 when phone not found on verify', function () {
     $this->postJson('/api/v1/forgot-password/verify', [
-        'username' => 'tidakada',
+        'phone' => '089999999999',
     ])->assertStatus(422);
 });
 
-it('returns 422 when username is empty on verify', function () {
+it('returns 422 when phone is empty on verify', function () {
     $this->postJson('/api/v1/forgot-password/verify', [
-        'username' => '',
+        'phone' => '',
     ])->assertStatus(422);
 });
 
 it('old reset token is deleted when verify is called again', function () {
-    // Verify pertama
-    $this->postJson('/api/v1/forgot-password/verify', ['username' => 'testuser']);
+    $this->postJson('/api/v1/forgot-password/verify', ['phone' => '081234567890']);
 
     expect($this->user->tokens()->where('name', 'password-reset')->count())->toBe(1);
 
-    // Verify kedua — token lama harus dihapus, dibuat baru
-    $this->postJson('/api/v1/forgot-password/verify', ['username' => 'testuser']);
+    $this->postJson('/api/v1/forgot-password/verify', ['phone' => '081234567890']);
 
     expect($this->user->tokens()->where('name', 'password-reset')->count())->toBe(1);
 });
@@ -234,7 +229,7 @@ it('old reset token is deleted when verify is called again', function () {
 
 it('can reset password with valid reset token', function () {
     $response = $this->postJson('/api/v1/forgot-password/verify', [
-        'username' => 'testuser',
+        'phone' => '081234567890',
     ]);
 
     $resetToken = $response->json('data.reset_token');
@@ -251,11 +246,10 @@ it('can reset password with valid reset token', function () {
 });
 
 it('all tokens are deleted after forgot password reset', function () {
-    // Login di beberapa device
     $this->user->createToken('device-1');
     $this->user->createToken('device-2');
 
-    $response   = $this->postJson('/api/v1/forgot-password/verify', ['username' => 'testuser']);
+    $response   = $this->postJson('/api/v1/forgot-password/verify', ['phone' => '081234567890']);
     $resetToken = $response->json('data.reset_token');
 
     $this->withHeader('Authorization', "Bearer {$resetToken}")
@@ -264,12 +258,10 @@ it('all tokens are deleted after forgot password reset', function () {
             'password_confirmation' => 'newpassword123',
         ]);
 
-    // Semua token harus dihapus — user harus login ulang
     expect($this->user->tokens()->count())->toBe(0);
 });
 
 it('returns 403 when using regular login token for forgot password reset', function () {
-    // Token login biasa tidak punya ability password:reset
     $loginToken = $this->user->createToken('login-device')->plainTextToken;
 
     $this->withHeader('Authorization', "Bearer {$loginToken}")
@@ -281,7 +273,7 @@ it('returns 403 when using regular login token for forgot password reset', funct
 });
 
 it('returns 422 when password confirmation does not match on forgot reset', function () {
-    $response   = $this->postJson('/api/v1/forgot-password/verify', ['username' => 'testuser']);
+    $response   = $this->postJson('/api/v1/forgot-password/verify', ['phone' => '081234567890']);
     $resetToken = $response->json('data.reset_token');
 
     $this->withHeader('Authorization', "Bearer {$resetToken}")

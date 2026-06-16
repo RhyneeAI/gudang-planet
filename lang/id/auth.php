@@ -9,8 +9,8 @@ return [
     'forgot_password_verified' => 'Username ditemukan. Silakan reset password Anda.',
     'invalid_reset_token'     => 'Token reset tidak valid atau sudah kadaluarsa.',
     'validation'              => [
-        'username_required'              => 'Username wajib diisi.',
-        'username_not_found'             => 'Username tidak ditemukan.',
+        'phone_required'                 => 'Phone wajib diisi.',
+        'phone_not_found'                => 'Phone tidak ditemukan.',
         'password_required'              => 'Password wajib diisi.',
         'password_min'                   => 'Password minimal 8 karakter.',
         'password_confirmed'             => 'Konfirmasi password tidak cocok.',
@@ -19,5 +19,6 @@ return [
         'email_invalid'                  => 'Format email tidak valid.',
         'email_unique'                   => 'Email sudah digunakan.',
         'phone_max'                      => 'Nomor telepon maksimal 20 karakter.',
+        'phone_unique'  => 'Nomor telepon ini sudah digunakan.',
     ],
 ];
