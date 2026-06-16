@@ -110,7 +110,7 @@ Route::prefix('v1')->middleware(['throttle:api'])->group(function () {
             ])->only(['index', 'show']);
 
             Route::apiResource('customer-types', CustomerTypeController::class)->parameters([
-                'customer-types' => 'marketingProduct:uuid'
+                'customer-types' => 'customerTypes:uuid'
             ])->only(['index', 'show']);
 
             Route::apiResource('marketings', MarketingController::class)->parameters([
@@ -118,7 +118,7 @@ Route::prefix('v1')->middleware(['throttle:api'])->group(function () {
             ])->only(['index', 'show']);
 
             Route::apiResource('marketing-products', MarketingProductController::class)->parameters([
-                'marketing-products' => 'customerType:uuid'
+                'marketing-products' => 'marketingProduct:uuid'
             ])->only(['index', 'show']);
 
             Route::prefix('purchase-transactions')->group(function () {
