@@ -11,19 +11,19 @@ class CustomerTypeSeeder extends Seeder
     public function run(): void
     {
         $types = [
-            ['type' => 'Regular', 'discount' => 0, 'company_id' => 1],
-            ['type' => 'Member', 'discount' => 10, 'company_id' => 1],
-            ['type' => 'VIP', 'discount' => 20, 'company_id' => 1],
+            ['type' => 'Regular', 'discount' => 0],
+            ['type' => 'Member', 'discount' => 10],
         ];
 
-        foreach ($types as $discount) {
-            CustomerType::create([
-                'uuid' => (string) Str::uuid(),
-                'type' => $discount['type'],
-                'discount' => $discount['discount'],
-                'created_by' => 1,
-                'company_id' => $discount['company_id'],
-            ]);
+        foreach ($types as $type) {
+            CustomerType::firstOrCreate(
+                ['type' => $type['type'], 'company_id' => 1],
+                [
+                    'uuid' => (string) Str::uuid(),
+                    'discount' => $type['discount'],
+                    'created_by' => 1,
+                ]
+            );
         }
     }
 }

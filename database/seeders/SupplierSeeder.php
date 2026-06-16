@@ -3,30 +3,28 @@
 namespace Database\Seeders;
 
 use App\Models\Supplier;
-use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str; 
+use Illuminate\Support\Str;
 
 class SupplierSeeder extends Seeder
 {
     public function run(): void
     {
-        $faker = Faker::create('id_ID');
-        $suppliers = [];
+        $suppliers = [
+            ['name' => 'Supplier Utama', 'phone' => '0211111111'],
+            ['name' => 'Supplier Cadangan', 'phone' => '0212222222'],
+        ];
 
-        for ($i = 0; $i < 20; $i++) {
-            $suppliers[] = [
-                'uuid' => (string) Str::uuid(),
-                'name' => $faker->company,
-                'address' => $faker->address,
-                'phone' => $faker->phoneNumber,
-                'created_by' => 1,
-                'company_id' => 1,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
+        foreach ($suppliers as $supplier) {
+            Supplier::firstOrCreate(
+                ['name' => $supplier['name'], 'company_id' => 1],
+                [
+                    'uuid' => (string) Str::uuid(),
+                    'address' => 'Jl. Supplier, Jakarta',
+                    'phone' => $supplier['phone'],
+                    'created_by' => 1,
+                ]
+            );
         }
-
-        Supplier::insert($suppliers);
     }
 }

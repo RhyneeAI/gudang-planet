@@ -4,28 +4,26 @@ namespace Database\Seeders;
 
 use App\Models\Customer;
 use App\Models\CustomerType;
-use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
-use Str;
+use Illuminate\Support\Str;
 
 class CustomerSeeder extends Seeder
 {
     public function run(): void
     {
-        $faker = Faker::create('id_ID');
+        $customerTypeId = CustomerType::where('company_id', 1)->value('id');
 
-        $customerTypeIds = CustomerType::pluck('id')->toArray();
-
-        for ($i = 0; $i < 25; $i++) {
-            Customer::create([
-                'uuid' => (string) Str::uuid(),
-                'name' => $faker->name,
-                'address' => $faker->address,
-                'phone' => $faker->phoneNumber,
-                'customer_type_id' => $faker->randomElement($customerTypeIds),
-                'created_by' => 1,
-                'company_id' => 1,
-            ]);
+        foreach (['Andi', 'Budi', 'Siti'] as $index => $name) {
+            Customer::firstOrCreate(
+                ['name' => $name, 'company_id' => 1],
+                [
+                    'uuid' => (string) Str::uuid(),
+                    'phone' => '08188000000' . $index,
+                    'address' => 'Jl. Pelanggan, Jakarta',
+                    'customer_type_id' => $customerTypeId,
+                    'created_by' => 1,
+                ]
+            );
         }
     }
 }

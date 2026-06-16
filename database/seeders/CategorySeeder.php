@@ -10,35 +10,14 @@ class CategorySeeder extends Seeder
 {
     public function run(): void
     {
-        $categories = [
-            [
-                'uuid' => (string) Str::uuid(),
-                'name' => 'Makanan',
-                'created_by' => 1,
-                'company_id' => 1,
-            ],
-            [
-                'uuid' => (string) Str::uuid(),
-                'name' => 'Minuman',
-                'created_by' => 1,
-                'company_id' => 1,
-            ],
-            [
-                'uuid' => (string) Str::uuid(),
-                'name' => 'Snack',
-                'created_by' => 1,
-                'company_id' => 1,
-            ],
-            [
-                'uuid' => (string) Str::uuid(),
-                'name' => 'Rokok',
-                'created_by' => 1,
-                'company_id' => 1,
-            ],
-        ];
-
-        foreach ($categories as $category) {
-            Category::create($category);
+        foreach (['Makanan', 'Minuman'] as $name) {
+            Category::firstOrCreate(
+                ['name' => $name, 'company_id' => 1],
+                [
+                    'uuid' => (string) Str::uuid(),
+                    'created_by' => 1,
+                ]
+            );
         }
     }
 }

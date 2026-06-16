@@ -5,50 +5,42 @@ namespace Database\Seeders;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Unit;
-use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
-use Str;
+use Illuminate\Support\Str;
 
 class ProductSeeder extends Seeder
 {
     public function run(): void
     {
-        $faker = Faker::create('id_ID');
-        $products = [];
+        $categoryId = Category::where('company_id', 1)->value('id');
+        $unitId = Unit::where('company_id', 1)->value('id');
 
-        for ($i = 0; $i < 100; $i++) {
-            $companyId = 1;
-            
-            // Dapatkan category_id, unit_id, yang sesuai dengan company
-            $categoryIds = Category::where('company_id', $companyId)->pluck('id')->toArray();
-            $unitIds = Unit::where('company_id', $companyId)->pluck('id')->toArray();
-            
-            $basePrice = $faker->numberBetween(5000, 500000);
-            $salesPrice = $basePrice * $faker->randomFloat(2, 1.1, 1.5);
-            
-            $products[] = [
-                'uuid' => (string) Str::uuid(), 
-                'name' => $faker->words(3, true),
-                'code' => 'PRD' . str_pad($i + 1, 5, '0', STR_PAD_LEFT),
-                'base_price' => $basePrice,
-                'sales_price' => round($salesPrice, -2), // Pembulatan ke ratusan
-                'last_purchase_price' => $basePrice,
-                'stock' => $faker->numberBetween(0, 500),
-                'min_stock' => $faker->numberBetween(5, 50),
-                'description' => $faker->sentence,
-                'is_active' => $faker->boolean(90),
-                'category_id' => $categoryIds ? $faker->randomElement($categoryIds) : null,
-                'unit_id' => $unitIds ? $faker->randomElement($unitIds) : null,
-                'created_by' => 1,
-                'company_id' => $companyId,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-        }
+        $products = [
+            ['name' => 'Indomie Goreng', 'code' => 'PRD-001', 'base' => 2500, 'sell' => 4000, 'marketing' => 3500, 'stock' => 200],
+            ['name' => 'Teh Botol Sosro', 'code' => 'PRD-002', 'base' => 4000, 'sell' => 6000, 'marketing' => 5000, 'stock' => 150],
+            ['name' => 'Sabun Lifebuoy', 'code' => 'PRD-003', 'base' => 5000, 'sell' => 8000, 'marketing' => 6500, 'stock' => 100],
+            ['name' => 'Minyak Bimoli 1L', 'code' => 'PRD-004', 'base' => 14000, 'sell' => 18000, 'marketing' => 16000, 'stock' => 80],
+            ['name' => 'Detergen Rinso', 'code' => 'PRD-005', 'base' => 9000, 'sell' => 13000, 'marketing' => 11000, 'stock' => 120],
+        ];
 
-        // Insert batch 100 data
-        foreach (array_chunk($products, 20) as $chunk) {
-            Product::insert($chunk);
+        foreach ($products as $product) {
+            Product::updateOrCreate(
+                ['code' => $product['code'], 'company_id' => 1],
+                [
+                    'uuid' => (string) Str::uuid(),
+                    'name' => $product['name'],
+                    'base_price' => $product['base'],
+                    'sales_price' => $product['sell'],
+                    'marketing_price' => $product['marketing'],
+                    'last_purchase_price' => $product['base'],
+                    'stock' => $product['stock'],
+                    'min_stock' => 10,
+                    'is_active' => true,
+                    'category_id' => $categoryId,
+                    'unit_id' => $unitId,
+                    'created_by' => 1,
+                ]
+            );
         }
     }
 }
