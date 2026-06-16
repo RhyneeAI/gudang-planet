@@ -79,6 +79,16 @@ class User extends Authenticatable
         return $this->hasOne(OpsWallet::class, 'mandor_id');
     }
 
+    public function opsWallets()
+    {
+        return $this->hasMany(OpsWallet::class, 'mandor_id');
+    }
+
+    public function opsSubCompanies()
+    {
+        return $this->hasMany(OpsSubCompany::class, 'mandor_id');
+    }
+
     public function mandorIncomes()
     {
         return $this->hasMany(OpsIncome::class, 'mandor_id');

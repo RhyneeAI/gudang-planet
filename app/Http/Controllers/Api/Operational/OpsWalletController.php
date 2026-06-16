@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Operational\OpsWalletResource;
 use App\Http\Resources\Operational\OpsWalletTransactionResource;
 use App\Models\OpsWalletTransaction;
+use App\Services\Operational\OpsSubCompanyService;
 use App\Services\Operational\OpsWalletService;
 use Illuminate\Http\Request;
 
@@ -15,22 +16,26 @@ class OpsWalletController extends Controller
 
     public function __construct(
         protected OpsWalletService $walletService,
+        protected OpsSubCompanyService $subCompanyService,
     ) {}
 
     public function show(Request $request)
     {
-        $wallet = $this->walletService->getOrCreateWallet($request->user());
+        $subCompany = $this->resolveSubCompany($request);
+
+        $wallet = $this->walletService->getOrCreateWallet($request->user(), $subCompany);
 
         return response()->json([
             'success' => true,
             'message' => __('operational.wallet.detail'),
-            'data' => new OpsWalletResource($wallet->load('mandor')),
+            'data' => new OpsWalletResource($wallet->load(['mandor', 'subCompany'])),
         ]);
     }
 
     public function transactions(Request $request)
     {
-        $wallet = $this->walletService->getOrCreateWallet($request->user());
+        $subCompany = $this->resolveSubCompany($request);
+        $wallet = $this->walletService->getOrCreateWallet($request->user(), $subCompany);
 
         $orderByKey = in_array($request->input('order_by_key', 'created_at'), $this->sortableColumns)
             ? $request->input('order_by_key', 'created_at')
@@ -49,5 +54,21 @@ class OpsWalletController extends Controller
             'message' => __('operational.wallet.transactions'),
             'data' => OpsWalletTransactionResource::collection($transactions),
         ]);
+    }
+
+    protected function resolveSubCompany(Request $request)
+    {
+        if (!$request->filled('sub_company_uuid')) {
+            abort(response()->json([
+                'success' => false,
+                'message' => __('operational.validation.sub_company_uuid_required'),
+                'code' => 422,
+            ], 422));
+        }
+
+        return $this->subCompanyService->resolveForMandor(
+            $request->query('sub_company_uuid'),
+            $request->user()
+        );
     }
 }

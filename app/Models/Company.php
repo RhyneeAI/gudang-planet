@@ -91,4 +91,9 @@ class Company extends Model
     {
         return $this->hasMany(OpsWallet::class);
     }
+
+    public function opsSubCompanies()
+    {
+        return $this->hasMany(OpsSubCompany::class);
+    }
 }

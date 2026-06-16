@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Auth;
 
 class OpsDashboardController extends Controller
 {
+    use ScopesOperationalBySubCompany;
+
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -37,22 +39,20 @@ class OpsDashboardController extends Controller
         $previousDateFrom = $dateFrom->copy()->subMonth();
         $previousDateTo = $dateTo->copy()->subMonth();
 
-        $applyMandorFilter = function ($query) use ($user) {
-            $query->when($user->role === Role::MANDOR, function ($q) use ($user) {
-                $q->where('mandor_id', $user->id);
-            });
+        $applySubCompanyScope = function ($query) use ($request) {
+            $this->applySubCompanyFilter($query, $request);
         };
 
         $totalIncome = OpsIncome::whereBetween('date', [$dateFrom, $dateTo])
-            ->tap($applyMandorFilter)
+            ->tap($applySubCompanyScope)
             ->sum('amount');
 
         $totalExpense = OpsExpense::whereBetween('date', [$dateFrom, $dateTo])
-            ->tap($applyMandorFilter)
+            ->tap($applySubCompanyScope)
             ->sum('amount');
 
         $previousTotalExpense = OpsExpense::whereBetween('date', [$previousDateFrom, $previousDateTo])
-            ->tap($applyMandorFilter)
+            ->tap($applySubCompanyScope)
             ->sum('amount');
 
         $totalActiveMandor = User::where('role', Role::MANDOR)
@@ -60,7 +60,7 @@ class OpsDashboardController extends Controller
             ->count();
 
         $waitingConfirmationIncome = OpsIncome::whereBetween('date', [$dateFrom, $dateTo])
-            ->tap($applyMandorFilter)
+            ->tap($applySubCompanyScope)
             ->whereHas('transferConfirmation', function ($query) {
                 $query->where('status', OpsTransferConfirmationStatus::PENDING->value);
             })

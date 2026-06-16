@@ -22,6 +22,7 @@ class OpsExpense extends Model
         'note',
         'expense_type',
         'mandor_id',
+        'sub_company_id',
         'created_by',
         'company_id',
     ];
@@ -50,6 +51,11 @@ class OpsExpense extends Model
     public function mandor()
     {
         return $this->belongsTo(User::class, 'mandor_id');
+    }
+
+    public function subCompany()
+    {
+        return $this->belongsTo(OpsSubCompany::class, 'sub_company_id');
     }
 
     public function transferConfirmation()

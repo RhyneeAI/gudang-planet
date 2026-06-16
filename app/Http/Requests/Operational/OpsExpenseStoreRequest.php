@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Operational;
 
+use App\Models\OpsSubCompany;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Log;
 
@@ -15,6 +16,22 @@ class OpsExpenseStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'sub_company_uuid' => [
+                'required',
+                'string',
+                'uuid',
+                function ($attribute, $value, $fail) {
+                    $exists = OpsSubCompany::where('uuid', $value)
+                        ->where('company_id', $this->user()->company_id)
+                        ->where('mandor_id', $this->user()->id)
+                        ->where('is_active', true)
+                        ->exists();
+
+                    if (!$exists) {
+                        $fail(__('operational.validation.sub_company_uuid_not_found'));
+                    }
+                },
+            ],
             'name' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'date' => ['required', 'date'],

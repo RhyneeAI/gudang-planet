@@ -16,6 +16,11 @@ class OpsWalletResource extends JsonResource
                 'uuid' => $this->mandor->uuid,
                 'name' => $this->mandor->name,
             ]),
+            'sub_company' => $this->whenLoaded('subCompany', fn () => [
+                'uuid' => $this->subCompany->uuid,
+                'name' => $this->subCompany->name,
+                'code' => $this->subCompany->code,
+            ]),
             'updated_at' => $this->updated_at?->toISOString(),
         ];
     }

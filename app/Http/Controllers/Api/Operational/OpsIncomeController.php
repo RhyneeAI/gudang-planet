@@ -11,20 +11,23 @@ use App\Http\Resources\Operational\OpsIncomeResource;
 use App\Models\OpsEditLog;
 use App\Models\OpsIncome;
 use App\Models\OpsTransferConfirmation;
-use App\Models\User;
 use App\Services\Operational\OpsFileService;
 use App\Services\Operational\OpsNotificationService;
+use App\Services\Operational\OpsSubCompanyService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class OpsIncomeController extends Controller
 {
+    use ScopesOperationalBySubCompany;
+
     protected array $sortableColumns = ['name', 'date', 'amount', 'source_type'];
 
     public function __construct(
         protected OpsFileService $fileService,
         protected OpsNotificationService $notificationService,
+        protected OpsSubCompanyService $subCompanyService,
     ) {}
 
     public function index(Request $request)
@@ -34,7 +37,8 @@ class OpsIncomeController extends Controller
             : 'date';
         $orderByValue = strtoupper($request->input('order_by_value', 'DESC')) === 'ASC' ? 'DESC' : 'ASC';
 
-        $incomes = OpsIncome::with(['mandor', 'createdBy', 'transferConfirmation', 'editLogs'])
+        $incomes = OpsIncome::with(['mandor', 'subCompany', 'createdBy', 'transferConfirmation', 'editLogs'])
+            ->when(true, fn ($query) => $this->applySubCompanyFilter($query, $request))
             ->when($request->date_from, fn($q, $date) => $q->whereDate('date', '>=', $date))
             ->when($request->date_to, fn($q, $date) => $q->whereDate('date', '<=', $date))
             ->when(
@@ -70,10 +74,13 @@ class OpsIncomeController extends Controller
 
         DB::beginTransaction();
         try {
-            $mandor = User::where('uuid', $request->mandor_uuid)
-                ->where('company_id', $request->user()->company_id)
-                ->where('role', \App\Enums\Role::MANDOR)
-                ->firstOrFail();
+            $companyId = $request->user()->company_id;
+            $mandor = $this->subCompanyService->resolveMandor($request->mandor_uuid, $companyId);
+            $subCompany = $this->subCompanyService->resolveForAdmin(
+                $request->sub_company_uuid,
+                $companyId,
+                $mandor->id
+            );
 
             $income = OpsIncome::create([
                 'name' => $request->name,
@@ -83,15 +90,16 @@ class OpsIncomeController extends Controller
                 'note' => $request->note,
                 'source_type' => OpsSourceType::MANDOR,
                 'mandor_id' => $mandor->id,
+                'sub_company_id' => $subCompany->id,
                 'created_by' => $request->user()->id,
-                'company_id' => $request->user()->company_id,
+                'company_id' => $companyId,
             ]);
 
             $confirmation = OpsTransferConfirmation::create([
                 'confirmable_type' => $income->getMorphClass(),
                 'confirmable_id' => $income->id,
                 'status' => OpsTransferConfirmationStatus::PENDING,
-                'company_id' => $request->user()->company_id,
+                'company_id' => $companyId,
             ]);
 
             $this->notificationService->notifyMandorIncomePending($mandor, $income, $confirmation);
@@ -102,7 +110,7 @@ class OpsIncomeController extends Controller
                 'success' => true,
                 'message' => __('operational.incomes.stored'),
                 'data' => new OpsIncomeResource(
-                    $income->load(['mandor', 'createdBy', 'transferConfirmation'])
+                    $income->load(['mandor', 'subCompany', 'createdBy', 'transferConfirmation'])
                 ),
             ], 201);
         } catch (\Throwable $e) {
@@ -117,7 +125,7 @@ class OpsIncomeController extends Controller
             'success' => true,
             'message' => __('operational.incomes.detail'),
             'data' => new OpsIncomeResource(
-                $opsIncome->load(['mandor', 'createdBy', 'transferConfirmation', 'editLogs'])
+                $opsIncome->load(['mandor', 'subCompany', 'createdBy', 'transferConfirmation', 'editLogs'])
             ),
         ]);
     }
@@ -145,18 +153,22 @@ class OpsIncomeController extends Controller
                 ], 422);
             }
 
-            $mandor = User::where('uuid', $request->mandor_uuid)
-                ->where('company_id', $request->user()->company_id)
-                ->where('role', \App\Enums\Role::MANDOR)
-                ->firstOrFail();
+            $companyId = $request->user()->company_id;
+            $mandor = $this->subCompanyService->resolveMandor($request->mandor_uuid, $companyId);
+            $subCompany = $this->subCompanyService->resolveForAdmin(
+                $request->sub_company_uuid,
+                $companyId,
+                $mandor->id
+            );
 
             $payload = [
                 'name' => $request->name,
                 'amount' => $request->amount,
                 'date' => $request->date,
                 'mandor_id' => $mandor->id,
+                'sub_company_id' => $subCompany->id,
                 'created_by' => $request->user()->id,
-                'company_id' => $request->user()->company_id,
+                'company_id' => $companyId,
             ];
 
             if ($request->hasFile('proof_file')) {
@@ -175,7 +187,7 @@ class OpsIncomeController extends Controller
                 'old_data' => $oldData,
                 'new_data' => $opsIncome->only(['name', 'amount', 'date', 'proof_file', 'note']),
                 'edited_by' => $request->user()->id,
-                'company_id' => $request->user()->company_id,
+                'company_id' => $companyId,
             ]);
 
             DB::commit();
@@ -184,7 +196,7 @@ class OpsIncomeController extends Controller
                 'success' => true,
                 'message' => __('operational.incomes.updated'),
                 'data' => new OpsIncomeResource(
-                    $opsIncome->load(['mandor', 'createdBy', 'transferConfirmation'])
+                    $opsIncome->load(['mandor', 'subCompany', 'createdBy', 'transferConfirmation'])
                 ),
             ]);
         } catch (\Throwable $th) {

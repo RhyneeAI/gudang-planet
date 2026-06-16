@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Carbon\Carbon;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -23,6 +24,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        User::observe(\App\Observers\UserObserver::class);
+
         Relation::enforceMorphMap([
             'users' => \App\Models\User::class,
             'ops_incomes' => \App\Models\OpsIncome::class,

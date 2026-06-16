@@ -13,6 +13,7 @@ use App\Models\OpsEditLog;
 use App\Models\OpsExpense;
 use App\Services\Operational\OpsFileService;
 use App\Services\Operational\OpsNotificationService;
+use App\Services\Operational\OpsSubCompanyService;
 use App\Services\Operational\OpsWalletService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -20,12 +21,15 @@ use Illuminate\Support\Facades\DB;
 
 class OpsExpenseController extends Controller
 {
+    use ScopesOperationalBySubCompany;
+
     protected array $sortableColumns = ['name', 'date', 'amount', 'expense_type'];
 
     public function __construct(
         protected OpsFileService $fileService,
         protected OpsWalletService $walletService,
         protected OpsNotificationService $notificationService,
+        protected OpsSubCompanyService $subCompanyService,
     ) {}
 
     public function index(Request $request)
@@ -35,15 +39,9 @@ class OpsExpenseController extends Controller
             : 'date';
         $orderByValue = strtoupper($request->input('order_by_value', 'DESC')) === 'ASC' ? 'DESC' : 'ASC';
 
-        $user = $request->user();
-
-        $expenses = OpsExpense::with(['mandor', 'createdBy', 'editLogs'])
+        $expenses = OpsExpense::with(['mandor', 'subCompany', 'createdBy', 'editLogs'])
             ->withCount('editLogs')
-            ->when(
-                $user->role === Role::MANDOR,
-                fn($q) =>
-                $q->where('mandor_id', $user->id)
-            )
+            ->when(true, fn ($query) => $this->applySubCompanyFilter($query, $request))
             ->when($request->date_from, fn($q, $date) => $q->whereDate('date', '>=', $date))
             ->when($request->date_to, fn($q, $date) => $q->whereDate('date', '<=', $date))
             ->when(
@@ -78,7 +76,8 @@ class OpsExpenseController extends Controller
         }
 
         $user = $request->user();
-        $wallet = $this->walletService->getOrCreateWallet($user);
+        $subCompany = $this->subCompanyService->resolveForMandor($request->sub_company_uuid, $user);
+        $wallet = $this->walletService->getOrCreateWallet($user, $subCompany);
 
         if ((float) $wallet->balance < (float) $request->amount) {
             $this->notificationService->notifyAdminsInsufficientBalance(
@@ -105,6 +104,7 @@ class OpsExpenseController extends Controller
                 'note' => $request->note,
                 'expense_type' => OpsExpenseType::INTERNAL,
                 'mandor_id' => $user->id,
+                'sub_company_id' => $subCompany->id,
                 'created_by' => $user->id,
                 'company_id' => $user->company_id,
             ]);
@@ -126,7 +126,7 @@ class OpsExpenseController extends Controller
                 'success' => true,
                 'message' => __('operational.expenses.stored'),
                 'data' => new OpsExpenseResource(
-                    $expense->load(['mandor', 'createdBy'])
+                    $expense->load(['mandor', 'subCompany', 'createdBy'])
                 ),
             ], 201);
         } catch (\Throwable $e) {
@@ -143,7 +143,7 @@ class OpsExpenseController extends Controller
             'success' => true,
             'message' => __('operational.expenses.detail'),
             'data' => new OpsExpenseResource(
-                $opsExpense->load(['mandor', 'createdBy', 'editLogs'])
+                $opsExpense->load(['mandor', 'subCompany', 'createdBy', 'editLogs'])
             ),
         ]);
     }
@@ -155,7 +155,6 @@ class OpsExpenseController extends Controller
         $this->authorizeExpenseAccess($opsExpense, Role::MANDOR);
 
         $editWindowDays = config('operational.expense_edit_window_days');
-        // $maxEditCount = config('operational.expense_max_edit_count');
 
         $requestDate = Carbon::parse($request->date)->startOfDay();
         $limitDate = now()->subDays($editWindowDays)->startOfDay();
@@ -167,17 +166,9 @@ class OpsExpenseController extends Controller
             ], 422);
         }
 
-        $editCount = $opsExpense->editLogs()->count();
-
-        // if ($editCount >= $maxEditCount) {
-        //     return response()->json([
-        //         'success' => false,
-        //         'message' => __('operational.expenses.edit_limit_reached'),
-        //         'code' => 422,
-        //     ], 422);
-        // }
-
-        $wallet = $this->walletService->getOrCreateWallet($user);
+        $subCompany = $opsExpense->subCompany
+            ?? $this->subCompanyService->resolveForMandor($request->sub_company_uuid, $user);
+        $wallet = $this->walletService->getOrCreateWallet($user, $subCompany);
         $oldAmount = (float) $opsExpense->amount;
         $newAmount = (float) $request->amount;
         $difference = round($newAmount - $oldAmount, 2);
@@ -234,7 +225,7 @@ class OpsExpenseController extends Controller
                 'success' => true,
                 'message' => __('operational.expenses.updated'),
                 'data' => new OpsExpenseResource(
-                    $opsExpense->fresh()->load(['mandor', 'createdBy'])
+                    $opsExpense->fresh()->load(['mandor', 'subCompany', 'createdBy'])
                 ),
             ]);
         } catch (\Throwable $e) {
@@ -249,9 +240,20 @@ class OpsExpenseController extends Controller
         try {
             $this->authorizeExpenseAccess($opsExpense, Role::MANDOR);
 
+            $opsExpense->loadMissing('subCompany');
+
+            if (!$opsExpense->subCompany) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('operational.validation.sub_company_uuid_not_found'),
+                    'code' => 422,
+                ], 422);
+            }
+
             $this->fileService->deleteProof($opsExpense->proof_file);
 
-            $wallet = $this->walletService->getOrCreateWallet($opsExpense->mandor);
+            $subCompany = $opsExpense->subCompany;
+            $wallet = $this->walletService->getOrCreateWallet($opsExpense->mandor, $subCompany);
 
             $this->walletService->credit(
                 $wallet,
@@ -287,7 +289,7 @@ class OpsExpenseController extends Controller
             ], 403));
         }
 
-        if ($user->role === Role::MANDOR && $expense->mandor_id !== $user->id) {
+        if ($user->role === Role::MANDOR && $expense->subCompany?->mandor_id !== $user->id) {
             abort(response()->json([
                 'success' => false,
                 'message' => 'You don\'t have permission to access this resource.',
