@@ -11,16 +11,24 @@ class ProfileUpdateRequest extends FormRequest
 
     public function rules(): array
     {
+        $userId = $this->user()->id;
+
         return [
             'name'    => ['sometimes', 'string', 'max:255'],
             'email'   => [
                 'sometimes',
                 'nullable',
                 'email',
-                Rule::unique('users', 'email')->ignore($this->user()->id),
+                Rule::unique('users', 'email')->ignore($userId),
             ],
             'address' => ['sometimes', 'nullable', 'string'],
-            'phone'   => ['sometimes', 'nullable', 'string', 'max:20'],
+            'phone'   => [
+                'sometimes',
+                'nullable',
+                'string',
+                'max:20',
+                Rule::unique('users', 'phone')->ignore($userId), // ← tambahkan ini
+            ],
         ];
     }
 
@@ -31,6 +39,7 @@ class ProfileUpdateRequest extends FormRequest
             'email.email'   => __('auth.validation.email_invalid'),
             'email.unique'  => __('auth.validation.email_unique'),
             'phone.max'     => __('auth.validation.phone_max'),
+            'phone.unique'  => __('auth.validation.phone_unique'),
         ];
     }
 }

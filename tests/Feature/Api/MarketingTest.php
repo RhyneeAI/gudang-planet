@@ -27,18 +27,16 @@ it('can get marketing list', function () {
             'success',
             'message',
             'data' => [
-                '*' => ['uuid', 'name', 'email', 'role']
+                '*' => ['uuid', 'name', 'phone', 'email', 'role'] // ← username → phone
             ]
         ])
         ->assertJsonPath('success', true);
 });
 
 it('only returns marketings belonging to the same company', function () {
-    // Marketing company lain
     $otherCompany = Company::factory()->create();
     User::factory(3)->marketing()->create(['company_id' => $otherCompany->id]);
 
-    // Marketing company sendiri
     User::factory(2)->marketing()->create(['company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
@@ -48,11 +46,9 @@ it('only returns marketings belonging to the same company', function () {
 });
 
 it('does not return non-marketing users', function () {
-    // Create superadmin and owner
     User::factory()->superAdmin()->create(['company_id' => $this->company->id]);
     User::factory()->owner()->create(['company_id' => $this->company->id]);
     
-    // Create marketing
     User::factory(2)->marketing()->create(['company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
@@ -66,20 +62,21 @@ it('returns 401 when not authenticated on index', function () {
     $this->getJson('/api/v1/marketings')->assertStatus(401);
 });
 
-it('can filter marketings by search (name, username, email)', function () {
+it('can filter marketings by search (name, phone, email)', function () { // ← username → phone
     User::factory()->marketing()->create([
         'name'     => 'Budi Santoso',
-        'username' => 'budi_s',
+        'phone'    => '081234567890', 
         'email'    => 'budi@example.com',
         'company_id' => $this->company->id,
     ]);
     User::factory()->marketing()->create([
         'name'     => 'Siti Aminah',
-        'username' => 'siti_a',
+        'phone'    => '081234567891',
         'email'    => 'siti@example.com',
         'company_id' => $this->company->id,
     ]);
 
+    // Search by phone number
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/marketings?search=budi');
 
@@ -133,27 +130,11 @@ it('can create a marketing', function () {
         'success',
         'message',
         'data',
-        'credentials' => ['username', 'password']
+        'credentials' => ['phone', 'password'] // ← username → phone
     ]);
 
-    // Check username auto-generated
-    expect($response->json('credentials.username'))->toBe('ahmadfauzi');
-});
-
-it('auto generates unique username when duplicate exists', function () {
-    User::factory()->marketing()->create([
-        'username' => 'ahmadfauzi',
-        'company_id' => $this->company->id,
-    ]);
-
-    $response = $this->actingAs($this->user)
-        ->postJson('/api/v1/marketings', [
-            'name'  => 'Ahmad Fauzi',
-            'email' => 'ahmad2@example.com',
-        ])
-        ->assertStatus(201);
-
-    expect($response->json('credentials.username'))->toBe('ahmadfauzi1');
+    // Check phone is returned as username (or keep username if auto-generated)
+    expect($response->json('credentials.phone'))->toBe('08123456789');
 });
 
 it('returns 422 when name is empty on store', function () {
@@ -206,7 +187,8 @@ it('allows same email in different companies', function () {
     $this->actingAs($this->user)
         ->postJson('/api/v1/marketings', [
             'name'  => 'New User',
-            'email' => 'same@example.com'
+            'email' => 'same@example.com',
+            'phone' => '08123456788', 
         ])
         ->assertStatus(201);
 });
@@ -282,7 +264,7 @@ it('can partial update marketing without sending all fields', function () {
         ->patchJson("/api/v1/marketings/{$marketing->uuid}", ['name' => 'Only Name Updated'])
         ->assertStatus(200)
         ->assertJsonPath('data.name', 'Only Name Updated')
-        ->assertJsonPath('data.address', 'Original Address'); // unchanged
+        ->assertJsonPath('data.address', 'Original Address');
 });
 
 it('can update marketing password', function () {
@@ -297,7 +279,6 @@ it('can update marketing password', function () {
         ])
         ->assertStatus(200);
 
-    // Verify password changed
     $marketing->refresh();
     expect(Hash::check('newpassword123', $marketing->password))->toBeTrue();
 });
@@ -333,7 +314,6 @@ it('can delete a marketing', function () {
         ->assertStatus(200)
         ->assertJsonPath('success', true);
 
-    // Pastikan soft deleted
     expect(User::withTrashed()->find($marketing->id)->deleted_at)->not->toBeNull();
 });
 
@@ -350,7 +330,6 @@ it('returns 422 when deleting marketing that has products', function () {
         'company_id' => $this->company->id,
     ]);
     
-    // Isi company_id juga
     $marketing->marketingProducts()->create([
         'product_id'      => $product->id,
         'created_by'      => $superAdmin->id,

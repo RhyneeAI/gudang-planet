@@ -9,10 +9,11 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class MarketingController extends Controller
 {
-    protected array $sortableColumns = ['name', 'username', 'email', 'created_at'];
+    protected array $sortableColumns = ['name', 'phone', 'email', 'created_at']; // ← username → phone
 
     public function index(Request $request)
     {
@@ -23,11 +24,11 @@ class MarketingController extends Controller
 
         $marketings = User::where('role', ROLE::MARKETING)
             ->when($request->search, function ($query, $search) {
-                // Case-insensitive search using LOWER() for PostgreSQL and MySQL compatibility
-                $query->where(function ($q) use ($search) {
-                    $q->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%'])
-                      ->orWhereRaw('LOWER(username) LIKE ?', ['%' . strtolower($search) . '%'])
-                      ->orWhereRaw('LOWER(email) LIKE ?', ['%' . strtolower($search) . '%']);
+                $searchLower = strtolower($search);
+                $query->where(function ($q) use ($searchLower) {
+                    $q->whereRaw('LOWER(name) LIKE ?', ['%' . $searchLower . '%'])
+                      ->orWhereRaw('LOWER(phone) LIKE ?', ['%' . $searchLower . '%']) // ← username → phone
+                      ->orWhereRaw('LOWER(email) LIKE ?', ['%' . $searchLower . '%']);
                 });
             })
             ->orderBy($orderByKey, $orderByValue)
@@ -42,19 +43,19 @@ class MarketingController extends Controller
 
     public function store(MarketingRequest $request)
     {
-        $baseUsername = strtolower(str_replace(' ', '', $request->name));
-        $username     = $this->generateUniqueUsername($baseUsername);
+        // Generate phone (bisa dari request atau auto-generate)
+        $basePhone = $request->phone ?? '08' . rand(100000000, 999999999);
+        $phone = $this->generateUniquePhone($basePhone);
 
         $randomDigits = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
         $rawPassword  = strtolower(str_replace(' ', '', $request->name)) . $randomDigits;
 
         $marketing = User::create([
             'name'       => $request->name,
-            'username'   => $username,
+            'phone'      => $phone, // ← username → phone
             'email'      => $request->email,
             'password'   => Hash::make($rawPassword),
             'address'    => $request->address,
-            'phone'      => $request->phone,
             'role'       => Role::MARKETING,
             'company_id' => $request->user()->company_id,
         ]);
@@ -64,24 +65,23 @@ class MarketingController extends Controller
             'message' => __('marketings.stored'),
             'data'    => new UserResource($marketing),
             'credentials' => [
-                'username' => $username,
+                'phone'    => $phone, // ← username → phone
                 'password' => $rawPassword,
             ],
         ], 201);
     }
 
-    private function generateUniqueUsername(string $base): string
+    private function generateUniquePhone(string $base): string
     {
-        $username = $base;
-        $counter  = 1;
+        $phone = $base;
+        $counter = 1;
 
-        // Jika username sudah ada, tambah angka di belakang
-        while (User::where('username', $username)->exists()) {
-            $username = $base . $counter;
+        while (User::where('phone', $phone)->exists()) {
+            $phone = $base . $counter;
             $counter++;
         }
 
-        return $username;
+        return $phone;
     }
 
     public function show(User $marketing)
@@ -95,7 +95,7 @@ class MarketingController extends Controller
 
     public function update(MarketingRequest $request, User $marketing)
     {
-        $data = $request->only(['name', 'username', 'email', 'address', 'phone']);
+        $data = $request->only(['name', 'phone', 'email', 'address']); // ← username → phone
 
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);

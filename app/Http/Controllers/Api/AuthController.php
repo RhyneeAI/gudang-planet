@@ -21,7 +21,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'phone' => 'required|string|number', 
+            'phone' => 'required|string', // ← ganti 'number' ke 'string'
             'password' => 'required|string',
         ]);
 
@@ -29,7 +29,14 @@ class AuthController extends Controller
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'username' => ['Kredensial tidak valid.'],
+                'phone' => ['Kredensial tidak valid.'], // ← ganti 'username' ke 'phone'
+            ]);
+        }
+
+        // Cek user aktif
+        if (!$user->is_active) {
+            throw ValidationException::withMessages([
+                'phone' => ['Akun tidak aktif. Hubungi administrator.'],
             ]);
         }
 
@@ -75,10 +82,7 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // Hapus semua token kecuali yang sedang dipakai
-        // agar device lain logout otomatis
         $currentToken = $user->currentAccessToken();
-        // Hanya hapus token jika bukan TransientToken (dari actingAs)
         if ($currentToken && isset($currentToken->id)) {
             $user->tokens()->where('id', '!=', $currentToken->id)->delete();
         }
@@ -90,17 +94,15 @@ class AuthController extends Controller
     }
 
     // =============================
-    // Forgot Password — Step 1: Verify Username
+    // Forgot Password — Step 1: Verify Phone
     // =============================
 
     public function forgotPasswordVerify(ForgotPasswordVerifyRequest $request)
     {
-        $user = User::where('username', $request->username)->firstOrFail();
+        $user = User::where('phone', $request->phone)->firstOrFail(); // ← ganti username ke phone
 
-        // Hapus token reset lama jika ada
         $user->tokens()->where('name', 'password-reset')->delete();
 
-        // Buat token Sanctum dengan ability terbatas, expire 15 menit
         $token = $user->createToken(
             'password-reset',
             ['password:reset'],
@@ -126,8 +128,6 @@ class AuthController extends Controller
         $user = $request->user();
         $currentToken = $user->currentAccessToken();
 
-        // Pastikan token punya ability password:reset
-        // Cek bahwa token memiliki ability dengan tepat
         $abilities = $currentToken->abilities ?? [];
         if (!in_array('password:reset', $abilities)) {
             return response()->json([
@@ -141,7 +141,6 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // Hapus semua token (reset + login lama)
         $user->tokens()->delete();
 
         return response()->json([
