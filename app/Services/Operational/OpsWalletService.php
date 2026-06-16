@@ -3,6 +3,7 @@
 namespace App\Services\Operational;
 
 use App\Enums\OpsWalletTransactionType;
+use App\Models\SubCompany;
 use App\Models\OpsWallet;
 use App\Models\OpsWalletTransaction;
 use App\Models\User;
@@ -10,11 +11,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class OpsWalletService
 {
-    public function getOrCreateWallet(User $mandor): OpsWallet
+    public function getOrCreateWallet(User $mandor, SubCompany $subCompany): OpsWallet
     {
+        if ($subCompany->mandor_id !== $mandor->id) {
+            throw new \InvalidArgumentException('Sub company does not belong to mandor.');
+        }
+
         return OpsWallet::firstOrCreate(
-            ['mandor_id' => $mandor->id],
+            ['sub_company_id' => $subCompany->id],
             [
+                'mandor_id' => $mandor->id,
                 'company_id' => $mandor->company_id,
                 'balance' => 0,
             ]
@@ -113,6 +119,42 @@ class OpsWalletService
             $reference,
             $actor,
             __('operational.wallet.adjustment_credit')
+        );
+    }
+
+    public function adjustIncomeBalance(
+        OpsWallet $wallet,
+        float $oldAmount,
+        float $newAmount,
+        Model $reference,
+        User $actor
+    ): void {
+        $difference = round($newAmount - $oldAmount, 2);
+
+        if ($difference === 0.0) {
+            return;
+        }
+
+        if ($difference > 0) {
+            $this->credit(
+                $wallet,
+                $difference,
+                OpsWalletTransactionType::CASH,
+                $reference,
+                $actor,
+                __('operational.wallet.adjustment_credit')
+            );
+
+            return;
+        }
+
+        $this->debit(
+            $wallet,
+            abs($difference),
+            OpsWalletTransactionType::CASH,
+            $reference,
+            $actor,
+            __('operational.wallet.adjustment_debit')
         );
     }
 }

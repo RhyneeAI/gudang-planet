@@ -14,6 +14,7 @@ class OpsWallet extends Model
     protected $fillable = [
         'uuid',
         'mandor_id',
+        'sub_company_id',
         'balance',
         'company_id',
     ];
@@ -35,6 +36,11 @@ class OpsWallet extends Model
     public function mandor()
     {
         return $this->belongsTo(User::class, 'mandor_id');
+    }
+
+    public function subCompany()
+    {
+        return $this->belongsTo(SubCompany::class, 'sub_company_id');
     }
 
     public function transactions()

@@ -4,9 +4,8 @@ namespace App\Http\Requests\Operational;
 
 use App\Models\SubCompany;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Log;
 
-class OpsExpenseStoreRequest extends FormRequest
+class OpsMandorIncomeStoreRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -43,6 +42,7 @@ class OpsExpenseStoreRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'sub_company_uuid.required' => __('operational.validation.sub_company_uuid_required'),
             'name.required' => __('operational.validation.name_required'),
             'name.string' => __('operational.validation.name_string'),
             'name.max' => __('operational.validation.name_max'),
@@ -50,13 +50,12 @@ class OpsExpenseStoreRequest extends FormRequest
             'amount.numeric' => __('operational.validation.amount_numeric'),
             'amount.min' => __('operational.validation.amount_min'),
             'date.required' => __('operational.validation.date_required'),
-            'date.invalid' => __('operational.validation.date_invalid'),
+            'date.date' => __('operational.validation.date_invalid'),
             'proof_file.required' => __('operational.validation.proof_file_required'),
             'proof_file.file' => __('operational.validation.proof_file_file'),
             'proof_file.mimes' => __('operational.validation.proof_file_invalid'),
             'proof_file.max' => __('operational.validation.proof_file_max'),
             'note.string' => __('operational.validation.note_invalid'),
-            'note.max' => __('operational.validation.note_max'),
         ];
     }
 }

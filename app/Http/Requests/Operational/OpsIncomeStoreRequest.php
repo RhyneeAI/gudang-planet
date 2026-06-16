@@ -32,6 +32,35 @@ class OpsIncomeStoreRequest extends FormRequest
                     }
                 },
             ],
+            'sub_company_uuid' => [
+                'required',
+                'string',
+                'uuid',
+                function ($attribute, $value, $fail) {
+                    if (!$this->filled('mandor_uuid')) {
+                        return;
+                    }
+
+                    $mandorId = User::where('uuid', $this->mandor_uuid)
+                        ->where('company_id', $this->user()->company_id)
+                        ->where('role', Role::MANDOR)
+                        ->value('id');
+
+                    if (!$mandorId) {
+                        return;
+                    }
+
+                    $exists = \App\Models\SubCompany::where('uuid', $value)
+                        ->where('company_id', $this->user()->company_id)
+                        ->where('mandor_id', $mandorId)
+                        ->where('is_active', true)
+                        ->exists();
+
+                    if (!$exists) {
+                        $fail(__('operational.validation.sub_company_uuid_not_found'));
+                    }
+                },
+            ],
             'name' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'date' => ['required', 'date'],

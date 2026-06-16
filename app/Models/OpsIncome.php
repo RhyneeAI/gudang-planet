@@ -22,6 +22,7 @@ class OpsIncome extends Model
         'note',
         'source_type',
         'mandor_id',
+        'sub_company_id',
         'created_by',
         'company_id',
     ];
@@ -50,6 +51,11 @@ class OpsIncome extends Model
     public function mandor()
     {
         return $this->belongsTo(User::class, 'mandor_id');
+    }
+
+    public function subCompany()
+    {
+        return $this->belongsTo(SubCompany::class, 'sub_company_id');
     }
 
     public function transferConfirmation()

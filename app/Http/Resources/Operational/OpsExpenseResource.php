@@ -24,6 +24,11 @@ class OpsExpenseResource extends JsonResource
                 'uuid' => $this->mandor->uuid,
                 'name' => $this->mandor->name,
             ]),
+            'sub_company' => $this->whenLoaded('subCompany', fn () => [
+                'uuid' => $this->subCompany->uuid,
+                'name' => $this->subCompany->name,
+                'code' => $this->subCompany->code,
+            ]),
             'created_by' => $this->whenLoaded('createdBy', fn() => [
                 'uuid' => $this->createdBy->uuid,
                 'name' => $this->createdBy->name,

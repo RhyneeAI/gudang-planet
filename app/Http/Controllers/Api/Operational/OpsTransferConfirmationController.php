@@ -14,7 +14,6 @@ use App\Services\Operational\OpsFileService;
 use App\Services\Operational\OpsWalletService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class OpsTransferConfirmationController extends Controller
 {
@@ -27,7 +26,7 @@ class OpsTransferConfirmationController extends Controller
     {
         $user = $request->user();
 
-        $confirmations = OpsTransferConfirmation::with(['confirmable', 'confirmedBy'])
+        $confirmations = OpsTransferConfirmation::with(['confirmable.subCompany', 'confirmable.mandor', 'confirmedBy'])
             ->when($user->role === Role::MANDOR, function ($query) use ($user) {
                 $query->whereHasMorph(
                     'confirmable',
@@ -36,6 +35,13 @@ class OpsTransferConfirmationController extends Controller
                 );
             })
             ->when($request->status, fn($q, $status) => $q->where('status', $status))
+            ->when($request->sub_company_uuid, function ($query, $uuid) {
+                $query->whereHasMorph(
+                    'confirmable',
+                    [OpsIncome::class],
+                    fn($q) => $q->whereHas('subCompany', fn($sub) => $sub->where('uuid', $uuid))
+                );
+            })
             ->orderByDesc('created_at')
             ->paginate($request->input('per_page', 15));
 
@@ -54,7 +60,7 @@ class OpsTransferConfirmationController extends Controller
             'success' => true,
             'message' => __('operational.confirmations.detail'),
             'data' => new OpsTransferConfirmationResource(
-                $opsTransferConfirmation->load(['confirmable.mandor', 'confirmable.createdBy', 'confirmedBy'])
+                $opsTransferConfirmation->load(['confirmable.mandor', 'confirmable.subCompany', 'confirmable.createdBy', 'confirmedBy'])
             ),
         ]);
     }
@@ -92,6 +98,16 @@ class OpsTransferConfirmationController extends Controller
             ], 422);
         }
 
+        $income->loadMissing('subCompany');
+
+        if (!$income->subCompany) {
+            return response()->json([
+                'success' => false,
+                'message' => __('operational.validation.sub_company_uuid_not_found'),
+                'code' => 422,
+            ], 422);
+        }
+
         DB::beginTransaction();
 
         try {
@@ -103,7 +119,7 @@ class OpsTransferConfirmationController extends Controller
                 'confirmed_by' => $user->id,
             ]);
 
-            $wallet = $this->walletService->getOrCreateWallet($user);
+            $wallet = $this->walletService->getOrCreateWallet($user, $income->subCompany);
 
             $this->walletService->credit(
                 $wallet,
@@ -120,7 +136,7 @@ class OpsTransferConfirmationController extends Controller
                 'success' => true,
                 'message' => __('operational.confirmations.confirmed'),
                 'data' => new OpsTransferConfirmationResource(
-                    $opsTransferConfirmation->fresh()->load(['confirmable', 'confirmedBy'])
+                    $opsTransferConfirmation->fresh()->load(['confirmable.subCompany', 'confirmable.mandor', 'confirmedBy'])
                 ),
             ]);
         } catch (\Throwable $e) {
@@ -153,7 +169,7 @@ class OpsTransferConfirmationController extends Controller
             'success' => true,
             'message' => __('operational.confirmations.rejected'),
             'data' => new OpsTransferConfirmationResource(
-                $opsTransferConfirmation->fresh()->load(['confirmable', 'confirmedBy'])
+                $opsTransferConfirmation->fresh()->load(['confirmable.subCompany', 'confirmable.mandor', 'confirmedBy'])
             ),
         ]);
     }
