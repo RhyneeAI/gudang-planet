@@ -20,7 +20,7 @@ class OpsNotificationController extends Controller
     {
         $notifications = OpsNotification::with(['notifiable' => function ($morphTo) {
             $morphTo->morphWith([
-                OpsTransferConfirmation::class => ['confirmable'],
+                OpsTransferConfirmation::class => ['confirmable.subCompany', 'confirmable.mandor'],
                 OpsExpense::class => [],
             ]);
         }])

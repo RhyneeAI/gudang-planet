@@ -42,6 +42,8 @@ return [
         'rejected' => 'Konfirmasi transfer ditolak.',
         'amount_mismatch' => 'Nominal tidak sesuai. Silakan hubungi admin.',
         'already_processed' => 'Konfirmasi transfer sudah diproses sebelumnya.',
+        'not_accessible' => 'Transfer ini bukan untuk akun mandor Anda atau cabang yang Anda kelola.',
+        'income_not_found' => 'Data pemasukan terkait tidak ditemukan. Hubungi admin.',
     ],
     'wallet' => [
         'detail' => 'Saldo virtual berhasil diambil.',
