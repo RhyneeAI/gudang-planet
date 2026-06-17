@@ -98,13 +98,7 @@ class OpsTransferConfirmationController extends Controller
             ], 422);
         }
 
-        if (round((float) $request->confirmed_amount, 2) !== round((float) $income->amount, 2)) {
-            return response()->json([
-                'success' => false,
-                'message' => __('operational.confirmations.amount_mismatch'),
-                'code' => 422,
-            ], 422);
-        }
+        $confirmedAmount = round((float) $request->confirmed_amount, 2);
 
         $income->loadMissing('subCompany');
 
@@ -121,17 +115,20 @@ class OpsTransferConfirmationController extends Controller
         try {
             $opsTransferConfirmation->update([
                 'status' => OpsTransferConfirmationStatus::CONFIRMED,
+                'confirmed_amount' => $confirmedAmount,
                 'mandor_proof_file' => $this->fileService->storeProof($request->file('mandor_proof_file')),
                 'confirmed_at' => now(),
                 'note' => $request->note,
                 'confirmed_by' => $user->id,
             ]);
 
+            $income->update(['amount' => $confirmedAmount]);
+
             $wallet = $this->walletService->getOrCreateWallet($user, $income->subCompany);
 
             $this->walletService->credit(
                 $wallet,
-                (float) $income->amount,
+                $confirmedAmount,
                 OpsWalletTransactionType::TRANSFER,
                 $income,
                 $user,
