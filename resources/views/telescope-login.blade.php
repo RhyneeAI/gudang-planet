@@ -122,14 +122,14 @@
         <form method="POST" action="{{ route('telescope.login.post') }}">
             @csrf
             <div class="form-group">
-                <label for="username">Username</label>
+                <label for="phone">Nomor Telepon</label>
                 <input
                     type="text"
-                    id="username"
-                    name="username"
-                    value="{{ old('username') }}"
-                    placeholder="Masukkan username"
-                    autocomplete="username"
+                    id="phone"
+                    name="phone"
+                    value="{{ old('phone') }}"
+                    placeholder="Masukkan nomor telepon"
+                    autocomplete="tel"
                     autofocus
                 >
             </div>
