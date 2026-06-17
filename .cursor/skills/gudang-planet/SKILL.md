@@ -249,7 +249,7 @@ Modul operasional mengelola keuangan cabang dengan sistem dompet digital mandor.
 
 | Model                   | Tabel                      | Fungsi                                     |
 | ----------------------- | -------------------------- | ------------------------------------------ |
-| SubCompany            | ops_sub_companies          | Cabang operasional (FK mandor_id)          |
+| SubCompany            | sub_companies              | Cabang operasional (FK mandor_id)          |
 | OpsIncome               | ops_incomes                | Pemasukan pusat (admin) / cabang (mandor) / pending transfer (admin→mandor) |
 | OpsExpense              | ops_expenses               | Pengeluaran pusat (admin INTERNAL) / transfer mandor (admin MANDOR) / cabang (mandor) |
 | OpsWallet               | ops_wallets                | Dompet digital mandor                      |
@@ -319,7 +319,7 @@ Field wajib saat `MANDOR`: `mandor_uuid`, `sub_company_uuid`. Link expense→inc
 
 ### Sub-Company (sudah diimplementasi)
 
-Model `SubCompany` (`ops_sub_companies`) sudah ada dan dipakai modul operasional:
+Model `SubCompany` (`sub_companies`) sudah ada dan dipakai modul operasional:
 
 - `Company` = kantor pusat (milik OWNER).
 - **`SubCompany`** = cabang (tabel terpisah, FK `company_id` + `mandor_id`).
@@ -327,20 +327,36 @@ Model `SubCompany` (`ops_sub_companies`) sudah ada dan dipakai modul operasional
 - **Limit cabang per mandor:** `ops_configurations` key `max_sub_companies_per_mandor` (fallback `config/operational.php`, default **10**).
 - Validasi saat create/assign cabang: cek jumlah sub-company mandor ≤ limit.
 
-**Alur create mandor (wajib pilih cabang):**
+**Alur create cabang + mandor (satu endpoint):**
 
-- **Opsi A** — assign cabang existing: `{ "sub_company_uuid": "..." }` (hanya jika cabang belum punya mandor aktif).
-- **Opsi B** — buat cabang baru: `{ "sub_company_name": "...", "sub_company_code": "..." }` (code opsional, auto-generate jika kosong).
-- XOR: wajib salah satu, tidak keduanya.
-- Tidak ada endpoint POST manual `/sub-companies` — cabang dibuat lewat create mandor atau seeder.
+`POST /api/v1/sub-companies`
+
+```json
+{
+  "mandor": {
+    "name": "...",
+    "phone": "...",
+    "email": "...",
+    "address": "..."
+  },
+  "sub_company": {
+    "name": "...",
+    "address": "..."
+  }
+}
+```
+
+- `sub_company.code` auto-generate (`{company_code}-{seq}`).
+- Response: `data.sub_company`, `data.mandor`, `data.credentials` (phone, username, password).
+- Role: SUPERADMIN, OWNER, ADMIN.
 
 **Endpoint cabang:**
 
 | Route | Role | Keterangan |
 | ----- | ---- | ---------- |
-| `GET /api/v1/sub-companies` | ADMIN, OWNER, SUPERADMIN, MANDOR | List cabang (legacy, tetap aktif) |
-| `GET /api/v1/operational/sub-companies` | Semua role operasional | List cabang (+ mandor lihat milik sendiri) |
-| `GET /api/v1/operational/sub-companies/{uuid}` | Semua role operasional | Detail cabang; not found → `data: []` |
+| `POST /api/v1/sub-companies` | ADMIN, OWNER, SUPERADMIN | Buat cabang + mandor |
+| `GET /api/v1/sub-companies` | ADMIN, OWNER, SUPERADMIN, MANDOR | List cabang (+ mandor lihat milik sendiri) |
+| `GET /api/v1/sub-companies/{uuid}` | ADMIN, OWNER, SUPERADMIN, MANDOR | Detail cabang; not found → `data: []` |
 
 **Wallet mandor (`GET /operational/wallet`):**
 

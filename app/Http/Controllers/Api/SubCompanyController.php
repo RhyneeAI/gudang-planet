@@ -5,13 +5,22 @@ namespace App\Http\Controllers\Api;
 use App\Enums\Role;
 use App\Http\Controllers\Api\Operational\ReturnsEmptyShowResponse;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Operational\SubCompanyStoreRequest;
+use App\Http\Resources\Operational\OpsMandorResource;
 use App\Http\Resources\SubCompanyResource;
 use App\Models\SubCompany;
+use App\Models\User;
+use App\Services\SubCompanyService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SubCompanyController extends Controller
 {
     use ReturnsEmptyShowResponse;
+
+    public function __construct(
+        protected SubCompanyService $subCompanyService,
+    ) {}
 
     public function index(Request $request)
     {
@@ -42,6 +51,42 @@ class SubCompanyController extends Controller
             'message' => __('operational.sub_companies.list'),
             'data' => SubCompanyResource::collection($subCompanies),
         ]);
+    }
+
+    public function store(SubCompanyStoreRequest $request)
+    {
+        DB::beginTransaction();
+
+        try {
+            $result = $this->subCompanyService->createMandorWithSubCompany(
+                $request->user(),
+                $request->input('mandor'),
+                $request->input('sub_company'),
+            );
+
+            DB::commit();
+
+            $mandor = $result['mandor']->load(['subCompanies.wallet']);
+            $subCompany = $result['subCompany']->load(['mandor', 'wallet']);
+
+            return response()->json([
+                'success' => true,
+                'message' => __('operational.sub_companies.stored'),
+                'data' => [
+                    'sub_company' => new SubCompanyResource($subCompany),
+                    'mandor' => new OpsMandorResource($mandor),
+                    'credentials' => [
+                        'phone' => $mandor->phone,
+                        'username' => strtolower(preg_replace('/\s+/', '', $mandor->name)),
+                        'password' => $result['rawPassword'],
+                    ],
+                ],
+            ], 201);
+        } catch (\Throwable $e) {
+            User::$skipSubCompanyAutoCreate = false;
+            DB::rollBack();
+            throw $e;
+        }
     }
 
     public function show(Request $request, string $uuid)

@@ -155,9 +155,9 @@
             "method": "GET",
             "header": [{ "key": "Accept", "value": "application/json" }],
             "url": {
-              "raw": "{{base_url}}/api/v1/operational/sub-companies",
+              "raw": "{{base_url}}/api/v1/sub-companies",
               "host": ["{{base_url}}"],
-              "path": ["api", "v1", "operational", "sub-companies"],
+              "path": ["api", "v1", "sub-companies"],
               "query": [
                 { "key": "mandor_uuid", "value": "", "disabled": true },
                 { "key": "is_active", "value": "true", "disabled": true },
@@ -174,11 +174,31 @@
             "method": "GET",
             "header": [{ "key": "Accept", "value": "application/json" }],
             "url": {
-              "raw": "{{base_url}}/api/v1/operational/sub-companies/{{sub_company_uuid}}",
+              "raw": "{{base_url}}/api/v1/sub-companies/{{sub_company_uuid}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "v1", "operational", "sub-companies", "{{sub_company_uuid}}"]
+              "path": ["api", "v1", "sub-companies", "{{sub_company_uuid}}"]
             },
             "description": "Detail cabang. Jika UUID tidak ditemukan → `data: []`."
+          }
+        },
+        {
+          "name": "Create Sub Company + Mandor",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mandor\": {\n    \"name\": \"Mandor Baru\",\n    \"phone\": \"081234567890\",\n    \"email\": \"mandor@test.com\",\n    \"address\": \"Jl. Mandor No. 1\"\n  },\n  \"sub_company\": {\n    \"name\": \"Cabang Jakarta\",\n    \"address\": \"Jl. Cabang Jakarta No. 2\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sub-companies",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "sub-companies"]
+            },
+            "description": "Buat cabang operasional sekaligus mandor baru. Kode cabang auto-generate. Return credentials mandor.\n\nRole: SUPERADMIN, OWNER, ADMIN."
           }
         }
       ]
@@ -626,26 +646,6 @@
               ]
             },
             "description": "List mandor. Semua role operasional."
-          }
-        },
-        {
-          "name": "Create Mandor",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Mandor Baru\",\n  \"phone\": \"081234567890\",\n  \"email\": \"mandor@test.com\",\n  \"address\": \"Jl. Cabang No. 1\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/v1/operational/mandors",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "operational", "mandors"]
-            },
-            "description": "Buat mandor + auto sub company + wallet. Return credentials.\n\nRole: SUPERADMIN, OWNER, ADMIN."
           }
         }
       ]

@@ -8,7 +8,6 @@ use App\Http\Controllers\Api\Operational\OpsMandorController;
 use App\Http\Controllers\Api\Operational\OpsNotificationController;
 use App\Http\Controllers\Api\Operational\OpsTransferConfirmationController;
 use App\Http\Controllers\Api\Operational\OpsWalletController;
-use App\Http\Controllers\Api\SubCompanyController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/operational')->middleware(['auth:sanctum'])->group(function () {
@@ -36,9 +35,6 @@ Route::prefix('v1/operational')->middleware(['auth:sanctum'])->group(function ()
         Route::get('transfer-confirmations', [OpsTransferConfirmationController::class, 'index']);
         Route::get('transfer-confirmations/{uuid}', [OpsTransferConfirmationController::class, 'show']);
 
-        Route::get('sub-companies', [SubCompanyController::class, 'index']);
-        Route::get('sub-companies/{uuid}', [SubCompanyController::class, 'show']);
-
         Route::get('mandors', [OpsMandorController::class, 'index']);
     });
 
@@ -46,8 +42,6 @@ Route::prefix('v1/operational')->middleware(['auth:sanctum'])->group(function ()
     // Admin & owner: SUPERADMIN, OWNER, ADMIN
     // ─────────────────────────────────────────────
     Route::middleware(['role:SUPERADMIN,OWNER,ADMIN'])->group(function () {
-
-        Route::post('mandors', [OpsMandorController::class, 'store']);
 
         Route::get('edit-logs', [OpsEditLogController::class, 'index']);
     });

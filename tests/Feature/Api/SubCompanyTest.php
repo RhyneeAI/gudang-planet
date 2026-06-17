@@ -17,22 +17,29 @@ beforeEach(function () {
     ]);
 });
 
-it('creates mandor with new branch via sub company name', function () {
+it('creates sub company with mandor via nested payload', function () {
     $response = $this->actingAs($this->admin)
-        ->postJson('/api/v1/operational/mandors', [
-            'name' => 'Mandor Baru',
-            'phone' => '081234567890',
-            'email' => 'mandor@test.com',
-            'sub_company_name' => 'Cabang Jakarta',
-            'sub_company_code' => 'JKT-01',
+        ->postJson('/api/v1/sub-companies', [
+            'mandor' => [
+                'name' => 'Mandor Baru',
+                'phone' => '081234567890',
+                'email' => 'mandor@test.com',
+                'address' => 'Jl. Mandor No. 1',
+            ],
+            'sub_company' => [
+                'name' => 'Cabang Jakarta',
+                'address' => 'Jl. Cabang Jakarta No. 2',
+            ],
         ]);
 
     $response->assertCreated()
         ->assertJsonPath('success', true)
-        ->assertJsonPath('sub_company.name', 'Cabang Jakarta')
-        ->assertJsonPath('sub_company.code', 'JKT-01')
-        ->assertJsonPath('data.has_sub_company', true)
-        ->assertJsonPath('data.sub_company.name', 'Cabang Jakarta');
+        ->assertJsonPath('data.sub_company.name', 'Cabang Jakarta')
+        ->assertJsonPath('data.sub_company.address', 'Jl. Cabang Jakarta No. 2')
+        ->assertJsonPath('data.sub_company.code', 'MJ001-01')
+        ->assertJsonPath('data.mandor.name', 'Mandor Baru')
+        ->assertJsonPath('data.mandor.has_sub_company', true)
+        ->assertJsonPath('data.credentials.phone', '081234567890');
 
     $mandor = User::where('phone', '081234567890')->first();
 
@@ -41,44 +48,31 @@ it('creates mandor with new branch via sub company name', function () {
     expect(OpsWallet::whereHas('subCompany', fn ($q) => $q->where('mandor_id', $mandor->id))->exists())->toBeTrue();
 });
 
-it('requires branch fields when creating mandor via api', function () {
-    $this->actingAs($this->admin)
-        ->postJson('/api/v1/operational/mandors', [
-            'name' => 'Mandor Baru',
-            'phone' => '081234567891',
-        ])
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors(['sub_company_uuid', 'sub_company_name']);
-});
-
-it('rejects both branch options when creating mandor', function () {
-    $existing = SubCompany::factory()->create([
-        'company_id' => $this->company->id,
-        'mandor_id' => User::factory()->mandor()->create(['company_id' => $this->company->id])->id,
-    ]);
-
-    $this->actingAs($this->admin)
-        ->postJson('/api/v1/operational/mandors', [
-            'name' => 'Mandor Baru',
-            'phone' => '081234567892',
-            'sub_company_uuid' => $existing->uuid,
-            'sub_company_name' => 'Cabang Baru',
-        ])
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors(['sub_company_uuid', 'sub_company_name']);
-});
-
-it('does not allow manual sub company creation', function () {
-    User::factory()->mandor()->create([
-        'company_id' => $this->company->id,
-    ]);
-
+it('requires mandor and sub company payload when creating branch', function () {
     $this->actingAs($this->admin)
         ->postJson('/api/v1/sub-companies', [
-            'name' => 'Cabang Manual',
-            'code' => 'MAN-01',
+            'mandor' => [
+                'name' => 'Mandor Baru',
+                'phone' => '081234567891',
+            ],
         ])
-        ->assertStatus(405);
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['sub_company', 'sub_company.name']);
+});
+
+it('creates sub company from general api route', function () {
+    $this->actingAs($this->admin)
+        ->postJson('/api/v1/sub-companies', [
+            'mandor' => [
+                'name' => 'Mandor API',
+                'phone' => '081234567892',
+            ],
+            'sub_company' => [
+                'name' => 'Cabang Bandung',
+            ],
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.sub_company.name', 'Cabang Bandung');
 });
 
 it('lists only own sub companies for mandor', function () {
@@ -106,7 +100,7 @@ it('lists operational sub companies for admin', function () {
     ]);
 
     $response = $this->actingAs($this->admin)
-        ->getJson('/api/v1/operational/sub-companies');
+        ->getJson('/api/v1/sub-companies');
 
     $response->assertOk()
         ->assertJsonPath('success', true);
