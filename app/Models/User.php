@@ -91,7 +91,7 @@ class User extends Authenticatable
         return $this->hasMany(SubCompany::class, 'mandor_id');
     }
 
-    /** Cabang utama mandor (aktif, urut nama) — FK mandor_id ada di ops_sub_companies. */
+    /** Cabang utama mandor (aktif, urut nama) — FK mandor_id ada di sub_companies. */
     public function primarySubCompany()
     {
         return $this->hasOne(SubCompany::class, 'mandor_id')

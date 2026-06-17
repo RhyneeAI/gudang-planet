@@ -79,7 +79,7 @@ return [
     'sub_companies' => [
         'list' => 'Operational branches retrieved successfully.',
         'detail' => 'Operational branch detail retrieved successfully.',
-        'stored' => 'Operational branch created successfully.',
+        'stored' => 'Operational branch and mandor created successfully.',
         'updated' => 'Operational branch updated successfully.',
         'limit_reached' => 'Mandor has reached the maximum of :limit branches.',
     ],
@@ -97,6 +97,9 @@ return [
         'sub_company_branch_xor' => 'Provide either sub_company_uuid or sub_company_name, not both.',
         'sub_company_already_assigned' => 'This branch is already linked to another active mandor.',
         'sub_company_name_max' => 'Branch name must not exceed 255 characters.',
+        'mandor_payload_required' => 'Mandor data is required.',
+        'sub_company_payload_required' => 'Branch data is required.',
+        'sub_company_name_required' => 'Branch name is required.',
         'sub_company_code_max' => 'Branch code must not exceed 50 characters.',
         'sub_company_code_required' => 'Branch code is required.',
         'sub_company_code_unique' => 'Branch code is already in use.',

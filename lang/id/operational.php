@@ -79,7 +79,7 @@ return [
     'sub_companies' => [
         'list' => 'Daftar cabang operasional berhasil diambil.',
         'detail' => 'Detail cabang operasional berhasil diambil.',
-        'stored' => 'Cabang operasional berhasil dibuat.',
+        'stored' => 'Cabang operasional dan mandor berhasil dibuat.',
         'updated' => 'Cabang operasional berhasil diperbarui.',
         'limit_reached' => 'Mandor sudah mencapai batas maksimal :limit cabang.',
     ],
@@ -97,6 +97,9 @@ return [
         'sub_company_branch_xor' => 'Isi sub_company_uuid atau sub_company_name, tidak keduanya.',
         'sub_company_already_assigned' => 'Cabang sudah terhubung ke mandor aktif lain.',
         'sub_company_name_max' => 'Nama cabang tidak boleh lebih dari 255 karakter.',
+        'mandor_payload_required' => 'Data mandor wajib diisi.',
+        'sub_company_payload_required' => 'Data cabang wajib diisi.',
+        'sub_company_name_required' => 'Nama cabang wajib diisi.',
         'sub_company_code_max' => 'Kode cabang tidak boleh lebih dari 50 karakter.',
         'sub_company_code_required' => 'Kode cabang wajib diisi.',
         'sub_company_code_unique' => 'Kode cabang sudah digunakan.',

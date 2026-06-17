@@ -12,7 +12,7 @@ return new class extends Migration
             $table->foreignId('sub_company_id')
                 ->nullable()
                 ->after('mandor_id')
-                ->constrained('ops_sub_companies')
+                ->constrained('sub_companies')
                 ->nullOnDelete();
         });
 
@@ -20,7 +20,7 @@ return new class extends Migration
             $table->foreignId('sub_company_id')
                 ->nullable()
                 ->after('mandor_id')
-                ->constrained('ops_sub_companies')
+                ->constrained('sub_companies')
                 ->nullOnDelete();
         });
 
@@ -32,7 +32,7 @@ return new class extends Migration
             $table->foreignId('sub_company_id')
                 ->nullable()
                 ->after('mandor_id')
-                ->constrained('ops_sub_companies')
+                ->constrained('sub_companies')
                 ->cascadeOnDelete();
 
             $table->unique('sub_company_id');

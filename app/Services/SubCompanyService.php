@@ -9,6 +9,7 @@ use App\Models\SubCompany;
 use App\Models\User;
 use App\Services\Operational\OpsWalletService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class SubCompanyService
@@ -140,6 +141,41 @@ class SubCompanyService
         ]);
     }
 
+    public function createMandorWithSubCompany(User $createdBy, array $mandorData, array $subCompanyData): array
+    {
+        $randomDigits = str_pad((string) random_int(0, 999), 3, '0', STR_PAD_LEFT);
+        $rawPassword = strtolower(str_replace(' ', '', $mandorData['name'])) . $randomDigits;
+
+        User::$skipSubCompanyAutoCreate = true;
+
+        $mandor = User::create([
+            'name' => $mandorData['name'],
+            'phone' => $mandorData['phone'],
+            'email' => $mandorData['email'] ?? null,
+            'password' => Hash::make($rawPassword),
+            'address' => $mandorData['address'] ?? null,
+            'role' => Role::MANDOR,
+            'is_active' => true,
+            'company_id' => $createdBy->company_id,
+        ]);
+
+        User::$skipSubCompanyAutoCreate = false;
+
+        $subCompany = $this->createNamedForMandor(
+            $mandor,
+            $subCompanyData['name'],
+            null,
+            $createdBy,
+            $subCompanyData['address'] ?? $mandorData['address'] ?? null,
+        );
+
+        return [
+            'mandor' => $mandor,
+            'subCompany' => $subCompany,
+            'rawPassword' => $rawPassword,
+        ];
+    }
+
     public function provisionForNewMandor(
         User $mandor,
         ?string $subCompanyUuid,
@@ -214,6 +250,7 @@ class SubCompanyService
         string $name,
         ?string $code,
         ?User $createdBy = null,
+        ?string $address = null,
     ): SubCompany {
         $limit = $this->maxSubCompaniesPerMandor($mandor->company_id);
         if ($this->countForMandor($mandor->id) >= $limit) {
@@ -238,7 +275,7 @@ class SubCompanyService
         $subCompany = SubCompany::create([
             'name' => $name,
             'code' => $resolvedCode,
-            'address' => $mandor->address,
+            'address' => $address ?? $mandor->address,
             'is_active' => true,
             'mandor_id' => $mandor->id,
             'company_id' => $company->id,
