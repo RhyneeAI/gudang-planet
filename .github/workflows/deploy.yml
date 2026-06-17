@@ -85,18 +85,7 @@ jobs:
       - name: Prepare SSH key
         env:
           SSH_KEY: ${{ secrets.SSH_KEY }}
-        run: |
-          set -e
-          install -m 700 -d ~/.ssh
-          printf '%s' "$SSH_KEY" > ~/.ssh/deploy_key
-          sed -i 's/\r$//' ~/.ssh/deploy_key
-          if grep -q '\\n' ~/.ssh/deploy_key; then
-            sed -i 's/\\n/\n/g' ~/.ssh/deploy_key
-          fi
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null
-          echo "Deploy key fingerprint:"
-          ssh-keygen -lf ~/.ssh/deploy_key
+        run: bash .github/scripts/prepare-ssh-key.sh
 
       - name: Verify SSH connection
         env:
