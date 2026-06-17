@@ -19,12 +19,12 @@ class OpsNotificationResource extends JsonResource
             'action' => [
                 'notifiable_type' => $this->notifiable_type,
                 'notifiable_id' => $this->notifiable_id,
+                'target_uuid' => $this->action_target_uuid ?? null,
                 'transfer_confirmation' => $this->notifiable_type === 'ops_transfer_confirmations'
                     && $this->relationLoaded('notifiable')
                     && $this->notifiable
                     ? OpsTransferConfirmationResource::make($this->notifiable)
                     : null,
-
                 'expense' => $this->notifiable_type === 'ops_expenses'
                     && $this->relationLoaded('notifiable')
                     && $this->notifiable

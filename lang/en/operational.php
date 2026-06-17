@@ -56,6 +56,7 @@ return [
         'list' => 'Notifications retrieved successfully.',
         'read' => 'Notification marked as read.',
         'read_all' => 'All notifications marked as read.',
+        'not_found' => 'Notification not found.',
         'income_pending' => [
             'title' => 'New Incoming Funds',
             'message' => 'There is new incoming funds. Please confirm receipt.',
