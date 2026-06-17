@@ -56,6 +56,7 @@ return [
         'list' => 'Daftar notifikasi berhasil diambil.',
         'read' => 'Notifikasi ditandai sudah dibaca.',
         'read_all' => 'Semua notifikasi ditandai sudah dibaca.',
+        'not_found' => 'Notifikasi tidak ditemukan.',
         'income_pending' => [
             'title' => 'Dana Masuk Baru',
             'message' => 'Ada dana masuk baru. Silakan konfirmasi penerimaan.',

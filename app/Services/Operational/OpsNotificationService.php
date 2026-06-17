@@ -9,7 +9,8 @@ use App\Models\OpsIncome;
 use App\Models\OpsNotification;
 use App\Models\OpsTransferConfirmation;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class OpsNotificationService
 {
@@ -98,5 +99,76 @@ class OpsNotificationService
                 'is_read' => true,
                 'read_at' => now(),
             ]);
+    }
+
+    public function resolveForUser(User $user, string $uuid): ?OpsNotification
+    {
+        $notification = OpsNotification::query()
+            ->where('user_id', $user->id)
+            ->where('uuid', $uuid)
+            ->first();
+
+        if ($notification) {
+            return $notification;
+        }
+
+        $transferConfirmationId = OpsTransferConfirmation::query()
+            ->where('uuid', $uuid)
+            ->value('id');
+
+        if (!$transferConfirmationId) {
+            return null;
+        }
+
+        return OpsNotification::query()
+            ->where('user_id', $user->id)
+            ->where('notifiable_type', 'ops_transfer_confirmations')
+            ->where('notifiable_id', $transferConfirmationId)
+            ->first();
+    }
+
+    public function enrichListActionTargets(LengthAwarePaginator|Collection $notifications): void
+    {
+        $items = $notifications instanceof LengthAwarePaginator
+            ? $notifications->getCollection()
+            : $notifications;
+
+        $transferConfirmationIds = $items
+            ->where('notifiable_type', 'ops_transfer_confirmations')
+            ->pluck('notifiable_id')
+            ->unique()
+            ->filter()
+            ->values();
+
+        $expenseIds = $items
+            ->where('notifiable_type', 'ops_expenses')
+            ->pluck('notifiable_id')
+            ->unique()
+            ->filter()
+            ->values();
+
+        $transferConfirmationUuids = $transferConfirmationIds->isEmpty()
+            ? collect()
+            : OpsTransferConfirmation::query()
+                ->whereIn('id', $transferConfirmationIds)
+                ->pluck('uuid', 'id');
+
+        $expenseUuids = $expenseIds->isEmpty()
+            ? collect()
+            : OpsExpense::query()
+                ->whereIn('id', $expenseIds)
+                ->pluck('uuid', 'id');
+
+        $items->transform(function (OpsNotification $notification) use ($transferConfirmationUuids, $expenseUuids) {
+            $targetUuid = match ($notification->notifiable_type) {
+                'ops_transfer_confirmations' => $transferConfirmationUuids->get($notification->notifiable_id),
+                'ops_expenses' => $expenseUuids->get($notification->notifiable_id),
+                default => null,
+            };
+
+            $notification->setAttribute('action_target_uuid', $targetUuid ? (string) $targetUuid : null);
+
+            return $notification;
+        });
     }
 }
