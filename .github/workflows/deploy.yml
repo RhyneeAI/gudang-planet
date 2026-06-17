@@ -82,10 +82,10 @@ jobs:
       - name: Install production dependencies
         run: composer install --no-dev --optimize-autoloader --no-interaction --no-progress --prefer-dist
 
-      - name: Prepare SSH key
-        env:
-          SSH_KEY: ${{ secrets.SSH_KEY }}
-        run: bash .github/scripts/prepare-ssh-key.sh
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
 
       - name: Verify SSH connection
         env:
@@ -94,8 +94,7 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
         run: |
           set -e
-          ssh -i ~/.ssh/deploy_key \
-            -p "${SSH_PORT:-2223}" \
+          ssh -p "${SSH_PORT:-2223}" \
             -o BatchMode=yes \
             -o StrictHostKeyChecking=accept-new \
             "${SSH_USER}@${SSH_HOST}" \
@@ -110,7 +109,7 @@ jobs:
         run: |
           set -e
           rsync -avz --delete \
-            -e "ssh -i ~/.ssh/deploy_key -p ${SSH_PORT:-2223} -o BatchMode=yes -o StrictHostKeyChecking=accept-new" \
+            -e "ssh -p ${SSH_PORT:-2223} -o BatchMode=yes -o StrictHostKeyChecking=accept-new" \
             --exclude '.git' \
             --exclude '.github' \
             --exclude '.env' \
@@ -132,8 +131,7 @@ jobs:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
           set -e
-          ssh -i ~/.ssh/deploy_key \
-            -p "${SSH_PORT:-2223}" \
+          ssh -p "${SSH_PORT:-2223}" \
             -o BatchMode=yes \
             -o StrictHostKeyChecking=accept-new \
             "${SSH_USER}@${SSH_HOST}" \

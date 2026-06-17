@@ -9,12 +9,13 @@ jobs:
     environment: production
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
 
-      - name: Prepare SSH key
-        env:
-          SSH_KEY: ${{ secrets.SSH_KEY }}
-        run: bash .github/scripts/prepare-ssh-key.sh
+      - name: Show loaded key fingerprint
+        run: ssh-add -l -E sha256
 
       - name: Test SSH connection
         env:
@@ -23,8 +24,7 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
         run: |
           set -e
-          ssh -i ~/.ssh/deploy_key \
-            -p "${SSH_PORT:-2223}" \
+          ssh -p "${SSH_PORT:-2223}" \
             -o BatchMode=yes \
             -o StrictHostKeyChecking=accept-new \
             "${SSH_USER}@${SSH_HOST}" \
