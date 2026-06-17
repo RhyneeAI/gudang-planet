@@ -17,6 +17,7 @@ class OpsTransferConfirmation extends Model
         'confirmable_type',
         'confirmable_id',
         'status',
+        'confirmed_amount',
         'mandor_proof_file',
         'confirmed_at',
         'note',
@@ -26,6 +27,7 @@ class OpsTransferConfirmation extends Model
 
     protected $casts = [
         'status' => OpsTransferConfirmationStatus::class,
+        'confirmed_amount' => 'decimal:2',
         'confirmed_at' => 'datetime',
     ];
 

@@ -74,7 +74,24 @@ it('allows mandor to confirm transfer assigned to their branch', function () {
         ], ['Accept' => 'application/json'])
         ->assertOk()
         ->assertJsonPath('success', true)
-        ->assertJsonPath('data.status', 'CONFIRMED');
+        ->assertJsonPath('data.status', 'CONFIRMED')
+        ->assertJsonPath('data.confirmed_amount', 250000);
+});
+
+it('allows mandor to confirm transfer with adjustable received amount', function () {
+    $confirmation = createPendingTransferConfirmation($this->admin, $this->mandor, $this->subCompany);
+
+    $this->actingAs($this->mandor)
+        ->post('/api/v1/operational/transfer-confirmations/' . $confirmation->uuid . '/confirm', [
+            'confirmed_amount' => 235000,
+            'mandor_proof_file' => UploadedFile::fake()->create('mandor-proof.jpg', 100, 'image/jpeg'),
+        ], ['Accept' => 'application/json'])
+        ->assertOk()
+        ->assertJsonPath('data.status', 'CONFIRMED')
+        ->assertJsonPath('data.confirmed_amount', 235000)
+        ->assertJsonPath('data.confirmable.amount', 235000);
+
+    expect((float) $this->subCompany->fresh()->wallet?->balance)->toBe(235000.0);
 });
 
 it('forbids another mandor from confirming transfer', function () {
