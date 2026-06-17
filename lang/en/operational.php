@@ -14,6 +14,7 @@ return [
         'not_pending' => 'Income is not pending.',
         'not_editable' => 'Admin transfer income cannot be modified by mandor.',
         'not_editable_by_admin' => 'Mandor transfer income cannot be modified from here.',
+        'not_accessible' => 'This income is not assigned to your mandor account or managed branch.',
         'not_found' => 'Income not found.',
         'updated' => 'Income updated successfully.',
         'deleted' => 'Income deleted successfully.',
@@ -34,6 +35,8 @@ return [
         'edit_window_expired' => 'Expenses can only be edited within the last :days days.',
         'store_window_expired' => 'Expenses can only be recorded within the last :days days.',
         'edit_limit_reached' => 'Edit limit for this expense has been reached.',
+        'not_editable' => 'This expense cannot be modified by mandor.',
+        'not_accessible' => 'This expense is not assigned to your mandor account or managed branch.',
     ],
     'confirmations' => [
         'list' => 'Transfer confirmations retrieved successfully.',

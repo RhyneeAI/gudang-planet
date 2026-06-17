@@ -14,6 +14,7 @@ return [
         'not_pending' => 'Pencairan dana tidak dalam status PENDING.',
         'not_editable' => 'Pemasukan dari admin tidak dapat diubah mandor.',
         'not_editable_by_admin' => 'Pemasukan transfer mandor tidak dapat diubah dari sini.',
+        'not_accessible' => 'Pemasukan ini bukan untuk akun mandor Anda atau cabang yang Anda kelola.',
         'not_found' => 'Pemasukan tidak ditemukan.',
         'updated' => 'Pemasukan berhasil diubah.',
         'deleted' => 'Pemasukan berhasil dihapus.',
@@ -34,6 +35,8 @@ return [
         'edit_window_expired' => 'Pengeluaran hanya dapat diedit dalam :days hari terakhir.',
         'store_window_expired' => 'Pengeluaran hanya dapat dicatat dalam :days hari terakhir.',
         'edit_limit_reached' => 'Batas edit untuk pengeluaran ini sudah tercapai.',
+        'not_editable' => 'Pengeluaran ini tidak dapat diubah oleh mandor.',
+        'not_accessible' => 'Pengeluaran ini bukan untuk akun mandor Anda atau cabang yang Anda kelola.',
     ],
     'confirmations' => [
         'list' => 'Daftar konfirmasi transfer berhasil diambil.',

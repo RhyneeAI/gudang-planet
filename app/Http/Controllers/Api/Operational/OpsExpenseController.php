@@ -380,6 +380,14 @@ class OpsExpenseController extends Controller
         $user = $request->user();
         $this->authorizeExpenseAccess($opsExpense, Role::MANDOR);
 
+        if ($opsExpense->expense_type !== OpsExpenseType::INTERNAL) {
+            abort(response()->json([
+                'success' => false,
+                'message' => __('operational.expenses.not_editable'),
+                'code' => 422,
+            ], 422));
+        }
+
         $subCompany = $opsExpense->subCompany
             ?? $this->subCompanyService->resolveForMandor($request->sub_company_uuid, $user);
         $wallet = $this->walletService->getOrCreateWallet($user, $subCompany);
@@ -499,6 +507,14 @@ class OpsExpenseController extends Controller
         DB::beginTransaction();
         try {
             $this->authorizeExpenseAccess($opsExpense, Role::MANDOR);
+
+            if ($opsExpense->expense_type !== OpsExpenseType::INTERNAL) {
+                abort(response()->json([
+                    'success' => false,
+                    'message' => __('operational.expenses.not_editable'),
+                    'code' => 422,
+                ], 422));
+            }
 
             $opsExpense->loadMissing('subCompany');
 
@@ -625,15 +641,21 @@ class OpsExpenseController extends Controller
         if ($mandorOnly === Role::MANDOR && $user->role !== Role::MANDOR) {
             abort(response()->json([
                 'success' => false,
-                'message' => 'You don\'t have permission to access this resource.',
+                'message' => __('operational.expenses.not_accessible'),
                 'code' => 403,
             ], 403));
         }
 
-        if ($user->role === Role::MANDOR && $expense->subCompany?->mandor_id !== $user->id) {
+        if ($user->role !== Role::MANDOR) {
+            return;
+        }
+
+        $expense->loadMissing('subCompany');
+
+        if (!$this->mandorCanAccessOperationalRecord($user, $expense->mandor_id, $expense->subCompany)) {
             abort(response()->json([
                 'success' => false,
-                'message' => 'You don\'t have permission to access this resource.',
+                'message' => __('operational.expenses.not_accessible'),
                 'code' => 403,
             ], 403));
         }
