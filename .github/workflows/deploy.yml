@@ -82,21 +82,46 @@ jobs:
       - name: Install production dependencies
         run: composer install --no-dev --optimize-autoloader --no-interaction --no-progress --prefer-dist
 
+      - name: Prepare SSH key
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+        run: |
+          set -e
+          install -m 700 -d ~/.ssh
+          printf '%s' "$SSH_KEY" > ~/.ssh/deploy_key
+          sed -i 's/\r$//' ~/.ssh/deploy_key
+          if grep -q '\\n' ~/.ssh/deploy_key; then
+            sed -i 's/\\n/\n/g' ~/.ssh/deploy_key
+          fi
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null
+          echo "Deploy key fingerprint:"
+          ssh-keygen -lf ~/.ssh/deploy_key
+
+      - name: Verify SSH connection
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          set -e
+          ssh -i ~/.ssh/deploy_key \
+            -p "${SSH_PORT:-2223}" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=accept-new \
+            "${SSH_USER}@${SSH_HOST}" \
+            'echo "SSH OK"'
+
       - name: Sync files to server
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
           SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_KEY: ${{ secrets.SSH_KEY }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
           set -e
-          mkdir -p ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-
           rsync -avz --delete \
-            -e "ssh -i ~/.ssh/deploy_key -p ${SSH_PORT:-22} -o StrictHostKeyChecking=no" \
+            -e "ssh -i ~/.ssh/deploy_key -p ${SSH_PORT:-2223} -o BatchMode=yes -o StrictHostKeyChecking=accept-new" \
             --exclude '.git' \
             --exclude '.github' \
             --exclude '.env' \
@@ -111,18 +136,16 @@ jobs:
             ./ "${SSH_USER}@${SSH_HOST}:${DEPLOY_PATH}/"
 
       - name: Run migrations and cache on server
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script_stop: true
-          script: |
-            set -e
-            cd "${{ secrets.DEPLOY_PATH }}"
-            php artisan migrate --force
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
-            php artisan storage:link 2>/dev/null || true
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -e
+          ssh -i ~/.ssh/deploy_key \
+            -p "${SSH_PORT:-2223}" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=accept-new \
+            "${SSH_USER}@${SSH_HOST}" \
+            "set -e && cd '${DEPLOY_PATH}' && php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan storage:link 2>/dev/null || true"
