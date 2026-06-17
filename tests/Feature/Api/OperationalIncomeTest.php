@@ -122,6 +122,91 @@ it('stores mandor income with only sub company uuid and credits wallet', functio
     expect(OpsTransferConfirmation::count())->toBe(0);
 });
 
+it('allows mandor to update own internal branch income', function () {
+    $incomeResponse = $this->actingAs($this->mandor)
+        ->post('/api/v1/operational/incomes', [
+            'sub_company_uuid' => $this->subCompany->uuid,
+            'name' => 'Pemasukan Cabang',
+            'amount' => 150000,
+            'date' => now()->toDateString(),
+            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+        ], ['Accept' => 'application/json']);
+
+    $incomeResponse->assertCreated();
+    $income = OpsIncome::first();
+
+    $this->actingAs($this->mandor)
+        ->patchJson('/api/v1/operational/incomes/' . $income->uuid, [
+            'name' => 'Pemasukan Cabang Updated',
+            'amount' => 175000,
+            'date' => now()->toDateString(),
+            'reason' => 'Koreksi nominal',
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.name', 'Pemasukan Cabang Updated')
+        ->assertJsonPath('data.amount', '175000.00');
+});
+
+it('allows mandor to update income by record mandor id after branch reassignment', function () {
+    $income = OpsIncome::create([
+        'name' => 'Pemasukan Lama',
+        'amount' => 120000,
+        'date' => now()->toDateString(),
+        'proof_file' => 'proofs/test.jpg',
+        'source_type' => OpsSourceType::INTERNAL,
+        'mandor_id' => $this->mandor->id,
+        'sub_company_id' => $this->subCompany->id,
+        'created_by' => $this->mandor->id,
+        'company_id' => $this->company->id,
+    ]);
+
+    $otherMandor = User::factory()->mandor()->create([
+        'company_id' => $this->company->id,
+    ]);
+
+    $this->subCompany->update(['mandor_id' => $otherMandor->id]);
+
+    $this->actingAs($this->mandor)
+        ->patchJson('/api/v1/operational/incomes/' . $income->uuid, [
+            'name' => 'Pemasukan Lama Updated',
+            'amount' => 120000,
+            'date' => now()->toDateString(),
+            'reason' => 'Koreksi',
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.name', 'Pemasukan Lama Updated');
+});
+
+it('allows current branch mandor to update income after branch reassignment', function () {
+    $income = OpsIncome::create([
+        'name' => 'Pemasukan Cabang',
+        'amount' => 90000,
+        'date' => now()->toDateString(),
+        'proof_file' => 'proofs/test.jpg',
+        'source_type' => OpsSourceType::INTERNAL,
+        'mandor_id' => $this->mandor->id,
+        'sub_company_id' => $this->subCompany->id,
+        'created_by' => $this->mandor->id,
+        'company_id' => $this->company->id,
+    ]);
+
+    $otherMandor = User::factory()->mandor()->create([
+        'company_id' => $this->company->id,
+    ]);
+
+    $this->subCompany->update(['mandor_id' => $otherMandor->id]);
+
+    $this->actingAs($otherMandor)
+        ->patchJson('/api/v1/operational/incomes/' . $income->uuid, [
+            'name' => 'Pemasukan Cabang Updated',
+            'amount' => 90000,
+            'date' => now()->toDateString(),
+            'reason' => 'Koreksi',
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.name', 'Pemasukan Cabang Updated');
+});
+
 it('forbids mandor from editing admin transfer income', function () {
     $income = OpsIncome::create([
         'name' => 'Transfer Admin',

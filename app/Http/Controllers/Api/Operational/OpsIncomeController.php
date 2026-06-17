@@ -479,11 +479,12 @@ class OpsIncomeController extends Controller
     protected function authorizeMandorIncomeAccess(OpsIncome $income, bool $editable = false): void
     {
         $user = request()->user();
+        $income->loadMissing('subCompany');
 
-        if ($income->mandor_id !== $user->id) {
+        if (!$this->mandorCanAccessOperationalRecord($user, $income->mandor_id, $income->subCompany)) {
             abort(response()->json([
                 'success' => false,
-                'message' => 'You don\'t have permission to access this resource.',
+                'message' => __('operational.incomes.not_accessible'),
                 'code' => 403,
             ], 403));
         }
