@@ -12,6 +12,7 @@ use App\Http\Resources\Operational\OpsTransferConfirmationResource;
 use App\Models\OpsIncome;
 use App\Models\OpsTransferConfirmation;
 use App\Services\Operational\OpsFileService;
+use App\Services\Operational\OpsTransferConfirmationAccess;
 use App\Services\Operational\OpsWalletService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +24,7 @@ class OpsTransferConfirmationController extends Controller
     public function __construct(
         protected OpsFileService $fileService,
         protected OpsWalletService $walletService,
+        protected OpsTransferConfirmationAccess $transferAccess,
     ) {}
 
     public function index(Request $request)
@@ -30,13 +32,10 @@ class OpsTransferConfirmationController extends Controller
         $user = $request->user();
 
         $confirmations = OpsTransferConfirmation::with(['confirmable.subCompany', 'confirmable.mandor', 'confirmedBy'])
-            ->when($user->role === Role::MANDOR, function ($query) use ($user) {
-                $query->whereHasMorph(
-                    'confirmable',
-                    [OpsIncome::class],
-                    fn($q) => $q->where('mandor_id', $user->id)
-                );
-            })
+            ->when(
+                $user->role === Role::MANDOR,
+                fn ($query) => $this->transferAccess->scopeForMandor($query, $user)
+            )
             ->when($request->status, fn($q, $status) => $q->where('status', $status))
             ->when($request->sub_company_uuid, function ($query, $uuid) {
                 $query->whereHasMorph(
@@ -89,12 +88,12 @@ class OpsTransferConfirmationController extends Controller
             ], 422);
         }
 
-        $income = $opsTransferConfirmation->confirmable;
+        $income = $this->transferAccess->resolveIncome($opsTransferConfirmation);
 
-        if (!$income instanceof OpsIncome) {
+        if (!$income) {
             return response()->json([
                 'success' => false,
-                'message' => __('operational.confirmations.already_processed'),
+                'message' => __('operational.confirmations.income_not_found'),
                 'code' => 422,
             ], 422);
         }
@@ -192,7 +191,7 @@ class OpsTransferConfirmationController extends Controller
         if ($mandorOnly === Role::MANDOR && $user->role !== Role::MANDOR) {
             abort(response()->json([
                 'success' => false,
-                'message' => 'You don\'t have permission to access this resource.',
+                'message' => __('operational.confirmations.not_accessible'),
                 'code' => 403,
             ], 403));
         }
@@ -201,12 +200,12 @@ class OpsTransferConfirmationController extends Controller
             return;
         }
 
-        $confirmable = $confirmation->confirmable;
+        $income = $this->transferAccess->resolveIncome($confirmation);
 
-        if (!$confirmable instanceof OpsIncome || $confirmable->mandor_id !== $user->id) {
+        if (!$income || !$this->transferAccess->mandorCanAccessIncome($user, $income)) {
             abort(response()->json([
                 'success' => false,
-                'message' => 'You don\'t have permission to access this resource.',
+                'message' => __('operational.confirmations.not_accessible'),
                 'code' => 403,
             ], 403));
         }

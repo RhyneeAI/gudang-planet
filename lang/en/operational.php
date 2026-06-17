@@ -42,6 +42,8 @@ return [
         'rejected' => 'Transfer confirmation rejected.',
         'amount_mismatch' => 'Amount does not match. Please contact admin.',
         'already_processed' => 'Transfer confirmation has already been processed.',
+        'not_accessible' => 'This transfer is not assigned to your mandor account or managed branch.',
+        'income_not_found' => 'Related income record was not found. Please contact admin.',
     ],
     'wallet' => [
         'detail' => 'Virtual balance retrieved successfully.',
