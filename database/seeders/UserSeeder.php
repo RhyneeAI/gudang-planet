@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
         $users = [
             [
                 'name' => 'OWNER',
-                'phone' => '081572438561',
+                'phone' => '12345678',
                 'email' => 'owner_gp@gp.com',
                 'password' => 'owner_gp',
                 'role' => Role::OWNER,
@@ -36,14 +36,14 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Marketing GP',
-                'phone' => '081976567083',
+                'phone' => '081976567084',
                 'email' => 'marketing_gp@gp.com',
                 'password' => 'marketing_gp',
                 'role' => Role::MARKETING,
             ],
             [
                 'name' => 'Mandor GP',
-                'phone' => '081976567083',
+                'phone' => '081976567085',
                 'email' => 'mandor_gp@gp.com',
                 'password' => 'mandor_gp',
                 'role' => Role::MANDOR,

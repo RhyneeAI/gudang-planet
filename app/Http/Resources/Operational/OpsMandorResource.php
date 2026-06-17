@@ -31,13 +31,6 @@ class OpsMandorResource extends JsonResource
                 'name' => $primarySubCompany->name,
                 'code' => $primarySubCompany->code,
             ] : null,
-            'sub_companies' => $this->whenLoaded('subCompanies', function () {
-                return $this->subCompanies->map(fn ($subCompany) => [
-                    'uuid' => (string) $subCompany->uuid,
-                    'name' => $subCompany->name,
-                    'code' => $subCompany->code,
-                ])->values();
-            }),
             $this->mergeWhen($request->boolean('is_dashboard_data'), [
                 'total_income' => $income,
                 'total_expense' => $expense,
