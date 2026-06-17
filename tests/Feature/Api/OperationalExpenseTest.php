@@ -50,10 +50,13 @@ it('allows mandor to update own internal branch expense', function () {
         ])
         ->assertOk()
         ->assertJsonPath('data.name', 'Pengeluaran Cabang Updated')
-        ->assertJsonPath('data.amount', '120000.00');
+        ->assertJsonPath('data.amount', 120000);
 });
 
 it('allows mandor to update expense by record mandor id even after branch reassignment', function () {
+    app(\App\Services\Operational\OpsWalletService::class)
+        ->getOrCreateWallet($this->mandor, $this->subCompany);
+
     $expense = OpsExpense::create([
         'name' => 'Pengeluaran Lama',
         'amount' => 80000,
