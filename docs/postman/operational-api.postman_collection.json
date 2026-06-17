@@ -1,0 +1,839 @@
+{
+  "info": {
+    "name": "Gudang Planet — Operational API (v2)",
+    "description": "Collection untuk modul Operasional Gudang Planet.\n\n**Base URL:** `{{base_url}}/api/v1/operational`\n\n**Auth:** Bearer token dari `POST /api/v1/login` (phone + password).\n\n**Alur bisnis terbaru:**\n- **Admin Income** — pemasukan pusat, `mandor_uuid` & `sub_company_uuid` opsional (atribusi saja), `source_type: INTERNAL`\n- **Admin Expense INTERNAL** — pengeluaran pusat\n- **Admin Expense MANDOR** — transfer ke mandor → buat income pending + notifikasi\n- **Mandor Income** — pemasukan cabang sendiri, langsung kredit wallet\n- **Mandor Expense** — pengeluaran internal cabang, debit wallet\n\n**Upload bukti:** jpg/jpeg/png/pdf, maks **10MB**\n\n**GET show:** jika UUID tidak ditemukan → `data: []` (bukan 404)\n\n**Demo credentials (company 1):**\n| Role | Phone | Password |\n|------|-------|----------|\n| ADMIN | 081122223333 | admin_gp |\n| MANDOR | 082233334444 | mandor_gp |",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "uuid", "value": "", "type": "string" },
+    { "key": "sub_company_uuid", "value": "", "type": "string" },
+    { "key": "mandor_uuid", "value": "", "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.token) {",
+                  "    pm.collectionVariables.set('token', json.data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"081122223333\",\n  \"password\": \"admin_gp\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "login"]
+            },
+            "description": "Login sebagai ADMIN. Token otomatis disimpan ke collection variable `token`."
+          }
+        },
+        {
+          "name": "Login (Mandor)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.token) {",
+                  "    pm.collectionVariables.set('token', json.data.token);",
+                  "}",
+                  "if (json.data && json.data.user && json.data.user.sub_companies && json.data.user.sub_companies.length) {",
+                  "    pm.collectionVariables.set('sub_company_uuid', json.data.user.sub_companies[0].uuid);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"082233334444\",\n  \"password\": \"mandor_gp\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "login"]
+            },
+            "description": "Login sebagai MANDOR. Token & `sub_company_uuid` pertama otomatis disimpan."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Admin Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/dashboard/admin?date_from=&date_to=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "dashboard", "admin"],
+              "query": [
+                { "key": "date_from", "value": "", "description": "YYYY-MM-DD, default: today" },
+                { "key": "date_to", "value": "", "description": "YYYY-MM-DD, harus bulan yang sama dengan date_from" },
+                { "key": "sub_company_uuid", "value": "", "disabled": true, "description": "Filter agregat ke cabang tertentu" }
+              ]
+            },
+            "description": "Ringkasan dashboard admin + list `sub_companies` (total income/expense per cabang untuk drill-down read-only).\n\nRole: SUPERADMIN, OWNER, ADMIN."
+          }
+        },
+        {
+          "name": "Mandor Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/dashboard/mandor",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "dashboard", "mandor"],
+              "query": [
+                { "key": "date_from", "value": "", "disabled": true },
+                { "key": "date_to", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Ringkasan dashboard mandor. Role: MANDOR."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sub Companies",
+      "item": [
+        {
+          "name": "List Sub Companies",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/sub-companies",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "sub-companies"],
+              "query": [
+                { "key": "mandor_uuid", "value": "", "disabled": true },
+                { "key": "is_active", "value": "true", "disabled": true },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "per_page", "value": "15", "disabled": true }
+              ]
+            },
+            "description": "List cabang operasional. Mandor hanya melihat cabang sendiri."
+          }
+        },
+        {
+          "name": "Show Sub Company",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/sub-companies/{{sub_company_uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "sub-companies", "{{sub_company_uuid}}"]
+            },
+            "description": "Detail cabang. Jika UUID tidak ditemukan → `data: []`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Incomes",
+      "item": [
+        {
+          "name": "List Incomes",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/incomes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "incomes"],
+              "query": [
+                { "key": "sub_company_uuid", "value": "{{sub_company_uuid}}", "disabled": true, "description": "Drill-down per cabang (read-only)" },
+                { "key": "date_from", "value": "", "disabled": true },
+                { "key": "date_to", "value": "", "disabled": true },
+                { "key": "mandor_uuid", "value": "", "disabled": true },
+                { "key": "source_type", "value": "INTERNAL", "disabled": true, "description": "INTERNAL | MANDOR" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "order_by_key", "value": "date", "disabled": true },
+                { "key": "order_by_value", "value": "DESC", "disabled": true },
+                { "key": "per_page", "value": "15", "disabled": true }
+              ]
+            },
+            "description": "List pemasukan. Mandor otomatis di-scope ke cabang sendiri."
+          }
+        },
+        {
+          "name": "Create Income (Admin — Pusat)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Pemasukan Pusat", "type": "text", "description": "Required" },
+                { "key": "amount", "value": "500000", "type": "text", "description": "Required, numeric" },
+                { "key": "date", "value": "2026-06-16", "type": "text", "description": "Required, YYYY-MM-DD" },
+                { "key": "proof_file", "value": "", "type": "file", "description": "Required, jpg/jpeg/png/pdf max 10MB" },
+                { "key": "note", "value": "", "type": "text", "disabled": true },
+                { "key": "mandor_uuid", "value": "", "type": "text", "disabled": true, "description": "Optional — atribusi ke mandor/cabang" },
+                { "key": "sub_company_uuid", "value": "", "type": "text", "disabled": true, "description": "Required if mandor_uuid diisi" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/incomes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "incomes"]
+            },
+            "description": "Admin catat pemasukan pusat (`source_type: INTERNAL`). **Tidak** membuat transfer/konfirmasi mandor.\n\n`mandor_uuid` & `sub_company_uuid` opsional (hanya atribusi).\n\nRole: SUPERADMIN, OWNER, ADMIN."
+          }
+        },
+        {
+          "name": "Create Income (Admin — Dengan Atribusi Mandor)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "mandor_uuid", "value": "{{mandor_uuid}}", "type": "text", "description": "Optional" },
+                { "key": "sub_company_uuid", "value": "{{sub_company_uuid}}", "type": "text", "description": "Required if mandor_uuid" },
+                { "key": "name", "value": "Pemasukan Atribusi Cabang", "type": "text" },
+                { "key": "amount", "value": "200000", "type": "text" },
+                { "key": "date", "value": "2026-06-16", "type": "text" },
+                { "key": "proof_file", "value": "", "type": "file", "description": "max 10MB" },
+                { "key": "note", "value": "", "type": "text", "disabled": true }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/incomes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "incomes"]
+            },
+            "description": "Admin income dengan atribusi mandor/cabang. Tetap `INTERNAL`, tanpa transfer confirmation."
+          }
+        },
+        {
+          "name": "Create Income (Mandor)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "sub_company_uuid", "value": "{{sub_company_uuid}}", "type": "text", "description": "Required" },
+                { "key": "name", "value": "Pemasukan Cabang", "type": "text" },
+                { "key": "amount", "value": "150000", "type": "text" },
+                { "key": "date", "value": "2026-06-16", "type": "text" },
+                { "key": "proof_file", "value": "", "type": "file", "description": "max 10MB" },
+                { "key": "note", "value": "", "type": "text", "disabled": true }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/incomes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "incomes"]
+            },
+            "description": "Mandor catat pemasukan cabang sendiri. `INTERNAL` + langsung kredit wallet.\n\nRole: MANDOR."
+          }
+        },
+        {
+          "name": "Show Income",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/incomes/{{uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "incomes", "{{uuid}}"]
+            },
+            "description": "Detail income. Jika UUID tidak ditemukan → `data: []`."
+          }
+        },
+        {
+          "name": "Update Income (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "", "type": "text" },
+                { "key": "amount", "value": "", "type": "text" },
+                { "key": "date", "value": "", "type": "text" },
+                { "key": "proof_file", "value": "", "type": "file", "disabled": true },
+                { "key": "note", "value": "", "type": "text", "disabled": true },
+                { "key": "reason", "value": "Koreksi data", "type": "text" },
+                { "key": "mandor_uuid", "value": "", "type": "text", "disabled": true },
+                { "key": "sub_company_uuid", "value": "", "type": "text", "disabled": true }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/incomes/{{uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "incomes", "{{uuid}}"]
+            },
+            "description": "Update income pusat admin (`INTERNAL` only). Income transfer mandor (`MANDOR`) tidak bisa diedit dari sini."
+          }
+        },
+        {
+          "name": "Update Income (Mandor)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "sub_company_uuid", "value": "", "type": "text", "disabled": true },
+                { "key": "name", "value": "", "type": "text" },
+                { "key": "amount", "value": "", "type": "text" },
+                { "key": "date", "value": "", "type": "text" },
+                { "key": "proof_file", "value": "", "type": "file", "disabled": true },
+                { "key": "note", "value": "", "type": "text", "disabled": true },
+                { "key": "reason", "value": "", "type": "text", "disabled": true }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/incomes/{{uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "incomes", "{{uuid}}"]
+            },
+            "description": "Update income mandor. Hanya `INTERNAL` (bukan transfer dari admin). Adjust wallet."
+          }
+        },
+        {
+          "name": "Delete Income (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/incomes/{{uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "incomes", "{{uuid}}"]
+            },
+            "description": "Hapus income pusat admin (`INTERNAL` only)."
+          }
+        },
+        {
+          "name": "Delete Income (Mandor)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/incomes/{{uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "incomes", "{{uuid}}"]
+            },
+            "description": "Hapus income mandor (`INTERNAL` only). Refund wallet."
+          }
+        }
+      ],
+      "description": "Pemasukan — satu endpoint, logic berbeda per role.\n\n- Admin: pemasukan pusat (INTERNAL), mandor opsional\n- Mandor: pemasukan cabang sendiri (INTERNAL) + terima transfer admin (MANDOR, read-only/edit via konfirmasi)"
+    },
+    {
+      "name": "Expenses",
+      "item": [
+        {
+          "name": "List Expenses",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/expenses",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "expenses"],
+              "query": [
+                { "key": "sub_company_uuid", "value": "{{sub_company_uuid}}", "disabled": true },
+                { "key": "expense_type", "value": "INTERNAL", "disabled": true, "description": "INTERNAL | MANDOR" },
+                { "key": "date_from", "value": "", "disabled": true },
+                { "key": "date_to", "value": "", "disabled": true },
+                { "key": "mandor_uuid", "value": "", "disabled": true },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "order_by_key", "value": "date", "disabled": true },
+                { "key": "order_by_value", "value": "DESC", "disabled": true },
+                { "key": "per_page", "value": "15", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Expense (Admin — INTERNAL Pusat)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "expense_type", "value": "INTERNAL", "type": "text", "description": "Required" },
+                { "key": "name", "value": "Pengeluaran Pusat", "type": "text" },
+                { "key": "amount", "value": "100000", "type": "text" },
+                { "key": "date", "value": "2026-06-16", "type": "text" },
+                { "key": "proof_file", "value": "", "type": "file", "description": "max 10MB" },
+                { "key": "note", "value": "", "type": "text", "disabled": true }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/expenses",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "expenses"]
+            },
+            "description": "Pengeluaran internal pusat. Tanpa mandor/sub_company."
+          }
+        },
+        {
+          "name": "Create Expense (Admin — Transfer ke Mandor)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "expense_type", "value": "MANDOR", "type": "text", "description": "Required" },
+                { "key": "mandor_uuid", "value": "{{mandor_uuid}}", "type": "text", "description": "Required" },
+                { "key": "sub_company_uuid", "value": "{{sub_company_uuid}}", "type": "text", "description": "Required" },
+                { "key": "name", "value": "Transfer Dana ke Mandor", "type": "text" },
+                { "key": "amount", "value": "250000", "type": "text" },
+                { "key": "date", "value": "2026-06-16", "type": "text" },
+                { "key": "proof_file", "value": "", "type": "file", "description": "max 10MB" },
+                { "key": "note", "value": "", "type": "text", "disabled": true }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/expenses",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "expenses"]
+            },
+            "description": "Transfer ke mandor. Membuat expense `MANDOR` + income pending + notifikasi ke mandor.\n\nResponse includes `transfer_income` dengan `transfer_confirmation.status: PENDING`."
+          }
+        },
+        {
+          "name": "Create Expense (Mandor — Internal Cabang)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "sub_company_uuid", "value": "{{sub_company_uuid}}", "type": "text", "description": "Required" },
+                { "key": "name", "value": "Pengeluaran Cabang", "type": "text" },
+                { "key": "amount", "value": "50000", "type": "text", "description": "Cek saldo wallet cukup" },
+                { "key": "date", "value": "2026-06-16", "type": "text" },
+                { "key": "proof_file", "value": "", "type": "file", "description": "max 10MB" },
+                { "key": "note", "value": "", "type": "text", "disabled": true }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/expenses",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "expenses"]
+            },
+            "description": "Pengeluaran internal cabang mandor. Debit wallet, notify admin jika saldo tidak cukup."
+          }
+        },
+        {
+          "name": "Show Expense",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/expenses/{{uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "expenses", "{{uuid}}"]
+            },
+            "description": "Detail expense. Jika UUID tidak ditemukan → `data: []`."
+          }
+        },
+        {
+          "name": "Update Expense (Admin — INTERNAL)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "", "type": "text" },
+                { "key": "amount", "value": "", "type": "text" },
+                { "key": "date", "value": "", "type": "text" },
+                { "key": "proof_file", "value": "", "type": "file", "disabled": true },
+                { "key": "note", "value": "", "type": "text", "disabled": true },
+                { "key": "reason", "value": "Koreksi data", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/expenses/{{uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "expenses", "{{uuid}}"]
+            },
+            "description": "Update pengeluaran pusat admin."
+          }
+        },
+        {
+          "name": "Update Expense (Admin — MANDOR Transfer)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "", "type": "text" },
+                { "key": "amount", "value": "", "type": "text" },
+                { "key": "date", "value": "", "type": "text" },
+                { "key": "proof_file", "value": "", "type": "file", "disabled": true },
+                { "key": "note", "value": "", "type": "text", "disabled": true },
+                { "key": "reason", "value": "Koreksi transfer", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/expenses/{{uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "expenses", "{{uuid}}"]
+            },
+            "description": "Update transfer ke mandor. Hanya jika `transfer_income.transfer_confirmation` masih PENDING. Sync ke linked income."
+          }
+        },
+        {
+          "name": "Update Expense (Mandor)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "", "type": "text" },
+                { "key": "amount", "value": "", "type": "text" },
+                { "key": "date", "value": "", "type": "text" },
+                { "key": "proof_file", "value": "", "type": "file", "disabled": true },
+                { "key": "note", "value": "", "type": "text", "disabled": true },
+                { "key": "reason", "value": "", "type": "text", "disabled": true }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/expenses/{{uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "expenses", "{{uuid}}"]
+            },
+            "description": "Update pengeluaran cabang mandor. Adjust wallet balance."
+          }
+        },
+        {
+          "name": "Delete Expense (Admin — INTERNAL)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/expenses/{{uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "expenses", "{{uuid}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Expense (Admin — MANDOR Transfer)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/expenses/{{uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "expenses", "{{uuid}}"]
+            },
+            "description": "Hapus transfer pending. Juga hapus linked income + confirmation."
+          }
+        },
+        {
+          "name": "Delete Expense (Mandor)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/expenses/{{uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "expenses", "{{uuid}}"]
+            },
+            "description": "Hapus pengeluaran cabang. Refund wallet."
+          }
+        }
+      ],
+      "description": "Pengeluaran — admin & mandor bisa write (role-based logic).\n\n- Admin INTERNAL: pengeluaran pusat\n- Admin MANDOR: transfer ke mandor\n- Mandor: pengeluaran internal cabang"
+    },
+    {
+      "name": "Mandors",
+      "item": [
+        {
+          "name": "List Mandors",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/mandors",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "mandors"],
+              "query": [
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "is_dashboard_data", "value": "false", "disabled": true },
+                { "key": "date_from", "value": "", "disabled": true },
+                { "key": "date_to", "value": "", "disabled": true },
+                { "key": "per_page", "value": "15", "disabled": true }
+              ]
+            },
+            "description": "List mandor. Semua role operasional."
+          }
+        },
+        {
+          "name": "Create Mandor",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Mandor Baru\",\n  \"phone\": \"081234567890\",\n  \"email\": \"mandor@test.com\",\n  \"address\": \"Jl. Cabang No. 1\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/mandors",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "mandors"]
+            },
+            "description": "Buat mandor + auto sub company + wallet. Return credentials.\n\nRole: SUPERADMIN, OWNER, ADMIN."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wallet",
+      "item": [
+        {
+          "name": "Show Wallet",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/wallet?sub_company_uuid={{sub_company_uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "wallet"],
+              "query": [
+                { "key": "sub_company_uuid", "value": "{{sub_company_uuid}}", "description": "Required" }
+              ]
+            },
+            "description": "Saldo virtual cabang. Role: MANDOR."
+          }
+        },
+        {
+          "name": "Wallet Transactions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/wallet/transactions?sub_company_uuid={{sub_company_uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "wallet", "transactions"],
+              "query": [
+                { "key": "sub_company_uuid", "value": "{{sub_company_uuid}}" },
+                { "key": "date_from", "value": "", "disabled": true },
+                { "key": "date_to", "value": "", "disabled": true },
+                { "key": "order_by_key", "value": "created_at", "disabled": true },
+                { "key": "order_by_value", "value": "DESC", "disabled": true },
+                { "key": "per_page", "value": "15", "disabled": true }
+              ]
+            },
+            "description": "Riwayat mutasi wallet. Role: MANDOR."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "notifications"]
+            }
+          }
+        },
+        {
+          "name": "Mark All Read",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/notifications/read-all",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "notifications", "read-all"]
+            }
+          }
+        },
+        {
+          "name": "Mark Read",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/notifications/{{uuid}}/read",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "notifications", "{{uuid}}", "read"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transfer Confirmations",
+      "item": [
+        {
+          "name": "List Confirmations",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/transfer-confirmations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "transfer-confirmations"],
+              "query": [
+                { "key": "status", "value": "PENDING", "disabled": true },
+                { "key": "sub_company_uuid", "value": "{{sub_company_uuid}}", "disabled": true },
+                { "key": "per_page", "value": "15", "disabled": true }
+              ]
+            },
+            "description": "List konfirmasi transfer dari admin expense MANDOR."
+          }
+        },
+        {
+          "name": "Show Confirmation",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/transfer-confirmations/{{uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "transfer-confirmations", "{{uuid}}"]
+            },
+            "description": "Detail konfirmasi. Jika UUID tidak ditemukan → `data: []`."
+          }
+        },
+        {
+          "name": "Confirm Transfer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "confirmed_amount", "value": "", "type": "text", "description": "Required, harus sama dengan income amount" },
+                { "key": "mandor_proof_file", "value": "", "type": "file", "description": "Required, jpg/jpeg/png/pdf max 10MB" },
+                { "key": "note", "value": "", "type": "text", "disabled": true }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/transfer-confirmations/{{uuid}}/confirm",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "transfer-confirmations", "{{uuid}}", "confirm"]
+            },
+            "description": "Konfirmasi penerimaan dana. Kredit wallet. Role: MANDOR."
+          }
+        },
+        {
+          "name": "Reject Transfer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Dana tidak sesuai\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/transfer-confirmations/{{uuid}}/reject",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "transfer-confirmations", "{{uuid}}", "reject"]
+            },
+            "description": "Tolak transfer. Role: MANDOR."
+          }
+        }
+      ],
+      "description": "Konfirmasi transfer — dipicu oleh Admin Expense `MANDOR`.\n\nMandor confirm → wallet dikredit."
+    },
+    {
+      "name": "Edit Logs",
+      "item": [
+        {
+          "name": "List Edit Logs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/operational/edit-logs",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "operational", "edit-logs"],
+              "query": [
+                { "key": "loggable_type", "value": "ops_incomes", "disabled": true },
+                { "key": "date_from", "value": "", "disabled": true },
+                { "key": "date_to", "value": "", "disabled": true },
+                { "key": "per_page", "value": "15", "disabled": true }
+              ]
+            },
+            "description": "Audit trail edit income/expense. Role: SUPERADMIN, OWNER, ADMIN."
+          }
+        }
+      ]
+    }
+  ]
+}
