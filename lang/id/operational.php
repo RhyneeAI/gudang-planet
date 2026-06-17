@@ -113,7 +113,7 @@ return [
         'proof_file_required' => 'Bukti transfer wajib diupload.',
         'proof_file_file' => 'Bukti transfer harus berupa file.',
         'proof_file_invalid' => 'Format bukti transfer tidak valid.',
-        'proof_file_max' => 'Bukti transfer tidak boleh lebih dari 2MB.',
+        'proof_file_max' => 'Bukti transfer tidak boleh lebih dari 10MB.',
         'reason_required' => 'Alasan edit wajib diisi.',
         'reason_string' => 'Alasan edit harus berupa string.',
         'note_invalid' => 'Catatan tidak valid.',
@@ -123,5 +123,6 @@ return [
 
         'confirmed_amount_required' => 'Nominal konfirmasi wajib diisi.',
         'mandor_proof_required' => 'Bukti rekening wajib diupload.',
+        'mandor_proof_file_max' => 'Bukti rekening tidak boleh lebih dari 10MB.',
     ],
 ];

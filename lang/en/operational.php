@@ -114,7 +114,7 @@ return [
         'proof_file_required' => 'Transfer proof is required.',
         'proof_file_file' => 'Transfer proof must be a file.',
         'proof_file_invalid' => 'Invalid transfer proof format.',
-        'proof_file_max' => 'Transfer proof must not exceed 2MB.',
+        'proof_file_max' => 'Transfer proof must not exceed 10MB.',
         'reason_required' => 'Edit reason is required.',
         'reason_string' => 'Edit reason must be a string.',
         'note_invalid' => 'Note must be a string.',
@@ -128,6 +128,6 @@ return [
         'mandor_proof_required' => 'Bank proof is required.',
         'mandor_proof_file_file' => 'Bank proof must be a file.',
         'mandor_proof_file_invalid' => 'Invalid bank proof format.',
-        'mandor_proof_file_max' => 'Bank proof must not exceed 2MB.',
+        'mandor_proof_file_max' => 'Bank proof must not exceed 10MB.',
     ],
 ];
