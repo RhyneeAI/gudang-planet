@@ -14,26 +14,29 @@ class OpsWalletService
 {
     public function getOrCreateWallet(User $mandor, SubCompany $subCompany): OpsWallet
     {
+        $existingWallet = OpsWallet::query()
+            ->where('sub_company_id', $subCompany->id)
+            ->where('mandor_id', $mandor->id)
+            ->first();
+
+        if ($existingWallet) {
+            return $existingWallet;
+        }
+
         if ((int) $subCompany->mandor_id !== (int) $mandor->id) {
             throw ValidationException::withMessages([
                 'sub_company_uuid' => [__('operational.validation.sub_company_not_assigned')],
             ]);
         }
 
-        $wallet = OpsWallet::firstOrCreate(
+        return OpsWallet::firstOrCreate(
             ['sub_company_id' => $subCompany->id],
             [
                 'mandor_id' => $mandor->id,
                 'company_id' => $mandor->company_id,
                 'balance' => 0,
             ]
-        );
-
-        if ((int) $wallet->mandor_id !== (int) $mandor->id) {
-            $wallet->update(['mandor_id' => $mandor->id]);
-        }
-
-        return $wallet->fresh();
+        )->fresh();
     }
 
     public function credit(

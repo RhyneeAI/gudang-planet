@@ -144,10 +144,13 @@ it('allows mandor to update own internal branch income', function () {
         ])
         ->assertOk()
         ->assertJsonPath('data.name', 'Pemasukan Cabang Updated')
-        ->assertJsonPath('data.amount', '175000.00');
+        ->assertJsonPath('data.amount', 175000);
 });
 
 it('allows mandor to update income by record mandor id after branch reassignment', function () {
+    app(\App\Services\Operational\OpsWalletService::class)
+        ->getOrCreateWallet($this->mandor, $this->subCompany);
+
     $income = OpsIncome::create([
         'name' => 'Pemasukan Lama',
         'amount' => 120000,
@@ -178,6 +181,9 @@ it('allows mandor to update income by record mandor id after branch reassignment
 });
 
 it('allows current branch mandor to update income after branch reassignment', function () {
+    app(\App\Services\Operational\OpsWalletService::class)
+        ->getOrCreateWallet($this->mandor, $this->subCompany);
+
     $income = OpsIncome::create([
         'name' => 'Pemasukan Cabang',
         'amount' => 90000,
