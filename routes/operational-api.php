@@ -22,11 +22,10 @@ Route::prefix('v1/operational')->middleware(['auth:sanctum'])->group(function ()
         Route::get('dashboard/mandor', [OpsDashboardController::class, 'mandorDashboard']);
 
         Route::apiResource('incomes', OpsIncomeController::class)
-            ->parameters(['incomes' => 'opsIncome:uuid']);
+            ->parameters(['incomes' => 'uuid']);
 
         Route::apiResource('expenses', OpsExpenseController::class)
-            ->parameters(['expenses' => 'opsExpense:uuid'])
-            ->only(['index', 'show']);
+            ->parameters(['expenses' => 'uuid']);
 
         Route::prefix('notifications')->group(function () {
             Route::get('/', [OpsNotificationController::class, 'index']);
@@ -35,10 +34,10 @@ Route::prefix('v1/operational')->middleware(['auth:sanctum'])->group(function ()
         });
 
         Route::get('transfer-confirmations', [OpsTransferConfirmationController::class, 'index']);
-        Route::get('transfer-confirmations/{opsTransferConfirmation:uuid}', [OpsTransferConfirmationController::class, 'show']);
+        Route::get('transfer-confirmations/{uuid}', [OpsTransferConfirmationController::class, 'show']);
 
         Route::get('sub-companies', [SubCompanyController::class, 'index']);
-        Route::get('sub-companies/{subCompany:uuid}', [SubCompanyController::class, 'show']);
+        Route::get('sub-companies/{uuid}', [SubCompanyController::class, 'show']);
 
         Route::get('mandors', [OpsMandorController::class, 'index']);
     });
@@ -53,10 +52,10 @@ Route::prefix('v1/operational')->middleware(['auth:sanctum'])->group(function ()
         Route::get('edit-logs', [OpsEditLogController::class, 'index']);
     });
 
+    // ─────────────────────────────────────────────
+    // Mandor only
+    // ─────────────────────────────────────────────
     Route::middleware(['role:MANDOR'])->group(function () {
-        Route::apiResource('expenses', OpsExpenseController::class)
-            ->parameters(['expenses' => 'opsExpense:uuid'])
-            ->only(['store', 'update', 'destroy']);
 
         Route::get('wallet', [OpsWalletController::class, 'show']);
         Route::get('wallet/transactions', [OpsWalletController::class, 'transactions']);

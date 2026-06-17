@@ -7,6 +7,7 @@ use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\OpsExpense;
 use App\Models\OpsIncome;
+use App\Models\SubCompany;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -72,6 +73,34 @@ class OpsDashboardController extends Controller
             );
         }
 
+        $subCompanies = SubCompany::with('mandor')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get()
+            ->map(function (SubCompany $subCompany) use ($dateFrom, $dateTo) {
+                $totalSubIncome = OpsIncome::where('sub_company_id', $subCompany->id)
+                    ->whereBetween('date', [$dateFrom, $dateTo])
+                    ->sum('amount');
+
+                $totalSubExpense = OpsExpense::where('sub_company_id', $subCompany->id)
+                    ->whereBetween('date', [$dateFrom, $dateTo])
+                    ->sum('amount');
+
+                return [
+                    'uuid' => (string) $subCompany->uuid,
+                    'name' => $subCompany->name,
+                    'code' => $subCompany->code,
+                    'mandor' => $subCompany->mandor ? [
+                        'uuid' => $subCompany->mandor->uuid,
+                        'name' => $subCompany->mandor->name,
+                    ] : null,
+                    'total_income' => (float) $totalSubIncome,
+                    'total_expense' => (float) $totalSubExpense,
+                    'remaining_amount' => (float) $totalSubIncome - (float) $totalSubExpense,
+                ];
+            })
+            ->values();
+
         return response()->json([
             'success' => true,
             'message' => __('operational.dashboard.admin_summary'),
@@ -90,6 +119,7 @@ class OpsDashboardController extends Controller
 
                 'total_mandor_active' => $totalActiveMandor,
                 'waiting_confirmation_income' => $waitingConfirmationIncome,
+                'sub_companies' => $subCompanies,
             ],
         ]);
     }
