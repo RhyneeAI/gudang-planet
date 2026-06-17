@@ -23,6 +23,7 @@ class OpsExpense extends Model
         'expense_type',
         'mandor_id',
         'sub_company_id',
+        'transfer_income_id',
         'created_by',
         'company_id',
     ];
@@ -56,6 +57,11 @@ class OpsExpense extends Model
     public function subCompany()
     {
         return $this->belongsTo(SubCompany::class, 'sub_company_id');
+    }
+
+    public function transferIncome()
+    {
+        return $this->belongsTo(OpsIncome::class, 'transfer_income_id');
     }
 
     public function transferConfirmation()

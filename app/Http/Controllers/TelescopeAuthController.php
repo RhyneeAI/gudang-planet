@@ -37,19 +37,18 @@ class TelescopeAuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'username' => ['required', 'string'],
+            'phone' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
 
-        // Cek user dari DB langsung
-        $user = User::where('username', $request->username)->first();
+        $user = User::where('phone', $request->phone)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return back()->withErrors(['username' => 'Credential not valid.']);
+            return back()->withErrors(['phone' => 'Credential not valid.']);
         }
 
         if ($user->role->value !== Role::SUPERADMIN->value) {
-            return back()->withErrors(['username' => 'Unathorized.']);
+            return back()->withErrors(['phone' => 'Unathorized.']);
         }
 
         // Buat token baru untuk Telescope session
@@ -60,7 +59,7 @@ class TelescopeAuthController extends Controller
             'telescope_user' => [
                 'id' => $user->id,
                 'name' => $user->name,
-                'username' => $user->username,
+                'phone' => $user->phone,
                 'role' => $user->role->value,
             ],
         ]);

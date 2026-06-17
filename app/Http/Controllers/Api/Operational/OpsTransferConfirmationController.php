@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Operational;
 use App\Enums\OpsTransferConfirmationStatus;
 use App\Enums\OpsWalletTransactionType;
 use App\Enums\Role;
+use App\Http\Controllers\Api\Operational\ReturnsEmptyShowResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Operational\OpsTransferConfirmationRequest;
 use App\Http\Resources\Operational\OpsTransferConfirmationResource;
@@ -17,6 +18,8 @@ use Illuminate\Support\Facades\DB;
 
 class OpsTransferConfirmationController extends Controller
 {
+    use ReturnsEmptyShowResponse;
+
     public function __construct(
         protected OpsFileService $fileService,
         protected OpsWalletService $walletService,
@@ -52,8 +55,14 @@ class OpsTransferConfirmationController extends Controller
         ]);
     }
 
-    public function show(OpsTransferConfirmation $opsTransferConfirmation)
+    public function show(Request $request, string $uuid)
     {
+        $opsTransferConfirmation = OpsTransferConfirmation::where('uuid', $uuid)->first();
+
+        if (!$opsTransferConfirmation) {
+            return $this->emptyShowResponse(__('operational.confirmations.detail'));
+        }
+
         $this->authorizeConfirmationAccess($opsTransferConfirmation);
 
         return response()->json([

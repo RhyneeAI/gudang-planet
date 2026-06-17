@@ -250,8 +250,8 @@ Modul operasional mengelola keuangan cabang dengan sistem dompet digital mandor.
 | Model                   | Tabel                      | Fungsi                                     |
 | ----------------------- | -------------------------- | ------------------------------------------ |
 | SubCompany            | ops_sub_companies          | Cabang operasional (FK mandor_id)          |
-| OpsIncome               | ops_incomes                | Pemasukan (admin → pusat / admin → mandor) |
-| OpsExpense              | ops_expenses               | Pengeluaran (pusat / cabang mandor)        |
+| OpsIncome               | ops_incomes                | Pemasukan pusat (admin) / cabang (mandor) / pending transfer (admin→mandor) |
+| OpsExpense              | ops_expenses               | Pengeluaran pusat (admin INTERNAL) / transfer mandor (admin MANDOR) / cabang (mandor) |
 | OpsWallet               | ops_wallets                | Dompet digital mandor                      |
 | OpsWalletTransaction    | ops_wallet_transactions    | Ledger dompet                              |
 | OpsTransferConfirmation | ops_transfer_confirmations | Konfirmasi transfer admin → mandor         |
@@ -259,48 +259,63 @@ Modul operasional mengelola keuangan cabang dengan sistem dompet digital mandor.
 | OpsEditLog              | ops_edit_logs              | Audit trail edit                           |
 
 
-### Role & Alur
+### Role & Alur (v2 — sudah diimplementasi)
 
-**Role:** ADMIN dan MANDOR (keduanya bisa input). ADMIN punya otoritas audit mandor.
+**Role:** ADMIN dan MANDOR (keduanya bisa write income/expense dengan logic berbeda). ADMIN punya otoritas audit mandor.
 
-#### Admin — Pemasukan
+Route tunggal per resource (`/incomes`, `/expenses`) — controller branch by role. Form Request: **`OpsIncomeRequest`** & **`OpsExpenseRequest`** (satu file per resource, store + update, kondisi role di dalamnya — pola sama `CategoryRequest`).
 
-- Hanya pencatatan operasional **kantor pusat** (bukan ke mandor — transfer ke mandor via pengeluaran).
+#### Admin — Pemasukan (`POST /incomes`)
 
-#### Admin — Pengeluaran
+- Pencatatan pemasukan **kantor pusat** (`source_type: INTERNAL`).
+- `mandor_uuid` & `sub_company_uuid` **opsional** (hanya atribusi, bukan transfer).
+- **Tidak** membuat `OpsTransferConfirmation`.
 
-- Pengeluaran **pusat** saja.
-- Pengeluaran **ke mandor** → trigger alur transfer (lihat bawah).
+#### Admin — Pengeluaran (`POST /expenses`)
+
+Dua cabang via `expense_type`:
+
+| `expense_type` | Perilaku |
+| -------------- | -------- |
+| `INTERNAL` | Pengeluaran pusat saja (tanpa mandor/sub_company) |
+| `MANDOR` | Transfer ke mandor → buat `OpsExpense` + linked `OpsIncome` (`source_type: MANDOR`) + `OpsTransferConfirmation` PENDING + notifikasi mandor |
+
+Field wajib saat `MANDOR`: `mandor_uuid`, `sub_company_uuid`. Link expense→income: kolom `transfer_income_id` di `ops_expenses`.
 
 #### Admin → Mandor: Transfer Dana
 
-Alur **sudah selaras** dengan implementasi `OpsTransferConfirmation` yang ada:
-
 ```
-1. Admin input manual pengeluaran (expense) ke mandor tertentu
-2. Sistem buat pending transfer + notifikasi ke mandor
-3. Mandor review & APPROVE pemasukan dari admin
-4. Setelah approve → tercatat sebagai pemasukan mandor + update dompet digital
-5. Mandor bisa REJECT jika tidak sesuai
+1. Admin POST expense expense_type=MANDOR ke mandor + sub_company
+2. Sistem buat income pending + transfer confirmation + notifikasi mandor
+3. Mandor confirm/reject via /transfer-confirmations/{uuid}/confirm|reject
+4. Confirm → kredit dompet digital mandor
 ```
 
-> Mandor **tidak** request dari sisi mereka — admin yang initiate pengeluaran; mandor yang **approve/reject** pemasukan masuk.
+> Transfer **bukan** lewat admin income — hanya lewat admin expense `MANDOR`.
 
-#### Mandor — Pemasukan
+#### Mandor — Pemasukan (`POST /incomes`)
 
-- Pemasukan dari admin: **wajib approve** dulu via `OpsTransferConfirmation` sebelum masuk ke buku mandor/dompet.
-- Pemasukan lain (non-admin) → input langsung oleh mandor.
+- **Cabang sendiri:** `sub_company_uuid` wajib → `INTERNAL` + langsung kredit wallet.
+- **Dari admin:** `source_type: MANDOR` — read-only untuk mandor; dikonfirmasi via transfer confirmation.
 
-#### Mandor — Pengeluaran
+#### Mandor — Pengeluaran (`POST /expenses`)
 
-- Hanya pencatatan operasional dari **cabang yang mandor kelola**.
+- Hanya pengeluaran **internal cabang** (`expense_type: INTERNAL`, auto-set).
+- Field wajib: `sub_company_uuid`, name, amount, date, proof_file.
+- Debit wallet; block jika saldo tidak cukup + notifikasi admin.
 
 ### Aturan Input
 
-- CRUD pemasukan & pengeluaran.
-- Input tanggal: **backdate max 3 hari** — berlaku untuk **semua role** (ADMIN & MANDOR) dan **semua jenis** (pemasukan & pengeluaran).
-- Upload bukti/invoice.
+- CRUD pemasukan & pengeluaran (admin & mandor — logic berbeda per role).
+- Input tanggal: **backdate max 3 hari** — berlaku untuk **semua role** dan **semua jenis**.
+- Upload bukti: jpg/jpeg/png/pdf, **max 10MB** (`max:10240`).
 - Field: keterangan, judul, tanggal, bukti.
+
+### API Behavior
+
+- **GET show** (income, expense, transfer-confirmation, sub-company): UUID tidak ditemukan → `data: []` (bukan 404).
+- **Admin dashboard** (`GET /dashboard/admin`): response termasuk `sub_companies[]` (ringkasan income/expense per cabang). Drill-down read-only: `GET /incomes?sub_company_uuid=...` & `GET /expenses?sub_company_uuid=...`.
+- **Telescope login** (`/telescope-admin/login`): credential pakai **phone** + password (bukan username). Hanya SUPERADMIN.
 
 ### Sub-Company (sudah diimplementasi)
 
@@ -324,7 +339,8 @@ Model `SubCompany` (`ops_sub_companies`) sudah ada dan dipakai modul operasional
 | Route | Role | Keterangan |
 | ----- | ---- | ---------- |
 | `GET /api/v1/sub-companies` | ADMIN, OWNER, SUPERADMIN, MANDOR | List cabang (legacy, tetap aktif) |
-| `GET /api/v1/operational/sub-companies` | ADMIN, OWNER, SUPERADMIN (+ MANDOR lihat milik sendiri) | List cabang untuk dropdown operasional |
+| `GET /api/v1/operational/sub-companies` | Semua role operasional | List cabang (+ mandor lihat milik sendiri) |
+| `GET /api/v1/operational/sub-companies/{uuid}` | Semua role operasional | Detail cabang; not found → `data: []` |
 
 **Wallet mandor (`GET /operational/wallet`):**
 
@@ -470,7 +486,7 @@ tests/Feature/Api/Attendance/         # Pest tests
 
 - Framework: Pest.
 - Lokasi: `tests/Feature/Api/`.
-- POS sudah punya 22 feature tests; Operasional **belum ada test** — tambahkan saat develop.
+- POS sudah punya feature tests; Operasional: `tests/Feature/Api/OperationalIncomeTest.php`, `SubCompanyTest.php`.
 
 ---
 
@@ -526,7 +542,9 @@ tests/Feature/Api/Attendance/         # Pest tests
 | Marketing commission  | `app/Http/Controllers/Api/ReportController.php`                |
 | SubCompany            | `app/Models/SubCompany.php`, `app/Services/SubCompanyService.php` |
 | Ops mandor + cabang   | `app/Http/Controllers/Api/Operational/OpsMandorController.php`    |
+| Ops Form Requests     | `app/Http/Requests/Operational/OpsIncomeRequest.php`, `OpsExpenseRequest.php` |
 | Ops config            | `config/operational.php`                                       |
+| Postman collection    | `docs/postman/operational-api.postman_collection.json`         |
 | Flowchart operasional | `public/flowchart_operasional.pdf`                             |
 
 

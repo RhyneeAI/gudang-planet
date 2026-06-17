@@ -49,7 +49,7 @@ Route::prefix('v1')->middleware(['throttle:api'])->group(function () {
 
         Route::middleware(['role:SUPERADMIN,OWNER,ADMIN,MANDOR'])->group(function () {
             Route::get('/sub-companies', [SubCompanyController::class, 'index']);
-            Route::get('/sub-companies/{subCompany:uuid}', [SubCompanyController::class, 'show']);
+            Route::get('/sub-companies/{uuid}', [SubCompanyController::class, 'show']);
         });
 
         Route::group(['middleware' => ['role:SUPERADMIN,OWNER,MARKETING']], function () {

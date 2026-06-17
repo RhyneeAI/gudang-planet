@@ -3,20 +3,14 @@
 namespace App\Http\Controllers\Api\Operational;
 
 use App\Enums\OpsSourceType;
-use App\Enums\OpsTransferConfirmationStatus;
 use App\Enums\OpsWalletTransactionType;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Operational\OpsIncomeStoreRequest;
-use App\Http\Requests\Operational\OpsIncomeUpdateRequest;
-use App\Http\Requests\Operational\OpsMandorIncomeStoreRequest;
-use App\Http\Requests\Operational\OpsMandorIncomeUpdateRequest;
+use App\Http\Requests\Operational\OpsIncomeRequest;
 use App\Http\Resources\Operational\OpsIncomeResource;
 use App\Models\OpsEditLog;
 use App\Models\OpsIncome;
-use App\Models\OpsTransferConfirmation;
 use App\Services\Operational\OpsFileService;
-use App\Services\Operational\OpsNotificationService;
 use App\Services\Operational\OpsWalletService;
 use App\Services\SubCompanyService;
 use Carbon\Carbon;
@@ -25,13 +19,13 @@ use Illuminate\Support\Facades\DB;
 
 class OpsIncomeController extends Controller
 {
+    use ReturnsEmptyShowResponse;
     use ScopesOperationalBySubCompany;
 
     protected array $sortableColumns = ['name', 'date', 'amount', 'source_type'];
 
     public function __construct(
         protected OpsFileService $fileService,
-        protected OpsNotificationService $notificationService,
         protected SubCompanyService $subCompanyService,
         protected OpsWalletService $walletService,
     ) {}
@@ -41,67 +35,69 @@ class OpsIncomeController extends Controller
         return $this->indexResponse($request);
     }
 
-    public function store(Request $request)
+    public function store(OpsIncomeRequest $request)
     {
-        if ($request->user()->role === Role::MANDOR) {
-            $formRequest = OpsMandorIncomeStoreRequest::createFrom($request);
-            $formRequest->setContainer(app())->setRedirector(app('redirect'));
-            $formRequest->validateResolved();
-
-            if ($response = $this->validateStoreWindow($formRequest->date, 'store')) {
-                return $response;
-            }
-
-            return $this->storeAsMandor($formRequest);
-        }
-
-        $formRequest = OpsIncomeStoreRequest::createFrom($request);
-        $formRequest->setContainer(app())->setRedirector(app('redirect'));
-        $formRequest->validateResolved();
-
-        if ($response = $this->validateStoreWindow($formRequest->date, 'store')) {
+        if ($response = $this->validateStoreWindow($request->date, 'store')) {
             return $response;
         }
 
-        return $this->storeAsAdmin($formRequest);
+        if ($request->user()->role === Role::MANDOR) {
+            return $this->storeAsMandor($request);
+        }
+
+        return $this->storeAsAdmin($request);
     }
 
-    public function show(OpsIncome $opsIncome)
+    public function show(Request $request, string $uuid)
     {
-        if (request()->user()->role === Role::MANDOR) {
+        $opsIncome = OpsIncome::where('uuid', $uuid)->first();
+
+        if (!$opsIncome) {
+            return $this->emptyShowResponse(__('operational.incomes.detail'));
+        }
+
+        if ($request->user()->role === Role::MANDOR) {
             $this->authorizeMandorIncomeAccess($opsIncome);
         }
 
         return $this->showResponse($opsIncome);
     }
 
-    public function update(Request $request, OpsIncome $opsIncome)
+    public function update(OpsIncomeRequest $request, string $uuid)
     {
-        if ($request->user()->role === Role::MANDOR) {
-            $formRequest = OpsMandorIncomeUpdateRequest::createFrom($request);
-            $formRequest->setContainer(app())->setRedirector(app('redirect'));
-            $formRequest->validateResolved();
+        $opsIncome = OpsIncome::where('uuid', $uuid)->first();
 
-            if ($response = $this->validateStoreWindow($formRequest->date, 'edit')) {
-                return $response;
-            }
-
-            return $this->updateAsMandor($formRequest, $opsIncome);
+        if (!$opsIncome) {
+            return response()->json([
+                'success' => false,
+                'message' => __('operational.incomes.not_found'),
+                'code' => 404,
+            ], 404);
         }
 
-        $formRequest = OpsIncomeUpdateRequest::createFrom($request);
-        $formRequest->setContainer(app())->setRedirector(app('redirect'));
-        $formRequest->validateResolved();
-
-        if ($response = $this->validateStoreWindow($formRequest->date, 'edit')) {
+        if ($response = $this->validateStoreWindow($request->date, 'edit')) {
             return $response;
         }
 
-        return $this->updateAsAdmin($formRequest, $opsIncome);
+        if ($request->user()->role === Role::MANDOR) {
+            return $this->updateAsMandor($request, $opsIncome);
+        }
+
+        return $this->updateAsAdmin($request, $opsIncome);
     }
 
-    public function destroy(Request $request, OpsIncome $opsIncome)
+    public function destroy(Request $request, string $uuid)
     {
+        $opsIncome = OpsIncome::where('uuid', $uuid)->first();
+
+        if (!$opsIncome) {
+            return response()->json([
+                'success' => false,
+                'message' => __('operational.incomes.not_found'),
+                'code' => 404,
+            ], 404);
+        }
+
         if ($request->user()->role === Role::MANDOR) {
             return $this->destroyAsMandor($opsIncome);
         }
@@ -109,56 +105,46 @@ class OpsIncomeController extends Controller
         return $this->destroyAsAdmin($opsIncome);
     }
 
-    protected function storeAsAdmin(OpsIncomeStoreRequest $request)
+    protected function storeAsAdmin(OpsIncomeRequest $request)
     {
         $companyId = $request->user()->company_id;
-        $mandor = $this->subCompanyService->resolveMandor($request->mandor_uuid, $companyId);
-        $subCompany = $this->subCompanyService->resolveForAdmin(
-            $request->sub_company_uuid,
-            $companyId,
-            $mandor->id
-        );
+        $mandorId = null;
+        $subCompanyId = null;
 
-        DB::beginTransaction();
-        try {
-            $income = OpsIncome::create([
-                'name' => $request->name,
-                'amount' => $request->amount,
-                'date' => $request->date,
-                'proof_file' => $this->fileService->storeProof($request->file('proof_file')),
-                'note' => $request->note,
-                'source_type' => OpsSourceType::MANDOR,
-                'mandor_id' => $mandor->id,
-                'sub_company_id' => $subCompany->id,
-                'created_by' => $request->user()->id,
-                'company_id' => $companyId,
-            ]);
-
-            $confirmation = OpsTransferConfirmation::create([
-                'confirmable_type' => $income->getMorphClass(),
-                'confirmable_id' => $income->id,
-                'status' => OpsTransferConfirmationStatus::PENDING,
-                'company_id' => $companyId,
-            ]);
-
-            $this->notificationService->notifyMandorIncomePending($mandor, $income, $confirmation);
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => __('operational.incomes.stored'),
-                'data' => new OpsIncomeResource(
-                    $income->load(['mandor', 'subCompany', 'createdBy', 'transferConfirmation'])
-                ),
-            ], 201);
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            throw $e;
+        if ($request->filled('mandor_uuid')) {
+            $mandor = $this->subCompanyService->resolveMandor($request->mandor_uuid, $companyId);
+            $subCompany = $this->subCompanyService->resolveForAdmin(
+                $request->sub_company_uuid,
+                $companyId,
+                $mandor->id
+            );
+            $mandorId = $mandor->id;
+            $subCompanyId = $subCompany->id;
         }
+
+        $income = OpsIncome::create([
+            'name' => $request->name,
+            'amount' => $request->amount,
+            'date' => $request->date,
+            'proof_file' => $this->fileService->storeProof($request->file('proof_file')),
+            'note' => $request->note,
+            'source_type' => OpsSourceType::INTERNAL,
+            'mandor_id' => $mandorId,
+            'sub_company_id' => $subCompanyId,
+            'created_by' => $request->user()->id,
+            'company_id' => $companyId,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => __('operational.incomes.stored'),
+            'data' => new OpsIncomeResource(
+                $income->load(['mandor', 'subCompany', 'createdBy'])
+            ),
+        ], 201);
     }
 
-    protected function storeAsMandor(OpsMandorIncomeStoreRequest $request)
+    protected function storeAsMandor(OpsIncomeRequest $request)
     {
         $user = $request->user();
         $subCompany = $this->subCompanyService->resolveForMandor($request->sub_company_uuid, $user);
@@ -203,72 +189,65 @@ class OpsIncomeController extends Controller
         }
     }
 
-    protected function updateAsAdmin(OpsIncomeUpdateRequest $request, OpsIncome $opsIncome)
+    protected function updateAsAdmin(OpsIncomeRequest $request, OpsIncome $opsIncome)
     {
-        DB::beginTransaction();
-        try {
-            if ($opsIncome->transferConfirmation->status !== OpsTransferConfirmationStatus::PENDING) {
-                return response()->json([
-                    'success' => false,
-                    'message' => __('operational.incomes.not_pending'),
-                    'code' => 422,
-                ], 422);
-            }
+        if ($response = $this->assertAdminEditableIncome($opsIncome)) {
+            return $response;
+        }
 
-            $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id;
+        $mandorId = null;
+        $subCompanyId = null;
+
+        if ($request->filled('mandor_uuid')) {
             $mandor = $this->subCompanyService->resolveMandor($request->mandor_uuid, $companyId);
             $subCompany = $this->subCompanyService->resolveForAdmin(
                 $request->sub_company_uuid,
                 $companyId,
                 $mandor->id
             );
-
-            $payload = [
-                'name' => $request->name,
-                'amount' => $request->amount,
-                'date' => $request->date,
-                'note' => $request->note,
-                'mandor_id' => $mandor->id,
-                'sub_company_id' => $subCompany->id,
-                'created_by' => $request->user()->id,
-                'company_id' => $companyId,
-            ];
-
-            if ($request->hasFile('proof_file')) {
-                $payload['proof_file'] = $this->fileService->storeProof($request->file('proof_file'));
-                $this->fileService->deleteProof($opsIncome->proof_file);
-            }
-
-            $oldData = $opsIncome->only(['name', 'amount', 'date', 'proof_file', 'note']);
-
-            $opsIncome->update($payload);
-
-            OpsEditLog::create([
-                'loggable_type' => 'ops_incomes',
-                'loggable_id' => $opsIncome->id,
-                'reason' => $request->reason ?? '-',
-                'old_data' => $oldData,
-                'new_data' => $opsIncome->only(['name', 'amount', 'date', 'proof_file', 'note']),
-                'edited_by' => $request->user()->id,
-                'company_id' => $companyId,
-            ]);
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => __('operational.incomes.updated'),
-                'data' => new OpsIncomeResource(
-                    $opsIncome->load(['mandor', 'subCompany', 'createdBy', 'transferConfirmation'])
-                ),
-            ]);
-        } catch (\Throwable $th) {
-            DB::rollBack();
-            throw $th;
+            $mandorId = $mandor->id;
+            $subCompanyId = $subCompany->id;
         }
+
+        $payload = [
+            'name' => $request->name,
+            'amount' => $request->amount,
+            'date' => $request->date,
+            'note' => $request->note,
+            'mandor_id' => $mandorId,
+            'sub_company_id' => $subCompanyId,
+        ];
+
+        if ($request->hasFile('proof_file')) {
+            $payload['proof_file'] = $this->fileService->storeProof($request->file('proof_file'));
+            $this->fileService->deleteProof($opsIncome->proof_file);
+        }
+
+        $oldData = $opsIncome->only(['name', 'amount', 'date', 'proof_file', 'note']);
+
+        $opsIncome->update($payload);
+
+        OpsEditLog::create([
+            'loggable_type' => 'ops_incomes',
+            'loggable_id' => $opsIncome->id,
+            'reason' => $request->reason ?? '-',
+            'old_data' => $oldData,
+            'new_data' => $opsIncome->only(['name', 'amount', 'date', 'proof_file', 'note']),
+            'edited_by' => $request->user()->id,
+            'company_id' => $companyId,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => __('operational.incomes.updated'),
+            'data' => new OpsIncomeResource(
+                $opsIncome->load(['mandor', 'subCompany', 'createdBy', 'editLogs'])
+            ),
+        ]);
     }
 
-    protected function updateAsMandor(OpsMandorIncomeUpdateRequest $request, OpsIncome $opsIncome)
+    protected function updateAsMandor(OpsIncomeRequest $request, OpsIncome $opsIncome)
     {
         $user = $request->user();
         $this->authorizeMandorIncomeAccess($opsIncome, editable: true);
@@ -352,32 +331,20 @@ class OpsIncomeController extends Controller
 
     protected function destroyAsAdmin(OpsIncome $opsIncome)
     {
-        DB::beginTransaction();
-        try {
-            if ($opsIncome->transferConfirmation->status !== OpsTransferConfirmationStatus::PENDING) {
-                return response()->json([
-                    'success' => false,
-                    'message' => __('operational.incomes.not_pending'),
-                    'code' => 422,
-                ], 422);
-            }
-
-            if ($opsIncome->proof_file) {
-                $this->fileService->deleteProof($opsIncome->proof_file);
-            }
-
-            $opsIncome->delete();
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => __('operational.incomes.deleted'),
-            ]);
-        } catch (\Throwable $th) {
-            DB::rollBack();
-            throw $th;
+        if ($response = $this->assertAdminEditableIncome($opsIncome)) {
+            return $response;
         }
+
+        if ($opsIncome->proof_file) {
+            $this->fileService->deleteProof($opsIncome->proof_file);
+        }
+
+        $opsIncome->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => __('operational.incomes.deleted'),
+        ]);
     }
 
     protected function destroyAsMandor(OpsIncome $opsIncome)
@@ -489,6 +456,19 @@ class OpsIncomeController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => __($messageKey, ['days' => $editWindowDays]),
+                'code' => 422,
+            ], 422);
+        }
+
+        return null;
+    }
+
+    protected function assertAdminEditableIncome(OpsIncome $income): ?\Illuminate\Http\JsonResponse
+    {
+        if ($income->source_type !== OpsSourceType::INTERNAL) {
+            return response()->json([
+                'success' => false,
+                'message' => __('operational.incomes.not_editable_by_admin'),
                 'code' => 422,
             ], 422);
         }

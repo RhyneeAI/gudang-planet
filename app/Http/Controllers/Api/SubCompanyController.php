@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\Role;
+use App\Http\Controllers\Api\Operational\ReturnsEmptyShowResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\SubCompanyResource;
 use App\Models\SubCompany;
@@ -10,6 +11,8 @@ use Illuminate\Http\Request;
 
 class SubCompanyController extends Controller
 {
+    use ReturnsEmptyShowResponse;
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -41,8 +44,14 @@ class SubCompanyController extends Controller
         ]);
     }
 
-    public function show(SubCompany $subCompany)
+    public function show(Request $request, string $uuid)
     {
+        $subCompany = SubCompany::where('uuid', $uuid)->first();
+
+        if (!$subCompany) {
+            return $this->emptyShowResponse(__('operational.sub_companies.detail'));
+        }
+
         $this->authorizeSubCompanyAccess($subCompany);
 
         return response()->json([

@@ -1,8 +1,10 @@
 <?php
 
+use App\Enums\OpsExpenseType;
 use App\Enums\OpsSourceType;
 use App\Enums\Role;
 use App\Models\Company;
+use App\Models\OpsExpense;
 use App\Models\OpsIncome;
 use App\Models\OpsTransferConfirmation;
 use App\Models\OpsWallet;
@@ -10,6 +12,7 @@ use App\Models\SubCompany;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     Storage::fake('public');
@@ -24,21 +27,63 @@ beforeEach(function () {
     $this->subCompany = SubCompany::where('mandor_id', $this->mandor->id)->first();
 });
 
-it('requires mandor and sub company uuid for admin income store', function () {
-    $this->actingAs($this->admin)
-        ->postJson('/api/v1/operational/incomes', [
-            'mandor_uuid' => $this->mandor->uuid,
-            'name' => 'Transfer Dana',
-            'amount' => 100000,
-            'date' => now()->toDateString(),
-        ])
-        ->assertStatus(422)
-        ->assertJsonValidationErrors(['sub_company_uuid', 'proof_file']);
-});
-
-it('stores admin income transfer with pending confirmation', function () {
+it('stores admin income without mandor as internal pusat income', function () {
     $response = $this->actingAs($this->admin)
         ->post('/api/v1/operational/incomes', [
+            'name' => 'Pemasukan Pusat',
+            'amount' => 500000,
+            'date' => now()->toDateString(),
+            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+        ], ['Accept' => 'application/json']);
+
+    $response->assertCreated()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.source_type', OpsSourceType::INTERNAL->value)
+        ->assertJsonPath('data.mandor', null);
+
+    expect(OpsTransferConfirmation::count())->toBe(0);
+});
+
+it('stores admin income with optional mandor attribution', function () {
+    $response = $this->actingAs($this->admin)
+        ->post('/api/v1/operational/incomes', [
+            'mandor_uuid' => $this->mandor->uuid,
+            'sub_company_uuid' => $this->subCompany->uuid,
+            'name' => 'Pemasukan Atribusi Cabang',
+            'amount' => 200000,
+            'date' => now()->toDateString(),
+            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+        ], ['Accept' => 'application/json']);
+
+    $response->assertCreated()
+        ->assertJsonPath('data.source_type', OpsSourceType::INTERNAL->value)
+        ->assertJsonPath('data.mandor.uuid', $this->mandor->uuid);
+
+    expect(OpsTransferConfirmation::count())->toBe(0);
+});
+
+it('stores admin internal expense without mandor', function () {
+    $response = $this->actingAs($this->admin)
+        ->post('/api/v1/operational/expenses', [
+            'expense_type' => OpsExpenseType::INTERNAL->value,
+            'name' => 'Pengeluaran Pusat',
+            'amount' => 100000,
+            'date' => now()->toDateString(),
+            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+        ], ['Accept' => 'application/json']);
+
+    $response->assertCreated()
+        ->assertJsonPath('data.expense_type', OpsExpenseType::INTERNAL->value)
+        ->assertJsonPath('data.mandor', null);
+
+    expect(OpsExpense::count())->toBe(1);
+    expect(OpsTransferConfirmation::count())->toBe(0);
+});
+
+it('stores admin mandor transfer expense with pending income confirmation', function () {
+    $response = $this->actingAs($this->admin)
+        ->post('/api/v1/operational/expenses', [
+            'expense_type' => OpsExpenseType::MANDOR->value,
             'mandor_uuid' => $this->mandor->uuid,
             'sub_company_uuid' => $this->subCompany->uuid,
             'name' => 'Transfer Dana',
@@ -48,9 +93,9 @@ it('stores admin income transfer with pending confirmation', function () {
         ], ['Accept' => 'application/json']);
 
     $response->assertCreated()
-        ->assertJsonPath('success', true)
-        ->assertJsonPath('data.source_type', OpsSourceType::MANDOR->value)
-        ->assertJsonPath('data.transfer_confirmation.status', 'PENDING');
+        ->assertJsonPath('data.expense_type', OpsExpenseType::MANDOR->value)
+        ->assertJsonPath('data.transfer_income.source_type', OpsSourceType::MANDOR->value)
+        ->assertJsonPath('data.transfer_income.transfer_confirmation.status', 'PENDING');
 
     expect(OpsTransferConfirmation::count())->toBe(1);
 });
@@ -105,4 +150,29 @@ it('forbids mandor from editing admin transfer income', function () {
         ])
         ->assertStatus(422)
         ->assertJsonPath('message', __('operational.incomes.not_editable'));
+});
+
+it('returns empty array when income show uuid is not found', function () {
+    $this->actingAs($this->admin)
+        ->getJson('/api/v1/operational/incomes/' . Str::uuid())
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data', []);
+});
+
+it('includes sub companies in admin dashboard', function () {
+    $response = $this->actingAs($this->admin)
+        ->getJson('/api/v1/operational/dashboard/admin');
+
+    $response->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonStructure([
+            'data' => [
+                'total_income',
+                'total_expense',
+                'sub_companies' => [
+                    ['uuid', 'name', 'code', 'total_income', 'total_expense'],
+                ],
+            ],
+        ]);
 });

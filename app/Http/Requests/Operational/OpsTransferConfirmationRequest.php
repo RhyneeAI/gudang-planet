@@ -15,7 +15,7 @@ class OpsTransferConfirmationRequest extends FormRequest
     {
         return [
             'confirmed_amount' => ['required', 'numeric', 'min:0.01'],
-            'mandor_proof_file' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'mandor_proof_file' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
             'note' => ['nullable', 'string'],
         ];
     }

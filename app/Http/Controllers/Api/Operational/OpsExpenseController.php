@@ -3,24 +3,28 @@
 namespace App\Http\Controllers\Api\Operational;
 
 use App\Enums\OpsExpenseType;
+use App\Enums\OpsSourceType;
+use App\Enums\OpsTransferConfirmationStatus;
 use App\Enums\OpsWalletTransactionType;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Operational\OpsExpenseStoreRequest;
-use App\Http\Requests\Operational\OpsExpenseUpdateRequest;
+use App\Http\Requests\Operational\OpsExpenseRequest;
 use App\Http\Resources\Operational\OpsExpenseResource;
 use App\Models\OpsEditLog;
 use App\Models\OpsExpense;
+use App\Models\OpsIncome;
+use App\Models\OpsTransferConfirmation;
 use App\Services\Operational\OpsFileService;
 use App\Services\Operational\OpsNotificationService;
-use App\Services\SubCompanyService;
 use App\Services\Operational\OpsWalletService;
+use App\Services\SubCompanyService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class OpsExpenseController extends Controller
 {
+    use ReturnsEmptyShowResponse;
     use ScopesOperationalBySubCompany;
 
     protected array $sortableColumns = ['name', 'date', 'amount', 'expense_type'];
@@ -37,19 +41,166 @@ class OpsExpenseController extends Controller
         return $this->indexResponse($request);
     }
 
-    public function store(OpsExpenseStoreRequest $request)
+    public function store(OpsExpenseRequest $request)
     {
-        $editWindowDays = config('operational.expense_edit_window_days');
-        $requestDate = Carbon::parse($request->date)->startOfDay();
-        $limitDate = now()->subDays($editWindowDays)->startOfDay();
-        if ($requestDate->lt($limitDate)) {
-            return response()->json([
-                'success' => false,
-                'message' => __('operational.expenses.store_window_expired', ['days' => $editWindowDays]),
-                'code' => 422,
-            ], 422);
+        if ($response = $this->validateStoreWindow($request->date, 'store')) {
+            return $response;
         }
 
+        if ($request->user()->role === Role::MANDOR) {
+            return $this->storeAsMandor($request);
+        }
+
+        return $this->storeAsAdmin($request);
+    }
+
+    public function show(Request $request, string $uuid)
+    {
+        $opsExpense = OpsExpense::where('uuid', $uuid)->first();
+
+        if (!$opsExpense) {
+            return $this->emptyShowResponse(__('operational.expenses.detail'));
+        }
+
+        if ($request->user()->role === Role::MANDOR) {
+            $this->authorizeExpenseAccess($opsExpense);
+        }
+
+        return $this->showResponse($opsExpense);
+    }
+
+    public function update(OpsExpenseRequest $request, string $uuid)
+    {
+        $opsExpense = OpsExpense::where('uuid', $uuid)->first();
+
+        if (!$opsExpense) {
+            return response()->json([
+                'success' => false,
+                'message' => __('operational.expenses.not_found'),
+                'code' => 404,
+            ], 404);
+        }
+
+        if ($response = $this->validateStoreWindow($request->date, 'edit')) {
+            return $response;
+        }
+
+        if ($request->user()->role === Role::MANDOR) {
+            return $this->updateAsMandor($request, $opsExpense);
+        }
+
+        return $this->updateAsAdmin($request, $opsExpense);
+    }
+
+    public function destroy(Request $request, string $uuid)
+    {
+        $opsExpense = OpsExpense::where('uuid', $uuid)->first();
+
+        if (!$opsExpense) {
+            return response()->json([
+                'success' => false,
+                'message' => __('operational.expenses.not_found'),
+                'code' => 404,
+            ], 404);
+        }
+
+        if ($request->user()->role === Role::MANDOR) {
+            return $this->destroyAsMandor($opsExpense);
+        }
+
+        return $this->destroyAsAdmin($opsExpense);
+    }
+
+    protected function storeAsAdmin(OpsExpenseRequest $request)
+    {
+        $companyId = $request->user()->company_id;
+        $expenseType = OpsExpenseType::from($request->expense_type);
+        $proofPath = $this->fileService->storeProof($request->file('proof_file'));
+
+        if ($expenseType === OpsExpenseType::INTERNAL) {
+            $expense = OpsExpense::create([
+                'name' => $request->name,
+                'amount' => $request->amount,
+                'date' => $request->date,
+                'proof_file' => $proofPath,
+                'note' => $request->note,
+                'expense_type' => OpsExpenseType::INTERNAL,
+                'created_by' => $request->user()->id,
+                'company_id' => $companyId,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => __('operational.expenses.admin_stored'),
+                'data' => new OpsExpenseResource(
+                    $expense->load(['createdBy'])
+                ),
+            ], 201);
+        }
+
+        $mandor = $this->subCompanyService->resolveMandor($request->mandor_uuid, $companyId);
+        $subCompany = $this->subCompanyService->resolveForAdmin(
+            $request->sub_company_uuid,
+            $companyId,
+            $mandor->id
+        );
+
+        DB::beginTransaction();
+        try {
+            $expense = OpsExpense::create([
+                'name' => $request->name,
+                'amount' => $request->amount,
+                'date' => $request->date,
+                'proof_file' => $proofPath,
+                'note' => $request->note,
+                'expense_type' => OpsExpenseType::MANDOR,
+                'mandor_id' => $mandor->id,
+                'sub_company_id' => $subCompany->id,
+                'created_by' => $request->user()->id,
+                'company_id' => $companyId,
+            ]);
+
+            $income = OpsIncome::create([
+                'name' => $request->name,
+                'amount' => $request->amount,
+                'date' => $request->date,
+                'proof_file' => $proofPath,
+                'note' => $request->note,
+                'source_type' => OpsSourceType::MANDOR,
+                'mandor_id' => $mandor->id,
+                'sub_company_id' => $subCompany->id,
+                'created_by' => $request->user()->id,
+                'company_id' => $companyId,
+            ]);
+
+            $expense->update(['transfer_income_id' => $income->id]);
+
+            $confirmation = OpsTransferConfirmation::create([
+                'confirmable_type' => $income->getMorphClass(),
+                'confirmable_id' => $income->id,
+                'status' => OpsTransferConfirmationStatus::PENDING,
+                'company_id' => $companyId,
+            ]);
+
+            $this->notificationService->notifyMandorIncomePending($mandor, $income, $confirmation);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => __('operational.expenses.mandor_transfer_stored'),
+                'data' => new OpsExpenseResource(
+                    $expense->load(['mandor', 'subCompany', 'createdBy', 'transferIncome.transferConfirmation'])
+                ),
+            ], 201);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    protected function storeAsMandor(OpsExpenseRequest $request)
+    {
         $user = $request->user();
         $subCompany = $this->subCompanyService->resolveForMandor($request->sub_company_uuid, $user);
         $wallet = $this->walletService->getOrCreateWallet($user, $subCompany);
@@ -110,31 +261,124 @@ class OpsExpenseController extends Controller
         }
     }
 
-    public function show(OpsExpense $opsExpense)
+    protected function updateAsAdmin(OpsExpenseRequest $request, OpsExpense $opsExpense)
     {
-        if (request()->user()->role === Role::MANDOR) {
-            $this->authorizeExpenseAccess($opsExpense);
+        if ($opsExpense->expense_type === OpsExpenseType::MANDOR) {
+            if ($response = $this->assertMandorTransferEditable($opsExpense)) {
+                return $response;
+            }
+
+            return $this->updateAdminMandorTransfer($request, $opsExpense);
         }
 
-        return $this->showResponse($opsExpense);
+        return $this->updateAdminInternal($request, $opsExpense);
     }
 
-    public function update(OpsExpenseUpdateRequest $request, OpsExpense $opsExpense)
+    protected function updateAdminInternal(OpsExpenseRequest $request, OpsExpense $opsExpense)
+    {
+        $oldData = $opsExpense->only(['name', 'amount', 'date', 'proof_file', 'note']);
+
+        $updateData = [
+            'name' => $request->name,
+            'amount' => $request->amount,
+            'date' => $request->date,
+            'note' => $request->note,
+        ];
+
+        if ($request->hasFile('proof_file')) {
+            $updateData['proof_file'] = $this->fileService->storeProof($request->file('proof_file'));
+            $this->fileService->deleteProof($opsExpense->proof_file);
+        }
+
+        $opsExpense->update($updateData);
+
+        OpsEditLog::create([
+            'loggable_type' => 'ops_expenses',
+            'loggable_id' => $opsExpense->id,
+            'reason' => $request->reason ?? '-',
+            'old_data' => $oldData,
+            'new_data' => $opsExpense->only(['name', 'amount', 'date', 'proof_file', 'note']),
+            'edited_by' => $request->user()->id,
+            'company_id' => $request->user()->company_id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => __('operational.expenses.updated'),
+            'data' => new OpsExpenseResource(
+                $opsExpense->fresh()->load(['createdBy', 'editLogs'])
+            ),
+        ]);
+    }
+
+    protected function updateAdminMandorTransfer(OpsExpenseRequest $request, OpsExpense $opsExpense)
+    {
+        $opsExpense->loadMissing('transferIncome.transferConfirmation');
+        $income = $opsExpense->transferIncome;
+
+        $oldData = $opsExpense->only(['name', 'amount', 'date', 'proof_file', 'note']);
+
+        $updateData = [
+            'name' => $request->name,
+            'amount' => $request->amount,
+            'date' => $request->date,
+            'note' => $request->note,
+        ];
+
+        if ($request->hasFile('proof_file')) {
+            $updateData['proof_file'] = $this->fileService->storeProof($request->file('proof_file'));
+            $this->fileService->deleteProof($opsExpense->proof_file);
+        }
+
+        DB::beginTransaction();
+        try {
+            $opsExpense->update($updateData);
+
+            if ($income) {
+                $incomeUpdate = [
+                    'name' => $request->name,
+                    'amount' => $request->amount,
+                    'date' => $request->date,
+                    'note' => $request->note,
+                ];
+
+                if (isset($updateData['proof_file'])) {
+                    $this->fileService->deleteProof($income->proof_file);
+                    $incomeUpdate['proof_file'] = $updateData['proof_file'];
+                }
+
+                $income->update($incomeUpdate);
+            }
+
+            OpsEditLog::create([
+                'loggable_type' => 'ops_expenses',
+                'loggable_id' => $opsExpense->id,
+                'reason' => $request->reason ?? '-',
+                'old_data' => $oldData,
+                'new_data' => $opsExpense->only(['name', 'amount', 'date', 'proof_file', 'note']),
+                'edited_by' => $request->user()->id,
+                'company_id' => $request->user()->company_id,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => __('operational.expenses.updated'),
+                'data' => new OpsExpenseResource(
+                    $opsExpense->fresh()->load(['mandor', 'subCompany', 'createdBy', 'transferIncome.transferConfirmation', 'editLogs'])
+                ),
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    protected function updateAsMandor(OpsExpenseRequest $request, OpsExpense $opsExpense)
     {
         $user = $request->user();
         $this->authorizeExpenseAccess($opsExpense, Role::MANDOR);
-
-        $editWindowDays = config('operational.expense_edit_window_days');
-
-        $requestDate = Carbon::parse($request->date)->startOfDay();
-        $limitDate = now()->subDays($editWindowDays)->startOfDay();
-        if ($requestDate->lt($limitDate)) {
-            return response()->json([
-                'success' => false,
-                'message' => __('operational.expenses.edit_window_expired', ['days' => $editWindowDays]),
-                'code' => 422,
-            ], 422);
-        }
 
         $subCompany = $opsExpense->subCompany
             ?? $this->subCompanyService->resolveForMandor($request->sub_company_uuid, $user);
@@ -163,9 +407,8 @@ class OpsExpenseController extends Controller
                 'note' => $request->note,
             ];
 
-            if ($request->proof_file) {
+            if ($request->hasFile('proof_file')) {
                 $updateData['proof_file'] = $this->fileService->storeProof($request->file('proof_file'));
-
                 $this->fileService->deleteProof($opsExpense->proof_file);
             }
 
@@ -204,7 +447,54 @@ class OpsExpenseController extends Controller
         }
     }
 
-    public function destroy(OpsExpense $opsExpense)
+    protected function destroyAsAdmin(OpsExpense $opsExpense)
+    {
+        if ($opsExpense->expense_type === OpsExpenseType::MANDOR) {
+            if ($response = $this->assertMandorTransferEditable($opsExpense)) {
+                return $response;
+            }
+
+            DB::beginTransaction();
+            try {
+                $opsExpense->loadMissing('transferIncome.transferConfirmation');
+                $income = $opsExpense->transferIncome;
+
+                if ($opsExpense->proof_file) {
+                    $this->fileService->deleteProof($opsExpense->proof_file);
+                }
+
+                if ($income) {
+                    $income->transferConfirmation?->delete();
+                    $income->delete();
+                }
+
+                $opsExpense->delete();
+
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => __('operational.expenses.deleted'),
+                ]);
+            } catch (\Throwable $th) {
+                DB::rollBack();
+                throw $th;
+            }
+        }
+
+        if ($opsExpense->proof_file) {
+            $this->fileService->deleteProof($opsExpense->proof_file);
+        }
+
+        $opsExpense->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => __('operational.expenses.deleted'),
+        ]);
+    }
+
+    protected function destroyAsMandor(OpsExpense $opsExpense)
     {
         DB::beginTransaction();
         try {
@@ -237,6 +527,7 @@ class OpsExpenseController extends Controller
             $opsExpense->delete();
 
             DB::commit();
+
             return response()->json([
                 'success' => true,
                 'message' => __('operational.expenses.deleted'),
@@ -247,6 +538,23 @@ class OpsExpenseController extends Controller
         }
     }
 
+    protected function assertMandorTransferEditable(OpsExpense $opsExpense): ?\Illuminate\Http\JsonResponse
+    {
+        $opsExpense->loadMissing('transferIncome.transferConfirmation');
+
+        $status = $opsExpense->transferIncome?->transferConfirmation?->status;
+
+        if ($status !== OpsTransferConfirmationStatus::PENDING) {
+            return response()->json([
+                'success' => false,
+                'message' => __('operational.expenses.not_pending'),
+                'code' => 422,
+            ], 422);
+        }
+
+        return null;
+    }
+
     protected function indexResponse(Request $request)
     {
         $orderByKey = in_array($request->input('order_by_key', 'date'), $this->sortableColumns)
@@ -254,7 +562,7 @@ class OpsExpenseController extends Controller
             : 'date';
         $orderByValue = strtoupper($request->input('order_by_value', 'DESC')) === 'ASC' ? 'ASC' : 'DESC';
 
-        $expenses = OpsExpense::with(['mandor', 'subCompany', 'createdBy', 'editLogs'])
+        $expenses = OpsExpense::with(['mandor', 'subCompany', 'createdBy', 'transferIncome.transferConfirmation', 'editLogs'])
             ->withCount('editLogs')
             ->when(true, fn ($query) => $this->applySubCompanyFilter($query, $request))
             ->when($request->date_from, fn($q, $date) => $q->whereDate('date', '>=', $date))
@@ -264,6 +572,7 @@ class OpsExpenseController extends Controller
                 fn($q, $uuid) =>
                 $q->whereHas('mandor', fn($m) => $m->where('uuid', $uuid))
             )
+            ->when($request->expense_type, fn ($q, $type) => $q->where('expense_type', $type))
             ->when($request->search, function ($query, $search) {
                 $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
             })
@@ -283,9 +592,30 @@ class OpsExpenseController extends Controller
             'success' => true,
             'message' => __('operational.expenses.detail'),
             'data' => new OpsExpenseResource(
-                $opsExpense->load(['mandor', 'subCompany', 'createdBy', 'editLogs'])
+                $opsExpense->load(['mandor', 'subCompany', 'createdBy', 'transferIncome.transferConfirmation', 'editLogs'])
             ),
         ]);
+    }
+
+    protected function validateStoreWindow(string $date, string $action): ?\Illuminate\Http\JsonResponse
+    {
+        $editWindowDays = config('operational.expense_edit_window_days');
+        $requestDate = Carbon::parse($date)->startOfDay();
+        $limitDate = now()->subDays($editWindowDays)->startOfDay();
+
+        if ($requestDate->lt($limitDate)) {
+            $messageKey = $action === 'store'
+                ? 'operational.expenses.store_window_expired'
+                : 'operational.expenses.edit_window_expired';
+
+            return response()->json([
+                'success' => false,
+                'message' => __($messageKey, ['days' => $editWindowDays]),
+                'code' => 422,
+            ], 422);
+        }
+
+        return null;
     }
 
     protected function authorizeExpenseAccess(OpsExpense $expense, ?Role $mandorOnly = null): void
