@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\Operational\OpsMandorResource;
 use App\Http\Resources\Operational\OpsWalletResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -16,10 +17,15 @@ class SubCompanyResource extends JsonResource
             'code' => $this->code,
             'address' => $this->address,
             'is_active' => (bool) $this->is_active,
-            'mandor' => $this->whenLoaded('mandor', fn () => [
-                'uuid' => $this->mandor->uuid,
-                'name' => $this->mandor->name,
-            ]),
+            'mandor' => $this->whenLoaded('mandor', function () {
+                $mandor = $this->mandor;
+
+                if (!$mandor->relationLoaded('subCompanies')) {
+                    $mandor->setRelation('subCompanies', collect([$this->resource]));
+                }
+
+                return new OpsMandorResource($mandor);
+            }),
             'created_by' => $this->whenLoaded('createdBy', fn () => [
                 'uuid' => $this->createdBy->uuid,
                 'name' => $this->createdBy->name,

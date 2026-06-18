@@ -6,11 +6,13 @@ use App\Enums\OpsTransferConfirmationStatus;
 use App\Enums\Role;
 use App\Models\Company;
 use App\Models\OpsConfiguration;
+use App\Models\OpsExpense;
 use App\Models\OpsIncome;
 use App\Models\SubCompany;
 use App\Models\User;
 use App\Services\Operational\OpsWalletService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -145,8 +147,7 @@ class SubCompanyService
 
     public function createMandorWithSubCompany(User $createdBy, array $mandorData, array $subCompanyData): array
     {
-        $randomDigits = str_pad((string) random_int(0, 999), 3, '0', STR_PAD_LEFT);
-        $rawPassword = strtolower(str_replace(' ', '', $mandorData['name'])) . $randomDigits;
+        $rawPassword = $this->generateMandorPassword($mandorData['name']);
 
         User::$skipSubCompanyAutoCreate = true;
 
@@ -313,32 +314,74 @@ class SubCompanyService
         return $mandor;
     }
 
-    public function updateForAdmin(SubCompany $subCompany, array $data, User $actor): SubCompany
+    public function updateMandorWithSubCompany(
+        SubCompany $subCompany,
+        array $mandorData,
+        array $subCompanyData,
+    ): array {
+        $mandor = $subCompany->mandor;
+
+        if (!$mandor) {
+            throw ValidationException::withMessages([
+                'mandor' => [__('operational.validation.mandor_uuid_not_found')],
+            ]);
+        }
+
+        $mandorUpdates = [];
+
+        if (array_key_exists('name', $mandorData)) {
+            $mandorUpdates['name'] = $mandorData['name'];
+        }
+
+        if (array_key_exists('phone', $mandorData)) {
+            $mandorUpdates['phone'] = $mandorData['phone'];
+        }
+
+        if (array_key_exists('email', $mandorData)) {
+            $mandorUpdates['email'] = $mandorData['email'];
+        }
+
+        if (array_key_exists('address', $mandorData)) {
+            $mandorUpdates['address'] = $mandorData['address'];
+        }
+
+        if (array_key_exists('is_active', $mandorData)) {
+            $mandorUpdates['is_active'] = (bool) $mandorData['is_active'];
+        }
+
+        if (!empty($mandorUpdates)) {
+            $mandor->update($mandorUpdates);
+        }
+
+        $subCompanyUpdates = [];
+
+        if (array_key_exists('name', $subCompanyData)) {
+            $subCompanyUpdates['name'] = $subCompanyData['name'];
+        }
+
+        if (array_key_exists('address', $subCompanyData)) {
+            $subCompanyUpdates['address'] = $subCompanyData['address'];
+        }
+
+        if (array_key_exists('is_active', $subCompanyData)) {
+            $subCompanyUpdates['is_active'] = (bool) $subCompanyData['is_active'];
+        }
+
+        if (!empty($subCompanyUpdates)) {
+            $subCompany->update($subCompanyUpdates);
+        }
+
+        return [
+            'mandor' => $mandor->fresh(),
+            'subCompany' => $subCompany->fresh(),
+        ];
+    }
+
+    protected function generateMandorPassword(string $name): string
     {
-        $updates = [];
+        $randomDigits = str_pad((string) random_int(0, 999), 3, '0', STR_PAD_LEFT);
 
-        if (array_key_exists('name', $data)) {
-            $updates['name'] = $data['name'];
-        }
-
-        if (array_key_exists('address', $data)) {
-            $updates['address'] = $data['address'];
-        }
-
-        if (array_key_exists('is_active', $data)) {
-            $updates['is_active'] = (bool) $data['is_active'];
-        }
-
-        if (!empty($updates)) {
-            $subCompany->update($updates);
-        }
-
-        if (!empty($data['mandor_uuid'])) {
-            $mandor = $this->resolveMandor($data['mandor_uuid'], $actor->company_id);
-            $this->reassignMandor($subCompany, $mandor, $actor);
-        }
-
-        return $subCompany->fresh();
+        return strtolower(preg_replace('/\s+/', '', $name) ?? '') . $randomDigits;
     }
 
     public function reassignMandor(SubCompany $subCompany, User $mandor, ?User $actor = null): SubCompany
@@ -382,6 +425,21 @@ class SubCompanyService
             ]);
         }
 
-        $subCompany->delete();
+        DB::transaction(function () use ($subCompany) {
+            $mandor = $subCompany->mandor;
+
+            OpsIncome::where('sub_company_id', $subCompany->id)->delete();
+            OpsExpense::where('sub_company_id', $subCompany->id)->delete();
+
+            $subCompany->delete();
+
+            if (
+                $mandor
+                && $mandor->role === Role::MANDOR
+                && $this->countForMandor($mandor->id) === 0
+            ) {
+                $mandor->delete();
+            }
+        });
     }
 }

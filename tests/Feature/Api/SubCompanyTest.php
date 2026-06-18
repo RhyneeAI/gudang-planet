@@ -1,8 +1,12 @@
 <?php
 
+use App\Enums\OpsExpenseType;
+use App\Enums\OpsSourceType;
 use App\Enums\Role;
 use App\Models\Company;
 use App\Models\SubCompany;
+use App\Models\OpsExpense;
+use App\Models\OpsIncome;
 use App\Models\OpsWallet;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -40,8 +44,14 @@ it('creates sub company with mandor via nested payload', function () {
         ->assertJsonPath('data.sub_company.address', 'Jl. Cabang Jakarta No. 2')
         ->assertJsonPath('data.sub_company.code', 'MJ001-01')
         ->assertJsonPath('data.mandor.name', 'Mandor Baru')
+        ->assertJsonPath('data.mandor.phone', '081234567890')
         ->assertJsonPath('data.mandor.has_sub_company', true)
-        ->assertJsonPath('data.credentials.phone', '081234567890');
+        ->assertJsonPath('data.credentials.phone', '081234567890')
+        ->assertJsonStructure(['data' => ['credentials' => ['phone', 'password']]]);
+
+    expect($response->json('message'))->toContain('081234567890')
+        ->and($response->json('message'))->toContain($response->json('data.credentials.password'))
+        ->and($response->json('data.credentials.password'))->toMatch('/^mandorbaru\d{3}$/');
 
     $mandor = User::where('phone', '081234567890')->first();
 
@@ -215,48 +225,63 @@ it('returns null sub company uuid on login when mandor has multiple branches', f
         ->assertJsonCount(2, 'data.user.sub_companies');
 });
 
-it('allows admin to update sub company details', function () {
+it('allows admin to update sub company and mandor together', function () {
     $mandor = User::factory()->mandor()->create([
         'company_id' => $this->company->id,
+        'name' => 'Mandor Lama',
+        'phone' => '081111111111',
     ]);
 
     $subCompany = SubCompany::where('mandor_id', $mandor->id)->first();
 
     $this->actingAs($this->admin)
         ->patchJson('/api/v1/sub-companies/' . $subCompany->uuid, [
-            'name' => 'Cabang Updated',
-            'address' => 'Alamat Baru',
-            'is_active' => false,
+            'mandor' => [
+                'name' => 'Mandor Updated',
+                'phone' => '082222222222',
+                'email' => 'mandor.updated@test.com',
+            ],
+            'sub_company' => [
+                'name' => 'Cabang Updated',
+                'address' => 'Alamat Baru',
+                'is_active' => false,
+            ],
         ])
         ->assertOk()
-        ->assertJsonPath('data.name', 'Cabang Updated')
-        ->assertJsonPath('data.address', 'Alamat Baru')
-        ->assertJsonPath('data.is_active', false);
+        ->assertJsonPath('data.sub_company.name', 'Cabang Updated')
+        ->assertJsonPath('data.sub_company.address', 'Alamat Baru')
+        ->assertJsonPath('data.sub_company.is_active', false)
+        ->assertJsonPath('data.mandor.name', 'Mandor Updated')
+        ->assertJsonPath('data.mandor.phone', '082222222222')
+        ->assertJsonPath('data.mandor.email', 'mandor.updated@test.com');
 
     expect($subCompany->fresh())
         ->name->toBe('Cabang Updated')
         ->address->toBe('Alamat Baru')
         ->is_active->toBeFalse();
+
+    expect($mandor->fresh())
+        ->name->toBe('Mandor Updated')
+        ->phone->toBe('082222222222')
+        ->email->toBe('mandor.updated@test.com');
 });
 
-it('allows admin to reassign sub company to another mandor', function () {
+it('includes mandor details on sub company show', function () {
     $mandor = User::factory()->mandor()->create([
         'company_id' => $this->company->id,
-    ]);
-    $otherMandor = User::factory()->mandor()->create([
-        'company_id' => $this->company->id,
+        'phone' => '083333333333',
+        'email' => 'mandor.show@test.com',
     ]);
 
     $subCompany = SubCompany::where('mandor_id', $mandor->id)->first();
 
     $this->actingAs($this->admin)
-        ->patchJson('/api/v1/sub-companies/' . $subCompany->uuid, [
-            'mandor_uuid' => $otherMandor->uuid,
-        ])
+        ->getJson('/api/v1/sub-companies/' . $subCompany->uuid)
         ->assertOk()
-        ->assertJsonPath('data.mandor.uuid', $otherMandor->uuid);
-
-    expect($subCompany->fresh()->mandor_id)->toBe($otherMandor->id);
+        ->assertJsonPath('data.sub_company.uuid', $subCompany->uuid)
+        ->assertJsonPath('data.mandor.uuid', $mandor->uuid)
+        ->assertJsonPath('data.mandor.phone', '083333333333')
+        ->assertJsonPath('data.mandor.email', 'mandor.show@test.com');
 });
 
 it('allows admin to delete sub company without pending transfers', function () {
@@ -265,6 +290,28 @@ it('allows admin to delete sub company without pending transfers', function () {
     ]);
 
     $subCompany = SubCompany::where('mandor_id', $mandor->id)->first();
+    $income = OpsIncome::create([
+        'name' => 'Pemasukan Cabang',
+        'amount' => 50000,
+        'date' => now()->toDateString(),
+        'proof_file' => 'proofs/test.jpg',
+        'source_type' => OpsSourceType::INTERNAL,
+        'mandor_id' => $mandor->id,
+        'sub_company_id' => $subCompany->id,
+        'created_by' => $this->admin->id,
+        'company_id' => $this->company->id,
+    ]);
+    $expense = OpsExpense::create([
+        'name' => 'Pengeluaran Cabang',
+        'amount' => 25000,
+        'date' => now()->toDateString(),
+        'proof_file' => 'proofs/test.jpg',
+        'expense_type' => OpsExpenseType::INTERNAL,
+        'mandor_id' => $mandor->id,
+        'sub_company_id' => $subCompany->id,
+        'created_by' => $this->admin->id,
+        'company_id' => $this->company->id,
+    ]);
 
     $this->actingAs($this->admin)
         ->deleteJson('/api/v1/sub-companies/' . $subCompany->uuid)
@@ -272,6 +319,10 @@ it('allows admin to delete sub company without pending transfers', function () {
         ->assertJsonPath('success', true);
 
     expect(SubCompany::withTrashed()->find($subCompany->id)?->trashed())->toBeTrue();
+    expect(OpsIncome::withTrashed()->find($income->id)?->trashed())->toBeTrue();
+    expect(OpsExpense::withTrashed()->find($expense->id)?->trashed())->toBeTrue();
+    expect(User::withTrashed()->find($mandor->id)?->trashed())->toBeTrue();
+    expect(OpsWallet::where('sub_company_id', $subCompany->id)->exists())->toBeTrue();
 });
 
 it('forbids deleting sub company with pending transfer confirmation', function () {
