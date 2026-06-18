@@ -48,14 +48,15 @@ Route::prefix('v1')->middleware(['throttle:api'])->group(function () {
         Route::patch('/profile',       [ProfileController::class, 'update']);
 
         Route::middleware(['role:SUPERADMIN,OWNER,ADMIN,MANDOR'])->group(function () {
-            Route::get('/sub-companies', [SubCompanyController::class, 'index']);
-            Route::get('/sub-companies/{uuid}', [SubCompanyController::class, 'show']);
+            Route::apiResource('sub-companies', SubCompanyController::class)
+                ->parameters(['sub-companies' => 'uuid'])
+                ->only(['index', 'show']);
         });
 
         Route::middleware(['role:SUPERADMIN,OWNER,ADMIN'])->group(function () {
-            Route::post('/sub-companies', [SubCompanyController::class, 'store']);
-            Route::patch('/sub-companies/{uuid}', [SubCompanyController::class, 'update']);
-            Route::delete('/sub-companies/{uuid}', [SubCompanyController::class, 'destroy']);
+            Route::apiResource('sub-companies', SubCompanyController::class)
+                ->parameters(['sub-companies' => 'uuid'])
+                ->only(['store', 'update', 'destroy']);
         });
 
         Route::group(['middleware' => ['role:SUPERADMIN,OWNER,MARKETING']], function () {

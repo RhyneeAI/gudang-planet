@@ -24,6 +24,8 @@ class OpsMandorResource extends JsonResource
             'name' => $this->name,
             'username' => $this->generatedUsername(),
             'phone' => $this->phone,
+            'email' => $this->email,
+            'address' => $this->address,
             'is_active' => (bool) $this->is_active,
             'has_sub_company' => $hasSubCompany,
             'sub_company' => $hasSubCompany ? [

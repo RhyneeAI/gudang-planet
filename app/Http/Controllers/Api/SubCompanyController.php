@@ -67,21 +67,24 @@ class SubCompanyController extends Controller
 
             DB::commit();
 
-            $mandor = $result['mandor']->load(['subCompanies.wallet']);
-            $subCompany = $result['subCompany']->load(['mandor', 'wallet']);
+            $mandor = $result['mandor'];
+            $subCompany = $result['subCompany'];
 
             return response()->json([
                 'success' => true,
-                'message' => __('operational.sub_companies.stored'),
-                'data' => [
-                    'sub_company' => new SubCompanyResource($subCompany),
-                    'mandor' => new OpsMandorResource($mandor),
-                    'credentials' => [
-                        'phone' => $mandor->phone,
-                        'username' => strtolower(preg_replace('/\s+/', '', $mandor->name)),
-                        'password' => $result['rawPassword'],
-                    ],
-                ],
+                'message' => __('operational.sub_companies.stored_with_credentials', [
+                    'phone' => $mandor->phone,
+                    'password' => $result['rawPassword'],
+                ]),
+                'data' => array_merge(
+                    $this->branchPayload($subCompany, $mandor),
+                    [
+                        'credentials' => [
+                            'phone' => $mandor->phone,
+                            'password' => $result['rawPassword'],
+                        ],
+                    ]
+                ),
             ], 201);
         } catch (\Throwable $e) {
             User::$skipSubCompanyAutoCreate = false;
@@ -100,12 +103,12 @@ class SubCompanyController extends Controller
 
         $this->authorizeSubCompanyAccess($subCompany);
 
+        $subCompany->load(['mandor', 'createdBy', 'wallet']);
+
         return response()->json([
             'success' => true,
             'message' => __('operational.sub_companies.detail'),
-            'data' => new SubCompanyResource(
-                $subCompany->load(['mandor', 'createdBy', 'wallet'])
-            ),
+            'data' => $this->branchPayload($subCompany, $subCompany->mandor),
         ]);
     }
 
@@ -121,18 +124,16 @@ class SubCompanyController extends Controller
             ], 404);
         }
 
-        $subCompany = $this->subCompanyService->updateForAdmin(
+        $result = $this->subCompanyService->updateMandorWithSubCompany(
             $subCompany,
-            $request->validated(),
-            $request->user(),
+            $request->input('mandor', []),
+            $request->input('sub_company', []),
         );
 
         return response()->json([
             'success' => true,
             'message' => __('operational.sub_companies.updated'),
-            'data' => new SubCompanyResource(
-                $subCompany->load(['mandor', 'createdBy', 'wallet'])
-            ),
+            'data' => $this->branchPayload($result['subCompany'], $result['mandor']),
         ]);
     }
 
@@ -154,6 +155,18 @@ class SubCompanyController extends Controller
             'success' => true,
             'message' => __('operational.sub_companies.deleted'),
         ]);
+    }
+
+    protected function branchPayload(SubCompany $subCompany, User $mandor): array
+    {
+        $subCompany->loadMissing(['mandor', 'createdBy', 'wallet']);
+        $mandor->loadMissing(['subCompanies.wallet']);
+        $mandor->setRelation('subCompanies', collect([$subCompany]));
+
+        return [
+            'sub_company' => new SubCompanyResource($subCompany),
+            'mandor' => new OpsMandorResource($mandor),
+        ];
     }
 
     protected function authorizeSubCompanyAccess(SubCompany $subCompany): void
