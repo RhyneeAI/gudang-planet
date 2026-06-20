@@ -12,10 +12,13 @@ class AbsShiftController extends Controller
 {
     public function index(Request $request)
     {
+        $orderByKey = $request->input('order_by', 'name');
+        $orderByValue = $request->input('order_by_value', 'ASC');
+
         $shifts = AbsShift::when($request->search, function ($query, $search) {
             $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
         })
-            ->orderBy('name')
+            ->orderBy($orderByKey, $orderByValue)
             ->paginate($request->input('per_page', 15));
 
         return response()->json([

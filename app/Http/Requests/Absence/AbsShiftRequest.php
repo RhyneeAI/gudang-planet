@@ -16,7 +16,11 @@ class AbsShiftRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:100'],
             'start_time' => ['required', 'date_format:H:i'],
-            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
+            'end_time' => [
+                'required',
+                'date_format:H:i',
+                // 'after:start_time'
+            ],
         ];
     }
 }
