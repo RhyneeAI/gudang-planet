@@ -14,15 +14,13 @@ class AbsEmployeeProfile extends Model
 
     protected $fillable = [
         'user_id',
-        'abs_branch_id',
+        'abs_jabatan_id',
+        'sub_company_id',
         'abs_shift_id',
-        'daily_rate',
         'company_id',
     ];
 
-    protected $casts = [
-        'daily_rate' => 'decimal:2',
-    ];
+    protected $casts = [];
 
     protected static function booted(): void
     {
@@ -34,9 +32,14 @@ class AbsEmployeeProfile extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function branch()
+    public function jabatan()
     {
-        return $this->belongsTo(AbsBranch::class, 'abs_branch_id');
+        return $this->belongsTo(AbsJabatan::class, 'abs_jabatan_id');
+    }
+
+    public function subCompany()
+    {
+        return $this->belongsTo(SubCompany::class, 'sub_company_id');
     }
 
     public function shift()

@@ -1,10 +1,12 @@
 <?php
 
-use App\Models\AbsBranch;
 use App\Models\AbsEmployeeProfile;
+use App\Models\AbsJabatan;
 use App\Models\AbsShift;
 use App\Models\Company;
+use App\Models\SubCompany;
 use App\Models\User;
+use App\Services\SubCompanyService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
@@ -17,14 +19,24 @@ beforeEach(function () {
         'is_active' => true,
     ]);
 
-    $this->branch = AbsBranch::create([
+    $this->mandor = User::factory()->mandor()->create([
+        'company_id' => $this->company->id,
+        'is_active' => true,
+    ]);
+
+    User::$skipSubCompanyAutoCreate = true;
+    $this->subCompany = SubCompany::create([
         'name' => 'Cabang Pusat',
+        'code' => 'GP-01',
         'address' => 'Jl. Test',
         'latitude' => -6.200000,
         'longitude' => 106.816666,
         'radius_meter' => 500,
+        'is_active' => true,
+        'mandor_id' => $this->mandor->id,
         'company_id' => $this->company->id,
     ]);
+    User::$skipSubCompanyAutoCreate = false;
 
     $this->shift = AbsShift::create([
         'name' => 'Shift Pagi',
@@ -33,42 +45,52 @@ beforeEach(function () {
         'company_id' => $this->company->id,
     ]);
 
+    $this->jabatan = AbsJabatan::create([
+        'name' => 'Operator',
+        'daily_rate' => 120000,
+        'company_id' => $this->company->id,
+    ]);
+
     $this->employee = User::factory()->karyawan()->create([
         'company_id' => $this->company->id,
         'is_active' => true,
     ]);
 
-    AbsEmployeeProfile::create([
-        'user_id' => $this->employee->id,
-        'abs_branch_id' => $this->branch->id,
+    AbsEmployeeProfile::where('user_id', $this->employee->id)->update([
+        'abs_jabatan_id' => $this->jabatan->id,
+        'sub_company_id' => $this->subCompany->id,
         'abs_shift_id' => $this->shift->id,
-        'daily_rate' => 100000,
-        'company_id' => $this->company->id,
     ]);
 });
 
-it('admin can create branch and employee', function () {
+it('admin can create employee via operational api', function () {
     $this->actingAs($this->admin)
-        ->postJson('/api/v1/abs/branches', [
-            'name' => 'Cabang Baru',
-            'latitude' => -6.2,
-            'longitude' => 106.8,
-        ])
-        ->assertStatus(201);
-
-    $this->actingAs($this->admin)
-        ->postJson('/api/v1/abs/employees', [
+        ->postJson('/api/v1/operational/employees', [
             'name' => 'Budi',
             'phone' => '081234567890',
             'password' => 'password123',
-            'branch_uuid' => $this->branch->uuid,
+            'role' => 'KARYAWAN',
+            'jabatan_uuid' => $this->jabatan->uuid,
+            'sub_company_uuid' => $this->subCompany->uuid,
             'shift_uuid' => $this->shift->uuid,
-            'daily_rate' => 120000,
         ])
-        ->assertStatus(201);
+        ->assertStatus(201)
+        ->assertJsonPath('data.profile.jabatan.name', 'Operator')
+        ->assertJsonPath('data.profile.jabatan.daily_rate', 120000);
 });
 
-it('employee can check in within branch radius', function () {
+it('admin can manage jabatan via operational api', function () {
+    $this->actingAs($this->admin)
+        ->postJson('/api/v1/operational/jabatans', [
+            'name' => 'Staff Lapangan',
+            'daily_rate' => 100000,
+        ])
+        ->assertStatus(201)
+        ->assertJsonPath('data.name', 'Staff Lapangan')
+        ->assertJsonPath('data.daily_rate', 100000);
+});
+
+it('employee can check in within sub company radius', function () {
     $photo = UploadedFile::fake()->image('selfie.jpg');
 
     $this->actingAs($this->employee)
@@ -81,7 +103,7 @@ it('employee can check in within branch radius', function () {
         ->assertJsonPath('success', true);
 });
 
-it('employee check in is blocked outside branch radius', function () {
+it('employee check in is blocked outside sub company radius', function () {
     $photo = UploadedFile::fake()->image('selfie.jpg');
 
     $this->actingAs($this->employee)
@@ -94,7 +116,7 @@ it('employee check in is blocked outside branch radius', function () {
         ->assertJsonPath('success', false);
 });
 
-it('owner can view dashboard but cannot create branch', function () {
+it('owner can view abs dashboard but cannot create employee', function () {
     $owner = User::factory()->owner()->create([
         'company_id' => $this->company->id,
     ]);
@@ -104,10 +126,17 @@ it('owner can view dashboard but cannot create branch', function () {
         ->assertStatus(200);
 
     $this->actingAs($owner)
-        ->postJson('/api/v1/abs/branches', [
-            'name' => 'Cabang Owner',
-            'latitude' => -6.2,
-            'longitude' => 106.8,
+        ->postJson('/api/v1/operational/employees', [
+            'name' => 'Blocked',
+            'phone' => '081111111111',
+            'password' => 'password123',
+            'role' => 'KARYAWAN',
         ])
         ->assertStatus(403);
+});
+
+it('creates employee profile for all seeded users', function () {
+    $this->seed(\Database\Seeders\AbsEmployeeProfileSeeder::class);
+
+    expect(User::where('company_id', $this->company->id)->whereDoesntHave('absEmployeeProfile')->count())->toBe(0);
 });

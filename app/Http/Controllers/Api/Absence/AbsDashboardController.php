@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api\Absence;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\AbsAttendance;
-use App\Models\AbsBranch;
 use App\Models\AbsEmployeeProfile;
+use App\Models\SubCompany;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -39,27 +39,25 @@ class AbsDashboardController extends Controller
             ->where('role', Role::KARYAWAN)
             ->where('is_active', true)
             ->whereNotIn('id', $checkedInIds)
-            ->with(['absEmployeeProfile.branch'])
+            ->with(['absEmployeeProfile.subCompany'])
             ->orderBy('name')
             ->limit(20)
             ->get(['id', 'uuid', 'name']);
 
-        $branches = AbsBranch::where('company_id', $companyId)
-            ->withCount([
-                'employeeProfiles as employees_count',
-            ])
+        $subCompanies = SubCompany::where('company_id', $companyId)
+            ->withCount(['employeeProfiles as employees_count'])
             ->get()
-            ->map(function ($branch) use ($today, $companyId) {
-                $employeeIds = AbsEmployeeProfile::where('abs_branch_id', $branch->id)->pluck('user_id');
+            ->map(function ($subCompany) use ($today, $companyId) {
+                $employeeIds = AbsEmployeeProfile::where('sub_company_id', $subCompany->id)->pluck('user_id');
                 $present = AbsAttendance::where('company_id', $companyId)
                     ->whereDate('date', $today)
                     ->whereIn('user_id', $employeeIds)
                     ->count();
 
                 return [
-                    'uuid' => (string) $branch->uuid,
-                    'name' => $branch->name,
-                    'employees_count' => (int) $branch->employees_count,
+                    'uuid' => (string) $subCompany->uuid,
+                    'name' => $subCompany->name,
+                    'employees_count' => (int) $subCompany->employees_count,
                     'present_today' => $present,
                 ];
             });
@@ -75,9 +73,9 @@ class AbsDashboardController extends Controller
                 'not_yet_absent' => $notYetAbsent->map(fn ($u) => [
                     'uuid' => $u->uuid,
                     'name' => $u->name,
-                    'branch' => $u->absEmployeeProfile?->branch?->name,
+                    'sub_company' => $u->absEmployeeProfile?->subCompany?->name,
                 ]),
-                'branches' => $branches,
+                'sub_companies' => $subCompanies,
             ],
         ]);
     }

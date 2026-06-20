@@ -36,12 +36,10 @@ class AbsAttendanceService
             throw new \RuntimeException(__('absence.attendance.already_checked_in'));
         }
 
-        $branch = $profile->branch;
+        $subCompany = $profile->subCompany;
         $shift = $profile->shift;
 
-        if (!$this->gpsService->isWithinBranchRadius($branch, $latitude, $longitude)) {
-            throw new \RuntimeException(__('absence.attendance.location_out_of_range'));
-        }
+        $this->assertAttendanceLocation($profile, $latitude, $longitude);
 
         $now = $this->now();
         $isLate = $this->isLate($shift, $now);
@@ -52,7 +50,7 @@ class AbsAttendanceService
 
         return AbsAttendance::create([
             'user_id' => $user->id,
-            'abs_branch_id' => $branch->id,
+            'sub_company_id' => $subCompany->id,
             'abs_shift_id' => $shift->id,
             'date' => $this->today(),
             'check_in_time' => $now->format('H:i:s'),
@@ -83,13 +81,9 @@ class AbsAttendanceService
             throw new \RuntimeException(__('absence.attendance.already_checked_out'));
         }
 
-        $branch = $profile->branch;
+        $this->assertAttendanceLocation($profile, $latitude, $longitude);
+
         $shift = $profile->shift;
-
-        if (!$this->gpsService->isWithinBranchRadius($branch, $latitude, $longitude)) {
-            throw new \RuntimeException(__('absence.attendance.location_out_of_range'));
-        }
-
         $now = $this->now();
         $isEarly = $this->isEarlyLeave($shift, $now);
 
@@ -140,6 +134,23 @@ class AbsAttendanceService
             'present_days' => $presentDays,
             'working_days' => $workingDays,
         ];
+    }
+
+    protected function assertAttendanceLocation(AbsEmployeeProfile $profile, float $latitude, float $longitude): void
+    {
+        $subCompany = $profile->subCompany;
+
+        if (!$subCompany) {
+            throw new \RuntimeException(__('absence.attendance.sub_company_not_assigned'));
+        }
+
+        if (!$profile->shift) {
+            throw new \RuntimeException(__('absence.attendance.shift_not_assigned'));
+        }
+
+        if (!$this->gpsService->isWithinSubCompanyRadius($subCompany, $latitude, $longitude)) {
+            throw new \RuntimeException(__('absence.attendance.location_out_of_range'));
+        }
     }
 
     protected function isLate(AbsShift $shift, Carbon $time): bool

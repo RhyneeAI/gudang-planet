@@ -37,6 +37,9 @@ return [
         'late_reason_required' => 'Alasan keterlambatan wajib diisi.',
         'early_reason_required' => 'Alasan pulang lebih awal wajib diisi.',
         'profile_not_found' => 'Profil absensi karyawan belum dikonfigurasi.',
+        'sub_company_not_assigned' => 'Cabang operasional belum ditetapkan pada profil karyawan.',
+        'sub_company_gps_not_configured' => 'Koordinat GPS cabang belum dikonfigurasi.',
+        'shift_not_assigned' => 'Shift kerja belum ditetapkan pada profil karyawan.',
     ],
     'payroll' => [
         'list' => 'Data payroll berhasil diambil.',
@@ -50,6 +53,7 @@ return [
         'deduction_deleted' => 'Pemotongan gaji berhasil dihapus.',
         'already_final' => 'Payroll sudah difinalisasi dan tidak dapat diubah.',
         'profile_not_found' => 'Profil karyawan tidak ditemukan.',
+        'jabatan_not_assigned' => 'Jabatan belum ditetapkan pada profil karyawan.',
         'slip_not_available' => 'Slip gaji hanya tersedia setelah payroll difinalisasi.',
     ],
     'dashboard' => [
@@ -61,6 +65,8 @@ return [
     ],
     'validation' => [
         'branch_uuid_not_found' => 'Cabang tidak ditemukan.',
+        'jabatan_uuid_not_found' => 'Jabatan tidak ditemukan.',
+        'sub_company_uuid_not_found' => 'Cabang operasional tidak ditemukan.',
         'shift_uuid_not_found' => 'Shift tidak ditemukan.',
         'phone_unique' => 'Nomor telepon sudah terdaftar.',
         'photo_required' => 'Foto absensi wajib diupload.',

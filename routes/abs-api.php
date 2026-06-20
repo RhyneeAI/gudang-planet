@@ -1,10 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\Absence\AbsAdminAttendanceController;
-use App\Http\Controllers\Api\Absence\AbsBranchController;
 use App\Http\Controllers\Api\Absence\AbsDashboardController;
 use App\Http\Controllers\Api\Absence\AbsEmployeeAttendanceController;
-use App\Http\Controllers\Api\Absence\AbsEmployeeController;
 use App\Http\Controllers\Api\Absence\AbsEmployeePayrollController;
 use App\Http\Controllers\Api\Absence\AbsPayrollController;
 use App\Http\Controllers\Api\Absence\AbsReportController;
@@ -26,14 +24,8 @@ Route::prefix('v1/abs')->middleware(['throttle:api'])->group(function () {
         Route::middleware(['role:SUPERADMIN,OWNER,ADMIN'])->group(function () {
             Route::get('/dashboard', [AbsDashboardController::class, 'index']);
 
-            Route::get('/branches', [AbsBranchController::class, 'index']);
-            Route::get('/branches/{absBranch:uuid}', [AbsBranchController::class, 'show']);
-
             Route::get('/shifts', [AbsShiftController::class, 'index']);
             Route::get('/shifts/{absShift:uuid}', [AbsShiftController::class, 'show']);
-
-            Route::get('/employees', [AbsEmployeeController::class, 'index']);
-            Route::get('/employees/{absEmployee:uuid}', [AbsEmployeeController::class, 'show']);
 
             Route::get('/attendances', [AbsAdminAttendanceController::class, 'index']);
             Route::get('/attendances/{absAttendance:ulid}', [AbsAdminAttendanceController::class, 'show']);
@@ -46,21 +38,10 @@ Route::prefix('v1/abs')->middleware(['throttle:api'])->group(function () {
         });
 
         Route::middleware(['role:SUPERADMIN,ADMIN'])->group(function () {
-            Route::post('/branches', [AbsBranchController::class, 'store']);
-            Route::put('/branches/{absBranch:uuid}', [AbsBranchController::class, 'update']);
-            Route::patch('/branches/{absBranch:uuid}', [AbsBranchController::class, 'update']);
-            Route::delete('/branches/{absBranch:uuid}', [AbsBranchController::class, 'destroy']);
-
             Route::post('/shifts', [AbsShiftController::class, 'store']);
             Route::put('/shifts/{absShift:uuid}', [AbsShiftController::class, 'update']);
             Route::patch('/shifts/{absShift:uuid}', [AbsShiftController::class, 'update']);
             Route::delete('/shifts/{absShift:uuid}', [AbsShiftController::class, 'destroy']);
-
-            Route::post('/employees', [AbsEmployeeController::class, 'store']);
-            Route::put('/employees/{absEmployee:uuid}', [AbsEmployeeController::class, 'update']);
-            Route::patch('/employees/{absEmployee:uuid}', [AbsEmployeeController::class, 'update']);
-            Route::delete('/employees/{absEmployee:uuid}', [AbsEmployeeController::class, 'destroy']);
-            Route::put('/employees/{absEmployee:uuid}/reset-password', [AbsEmployeeController::class, 'resetPassword']);
 
             Route::post('/payrolls/generate', [AbsPayrollController::class, 'generate']);
             Route::post('/payrolls/{absPayrollPeriod:ulid}/deductions', [AbsPayrollController::class, 'storeDeduction']);

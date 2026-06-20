@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Absence;
 
+use App\Http\Resources\SubCompanyResource;
 use App\Services\Absence\AbsFileService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -26,7 +27,7 @@ class AbsAttendanceResource extends JsonResource
                 'uuid' => $this->user->uuid,
                 'name' => $this->user->name,
             ]),
-            'branch' => $this->whenLoaded('branch', fn () => new AbsBranchResource($this->branch)),
+            'sub_company' => $this->whenLoaded('subCompany', fn () => new SubCompanyResource($this->subCompany)),
             'shift' => $this->whenLoaded('shift', fn () => new AbsShiftResource($this->shift)),
             'created_at' => $this->created_at?->toISOString(),
         ];

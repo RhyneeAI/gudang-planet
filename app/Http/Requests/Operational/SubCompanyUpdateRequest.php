@@ -43,6 +43,9 @@ class SubCompanyUpdateRequest extends FormRequest
             'sub_company' => ['sometimes', 'array'],
             'sub_company.name' => ['sometimes', 'string', 'max:255'],
             'sub_company.address' => ['sometimes', 'nullable', 'string'],
+            'sub_company.latitude' => ['sometimes', 'nullable', 'numeric', 'between:-90,90'],
+            'sub_company.longitude' => ['sometimes', 'nullable', 'numeric', 'between:-180,180'],
+            'sub_company.radius_meter' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:5000'],
             'sub_company.is_active' => ['sometimes', 'boolean'],
         ];
     }

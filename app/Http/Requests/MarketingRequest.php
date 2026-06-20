@@ -2,6 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\AbsJabatan;
+use App\Models\AbsShift;
+use App\Models\SubCompany;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -36,6 +39,21 @@ class MarketingRequest extends FormRequest
                     ->ignore($userId),
             ],
             'address' => ['sometimes', 'nullable', 'string'],
+            'jabatan_uuid' => ['sometimes', 'nullable', 'uuid', function ($attribute, $value, $fail) use ($companyId) {
+                if ($value && !AbsJabatan::where('uuid', $value)->where('company_id', $companyId)->exists()) {
+                    $fail(__('absence.validation.jabatan_uuid_not_found'));
+                }
+            }],
+            'sub_company_uuid' => ['sometimes', 'nullable', 'uuid', function ($attribute, $value, $fail) use ($companyId) {
+                if ($value && !SubCompany::where('uuid', $value)->where('company_id', $companyId)->exists()) {
+                    $fail(__('absence.validation.sub_company_uuid_not_found'));
+                }
+            }],
+            'shift_uuid' => ['sometimes', 'nullable', 'uuid', function ($attribute, $value, $fail) use ($companyId) {
+                if ($value && !AbsShift::where('uuid', $value)->where('company_id', $companyId)->exists()) {
+                    $fail(__('absence.validation.shift_uuid_not_found'));
+                }
+            }],
         ];
     }
 

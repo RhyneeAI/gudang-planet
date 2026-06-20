@@ -11,11 +11,11 @@ class AbsAdminAttendanceController extends Controller
 {
     public function index(Request $request)
     {
-        $records = AbsAttendance::with(['user', 'branch', 'shift'])
+        $records = AbsAttendance::with(['user', 'subCompany', 'shift'])
             ->when($request->date_from, fn ($q, $date) => $q->whereDate('date', '>=', $date))
             ->when($request->date_to, fn ($q, $date) => $q->whereDate('date', '<=', $date))
-            ->when($request->branch_uuid, fn ($q, $uuid) =>
-                $q->whereHas('branch', fn ($b) => $b->where('uuid', $uuid))
+            ->when($request->sub_company_uuid, fn ($q, $uuid) =>
+                $q->whereHas('subCompany', fn ($sc) => $sc->where('uuid', $uuid))
             )
             ->when($request->employee_uuid, fn ($q, $uuid) =>
                 $q->whereHas('user', fn ($u) => $u->where('uuid', $uuid))
@@ -38,7 +38,7 @@ class AbsAdminAttendanceController extends Controller
             'success' => true,
             'message' => __('absence.attendance.detail'),
             'data' => new AbsAttendanceResource(
-                $absAttendance->load(['user', 'branch', 'shift'])
+                $absAttendance->load(['user', 'subCompany', 'shift'])
             ),
         ]);
     }

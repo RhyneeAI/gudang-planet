@@ -8,26 +8,21 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class AbsBranch extends Model
+class AbsJabatan extends Model
 {
     use HasFactory, HasUuid, SoftDeletes;
 
-    protected $table = 'abs_branches';
+    protected $table = 'abs_jabatans';
 
     protected $fillable = [
         'uuid',
         'name',
-        'address',
-        'latitude',
-        'longitude',
-        'radius_meter',
+        'daily_rate',
         'company_id',
     ];
 
     protected $casts = [
-        'latitude' => 'decimal:8',
-        'longitude' => 'decimal:8',
-        'radius_meter' => 'integer',
+        'daily_rate' => 'decimal:2',
     ];
 
     protected static function booted(): void
@@ -42,11 +37,6 @@ class AbsBranch extends Model
 
     public function employeeProfiles()
     {
-        return $this->hasMany(AbsEmployeeProfile::class, 'abs_branch_id');
-    }
-
-    public function attendances()
-    {
-        return $this->hasMany(AbsAttendance::class, 'abs_branch_id');
+        return $this->hasMany(AbsEmployeeProfile::class, 'abs_jabatan_id');
     }
 }

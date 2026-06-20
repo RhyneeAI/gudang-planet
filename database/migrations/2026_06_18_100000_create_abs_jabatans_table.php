@@ -8,21 +8,21 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('abs_employee_profiles', function (Blueprint $table) {
+        Schema::create('abs_jabatans', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->unique()->constrained()->cascadeOnDelete();
-            $table->foreignId('abs_branch_id')->constrained('abs_branches')->restrictOnDelete();
-            $table->foreignId('abs_shift_id')->nullable()->constrained('abs_shifts')->nullOnDelete();
+            $table->uuid('uuid')->unique();
+            $table->string('name');
             $table->decimal('daily_rate', 12, 2)->default(0);
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
+            $table->softDeletes();
             $table->timestamps();
 
-            $table->index(['company_id', 'abs_branch_id']);
+            $table->unique(['company_id', 'name']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('abs_employee_profiles');
+        Schema::dropIfExists('abs_jabatans');
     }
 };

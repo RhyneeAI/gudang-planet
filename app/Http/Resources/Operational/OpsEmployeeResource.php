@@ -1,11 +1,14 @@
 <?php
 
-namespace App\Http\Resources\Absence;
+namespace App\Http\Resources\Operational;
 
+use App\Http\Resources\Absence\AbsJabatanResource;
+use App\Http\Resources\Absence\AbsShiftResource;
+use App\Http\Resources\SubCompanyResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class AbsEmployeeResource extends JsonResource
+class OpsEmployeeResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
@@ -13,12 +16,15 @@ class AbsEmployeeResource extends JsonResource
             'uuid' => (string) $this->uuid,
             'name' => $this->name,
             'phone' => $this->phone,
+            'role' => $this->role?->value,
             'is_active' => (bool) $this->is_active,
             'profile' => $this->whenLoaded('absEmployeeProfile', function () {
                 return [
-                    'daily_rate' => (float) $this->absEmployeeProfile->daily_rate,
-                    'branch' => $this->absEmployeeProfile->relationLoaded('branch')
-                        ? new AbsBranchResource($this->absEmployeeProfile->branch)
+                    'jabatan' => $this->absEmployeeProfile->relationLoaded('jabatan') && $this->absEmployeeProfile->jabatan
+                        ? new AbsJabatanResource($this->absEmployeeProfile->jabatan)
+                        : null,
+                    'sub_company' => $this->absEmployeeProfile->relationLoaded('subCompany')
+                        ? new SubCompanyResource($this->absEmployeeProfile->subCompany)
                         : null,
                     'shift' => $this->absEmployeeProfile->relationLoaded('shift')
                         ? new AbsShiftResource($this->absEmployeeProfile->shift)

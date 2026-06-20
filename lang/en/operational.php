@@ -76,6 +76,22 @@ return [
     'edit_logs' => [
         'list' => 'Edit audit logs retrieved successfully.',
     ],
+    'employees' => [
+        'list' => 'Employees retrieved successfully.',
+        'detail' => 'Employee detail retrieved successfully.',
+        'stored' => 'Employee created successfully.',
+        'updated' => 'Employee updated successfully.',
+        'deactivated' => 'Employee deactivated successfully.',
+        'password_reset' => 'Employee password reset successfully.',
+    ],
+    'jabatans' => [
+        'list' => 'Job positions retrieved successfully.',
+        'detail' => 'Job position detail retrieved successfully.',
+        'stored' => 'Job position created successfully.',
+        'updated' => 'Job position updated successfully.',
+        'deleted' => 'Job position deleted successfully.',
+        'in_use' => 'This job position is still assigned to employees and cannot be deleted.',
+    ],
     'mandors' => [
         'list' => 'Mandor list retrieved successfully.',
         'stored' => 'Mandor and operational branch created successfully.',

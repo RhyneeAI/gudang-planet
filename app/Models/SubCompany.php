@@ -17,6 +17,9 @@ class SubCompany extends Model
         'name',
         'code',
         'address',
+        'latitude',
+        'longitude',
+        'radius_meter',
         'is_active',
         'mandor_id',
         'company_id',
@@ -25,6 +28,9 @@ class SubCompany extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8',
+        'radius_meter' => 'integer',
     ];
 
     protected static function booted(): void
@@ -37,7 +43,6 @@ class SubCompany extends Model
         return $this->belongsTo(Company::class);
     }
 
-    /** Mandor yang mengelola cabang ini (FK mandor_id di tabel cabang). */
     public function mandor()
     {
         return $this->belongsTo(User::class, 'mandor_id');
@@ -61,5 +66,20 @@ class SubCompany extends Model
     public function expenses()
     {
         return $this->hasMany(OpsExpense::class, 'sub_company_id');
+    }
+
+    public function employeeProfiles()
+    {
+        return $this->hasMany(AbsEmployeeProfile::class, 'sub_company_id');
+    }
+
+    public function attendances()
+    {
+        return $this->hasMany(AbsAttendance::class, 'sub_company_id');
+    }
+
+    public function hasGpsConfigured(): bool
+    {
+        return !is_null($this->latitude) && !is_null($this->longitude);
     }
 }

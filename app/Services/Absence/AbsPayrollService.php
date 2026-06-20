@@ -25,17 +25,21 @@ class AbsPayrollService
             return $this->recalculate($existing);
         }
 
-        $profile = $user->absEmployeeProfile;
+        $profile = $user->absEmployeeProfile?->load('jabatan');
 
         if (!$profile) {
             throw new \RuntimeException(__('absence.payroll.profile_not_found'));
+        }
+
+        if (!$profile->jabatan) {
+            throw new \RuntimeException(__('absence.payroll.jabatan_not_assigned'));
         }
 
         $period = AbsPayrollPeriod::create([
             'user_id' => $user->id,
             'period_month' => $month,
             'period_year' => $year,
-            'daily_rate' => $profile->daily_rate,
+            'daily_rate' => $profile->jabatan->daily_rate,
             'status' => AbsPayrollStatus::DRAFT,
             'generated_at' => now(),
             'company_id' => $user->company_id,
@@ -46,14 +50,14 @@ class AbsPayrollService
 
     public function generateForCompany(int $companyId, int $month, int $year): int
     {
-        $profiles = AbsEmployeeProfile::with('user')
+        $profiles = AbsEmployeeProfile::with(['user', 'jabatan'])
             ->where('company_id', $companyId)
             ->get();
 
         $count = 0;
 
         foreach ($profiles as $profile) {
-            if (!$profile->user?->is_active) {
+            if (!$profile->user?->is_active || !$profile->jabatan) {
                 continue;
             }
 
@@ -87,7 +91,7 @@ class AbsPayrollService
             'net_salary' => $net,
         ]);
 
-        return $period->fresh(['deductions', 'user.absEmployeeProfile.branch', 'user.absEmployeeProfile.shift']);
+        return $period->fresh(['deductions', 'user.absEmployeeProfile.subCompany', 'user.absEmployeeProfile.shift']);
     }
 
     public function addDeduction(
@@ -160,8 +164,9 @@ class AbsPayrollService
     public function generateSlipPdf(AbsPayrollPeriod $period)
     {
         $period->load([
-            'user.absEmployeeProfile.branch',
+            'user.absEmployeeProfile.subCompany',
             'user.absEmployeeProfile.shift',
+            'user.absEmployeeProfile.jabatan',
             'deductions',
         ]);
 

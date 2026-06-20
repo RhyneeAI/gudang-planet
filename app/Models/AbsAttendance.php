@@ -17,7 +17,7 @@ class AbsAttendance extends Model
     protected $fillable = [
         'ulid',
         'user_id',
-        'abs_branch_id',
+        'sub_company_id',
         'abs_shift_id',
         'date',
         'check_in_time',
@@ -53,9 +53,9 @@ class AbsAttendance extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function branch()
+    public function subCompany()
     {
-        return $this->belongsTo(AbsBranch::class, 'abs_branch_id');
+        return $this->belongsTo(SubCompany::class, 'sub_company_id');
     }
 
     public function shift()

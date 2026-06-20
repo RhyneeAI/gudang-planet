@@ -10,6 +10,7 @@ use App\Models\OpsExpense;
 use App\Models\OpsIncome;
 use App\Models\SubCompany;
 use App\Models\User;
+use App\Services\Absence\AbsEmployeeProfileService;
 use App\Services\Operational\OpsWalletService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -66,6 +67,9 @@ class SubCompanyService
             'name' => $company->name,
             'code' => $this->generateUniqueCode($company),
             'address' => $company->address,
+            'latitude' => null,
+            'longitude' => null,
+            'radius_meter' => config('absence.default_radius_meter', 50),
             'is_active' => true,
             'mandor_id' => $mandor->id,
             'company_id' => $company->id,
@@ -73,6 +77,8 @@ class SubCompanyService
         ]);
 
         $this->walletService->getOrCreateWallet($mandor, $subCompany);
+
+        app(AbsEmployeeProfileService::class)->syncForUser($mandor);
 
         return $subCompany;
     }
@@ -164,13 +170,22 @@ class SubCompanyService
 
         User::$skipSubCompanyAutoCreate = false;
 
-        $subCompany = $this->createNamedForMandor(
-            $mandor,
-            $subCompanyData['name'],
-            null,
-            $createdBy,
-            $subCompanyData['address'] ?? $mandorData['address'] ?? null,
-        );
+        $subCompany = SubCompany::create([
+            'name' => $subCompanyData['name'],
+            'code' => $this->generateUniqueCode(Company::findOrFail($createdBy->company_id)),
+            'address' => $subCompanyData['address'] ?? $mandorData['address'] ?? null,
+            'latitude' => $subCompanyData['latitude'] ?? null,
+            'longitude' => $subCompanyData['longitude'] ?? null,
+            'radius_meter' => $subCompanyData['radius_meter'] ?? config('absence.default_radius_meter', 50),
+            'is_active' => true,
+            'mandor_id' => $mandor->id,
+            'company_id' => $createdBy->company_id,
+            'created_by' => $createdBy->id,
+        ]);
+
+        $this->walletService->getOrCreateWallet($mandor, $subCompany);
+
+        app(AbsEmployeeProfileService::class)->syncForUser($mandor);
 
         return [
             'mandor' => $mandor,
@@ -279,6 +294,9 @@ class SubCompanyService
             'name' => $name,
             'code' => $resolvedCode,
             'address' => $address ?? $mandor->address,
+            'latitude' => null,
+            'longitude' => null,
+            'radius_meter' => config('absence.default_radius_meter', 50),
             'is_active' => true,
             'mandor_id' => $mandor->id,
             'company_id' => $company->id,
@@ -286,6 +304,8 @@ class SubCompanyService
         ]);
 
         $this->walletService->getOrCreateWallet($mandor, $subCompany);
+
+        app(AbsEmployeeProfileService::class)->syncForUser($mandor);
 
         return $subCompany;
     }
@@ -363,6 +383,12 @@ class SubCompanyService
             $subCompanyUpdates['address'] = $subCompanyData['address'];
         }
 
+        foreach (['latitude', 'longitude', 'radius_meter'] as $gpsField) {
+            if (array_key_exists($gpsField, $subCompanyData)) {
+                $subCompanyUpdates[$gpsField] = $subCompanyData[$gpsField];
+            }
+        }
+
         if (array_key_exists('is_active', $subCompanyData)) {
             $subCompanyUpdates['is_active'] = (bool) $subCompanyData['is_active'];
         }
@@ -370,6 +396,8 @@ class SubCompanyService
         if (!empty($subCompanyUpdates)) {
             $subCompany->update($subCompanyUpdates);
         }
+
+        app(AbsEmployeeProfileService::class)->syncForUser($mandor->fresh());
 
         return [
             'mandor' => $mandor->fresh(),

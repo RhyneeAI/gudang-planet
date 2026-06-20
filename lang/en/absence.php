@@ -33,10 +33,13 @@ return [
         'already_checked_in' => 'You have already checked in today.',
         'already_checked_out' => 'You have already checked out today.',
         'check_in_first' => 'Please check in before checking out.',
-        'location_out_of_range' => 'GPS location is outside branch radius. Attendance cancelled.',
+        'location_out_of_range' => 'GPS location is outside sub company radius. Attendance cancelled.',
         'late_reason_required' => 'Late reason is required.',
         'early_reason_required' => 'Early leave reason is required.',
         'profile_not_found' => 'Employee attendance profile is not configured.',
+        'sub_company_not_assigned' => 'Operational branch is not assigned to employee profile.',
+        'sub_company_gps_not_configured' => 'Sub company GPS coordinates are not configured.',
+        'shift_not_assigned' => 'Work shift is not assigned to employee profile.',
     ],
     'payroll' => [
         'list' => 'Payroll records retrieved successfully.',
@@ -50,6 +53,7 @@ return [
         'deduction_deleted' => 'Deduction deleted successfully.',
         'already_final' => 'Payroll is finalized and cannot be modified.',
         'profile_not_found' => 'Employee profile not found.',
+        'jabatan_not_assigned' => 'Job position is not assigned to employee profile.',
         'slip_not_available' => 'Payslip is only available after payroll is finalized.',
     ],
     'dashboard' => [
@@ -61,6 +65,8 @@ return [
     ],
     'validation' => [
         'branch_uuid_not_found' => 'Branch not found.',
+        'jabatan_uuid_not_found' => 'Job position not found.',
+        'sub_company_uuid_not_found' => 'Operational branch not found.',
         'shift_uuid_not_found' => 'Shift not found.',
         'phone_unique' => 'Phone number is already registered.',
         'photo_required' => 'Attendance photo is required.',

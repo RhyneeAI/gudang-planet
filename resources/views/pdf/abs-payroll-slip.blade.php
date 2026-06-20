@@ -17,7 +17,8 @@
     <h1>Slip Gaji</h1>
     <p><strong>Nama:</strong> {{ $period->user->name }}</p>
     <p><strong>Periode:</strong> {{ sprintf('%02d', $period->period_month) }}/{{ $period->period_year }}</p>
-    <p><strong>Cabang:</strong> {{ $period->user->absEmployeeProfile?->branch?->name ?? '-' }}</p>
+    <p><strong>Cabang:</strong> {{ $period->user->absEmployeeProfile?->subCompany?->name ?? '-' }}</p>
+    <p><strong>Jabatan:</strong> {{ $period->user->absEmployeeProfile?->jabatan?->name ?? '-' }}</p>
 
     <div class="section">
         <table>

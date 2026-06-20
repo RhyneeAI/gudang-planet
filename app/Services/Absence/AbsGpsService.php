@@ -2,7 +2,7 @@
 
 namespace App\Services\Absence;
 
-use App\Models\AbsBranch;
+use App\Models\SubCompany;
 
 class AbsGpsService
 {
@@ -21,15 +21,19 @@ class AbsGpsService
         return $earthRadius * $c;
     }
 
-    public function isWithinBranchRadius(AbsBranch $branch, float $latitude, float $longitude): bool
+    public function isWithinSubCompanyRadius(SubCompany $subCompany, float $latitude, float $longitude): bool
     {
+        if (!$subCompany->hasGpsConfigured()) {
+            throw new \RuntimeException(__('absence.attendance.sub_company_gps_not_configured'));
+        }
+
         $distance = $this->distanceInMeters(
-            (float) $branch->latitude,
-            (float) $branch->longitude,
+            (float) $subCompany->latitude,
+            (float) $subCompany->longitude,
             $latitude,
             $longitude
         );
 
-        return $distance <= (int) $branch->radius_meter;
+        return $distance <= (int) ($subCompany->radius_meter ?? config('absence.default_radius_meter', 50));
     }
 }

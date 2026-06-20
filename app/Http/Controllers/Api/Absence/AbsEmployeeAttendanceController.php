@@ -6,8 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Absence\AbsCheckInRequest;
 use App\Http\Requests\Absence\AbsCheckOutRequest;
 use App\Http\Resources\Absence\AbsAttendanceResource;
-use App\Http\Resources\Absence\AbsBranchResource;
+use App\Http\Resources\Absence\AbsJabatanResource;
 use App\Http\Resources\Absence\AbsShiftResource;
+use App\Http\Resources\SubCompanyResource;
 use App\Models\AbsAttendance;
 use App\Services\Absence\AbsAttendanceService;
 use Illuminate\Http\Request;
@@ -31,7 +32,7 @@ class AbsEmployeeAttendanceController extends Controller
             ], 422);
         }
 
-        $profile->load(['branch', 'shift']);
+        $profile->load(['subCompany', 'shift', 'jabatan']);
         $attendance = $this->attendanceService->todayFor($user);
         $summary = $this->attendanceService->monthSummary($user);
 
@@ -41,12 +42,13 @@ class AbsEmployeeAttendanceController extends Controller
             'data' => [
                 'employee' => [
                     'name' => $user->name,
+                    'jabatan' => $profile->jabatan ? new AbsJabatanResource($profile->jabatan) : null,
                     'date' => now(config('absence.timezone'))->toDateString(),
                 ],
-                'shift' => new AbsShiftResource($profile->shift),
-                'branch' => new AbsBranchResource($profile->branch),
+                'shift' => $profile->shift ? new AbsShiftResource($profile->shift) : null,
+                'sub_company' => $profile->subCompany ? new SubCompanyResource($profile->subCompany) : null,
                 'attendance' => $attendance
-                    ? new AbsAttendanceResource($attendance->load(['branch', 'shift']))
+                    ? new AbsAttendanceResource($attendance->load(['subCompany', 'shift']))
                     : null,
                 'can_check_in' => !$attendance,
                 'can_check_out' => $attendance && $attendance->hasCheckedIn() && !$attendance->hasCheckedOut(),
@@ -58,7 +60,7 @@ class AbsEmployeeAttendanceController extends Controller
     public function checkIn(AbsCheckInRequest $request)
     {
         $user = $request->user();
-        $profile = $user->absEmployeeProfile?->load(['branch', 'shift']);
+        $profile = $user->absEmployeeProfile?->load(['subCompany', 'shift']);
 
         if (!$profile) {
             return response()->json([
@@ -88,14 +90,14 @@ class AbsEmployeeAttendanceController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('absence.attendance.check_in_success'),
-            'data' => new AbsAttendanceResource($attendance->load(['branch', 'shift'])),
+            'data' => new AbsAttendanceResource($attendance->load(['subCompany', 'shift'])),
         ], 201);
     }
 
     public function checkOut(AbsCheckOutRequest $request)
     {
         $user = $request->user();
-        $profile = $user->absEmployeeProfile?->load(['branch', 'shift']);
+        $profile = $user->absEmployeeProfile?->load(['subCompany', 'shift']);
 
         if (!$profile) {
             return response()->json([
@@ -125,7 +127,7 @@ class AbsEmployeeAttendanceController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('absence.attendance.check_out_success'),
-            'data' => new AbsAttendanceResource($attendance->load(['branch', 'shift'])),
+            'data' => new AbsAttendanceResource($attendance->load(['subCompany', 'shift'])),
         ]);
     }
 
@@ -134,7 +136,7 @@ class AbsEmployeeAttendanceController extends Controller
         $month = $request->input('month', now(config('absence.timezone'))->month);
         $year = $request->input('year', now(config('absence.timezone'))->year);
 
-        $records = AbsAttendance::with(['branch', 'shift'])
+        $records = AbsAttendance::with(['subCompany', 'shift'])
             ->where('user_id', $request->user()->id)
             ->whereYear('date', $year)
             ->whereMonth('date', $month)
