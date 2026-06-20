@@ -33,6 +33,7 @@ it('stores admin income without mandor as internal pusat income', function () {
             'name' => 'Pemasukan Pusat',
             'amount' => 500000,
             'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
             'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
         ], ['Accept' => 'application/json']);
 
@@ -52,6 +53,7 @@ it('stores admin income with optional mandor attribution', function () {
             'name' => 'Pemasukan Atribusi Cabang',
             'amount' => 200000,
             'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
             'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
         ], ['Accept' => 'application/json']);
 
@@ -69,6 +71,7 @@ it('stores admin internal expense without mandor', function () {
             'name' => 'Pengeluaran Pusat',
             'amount' => 100000,
             'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
             'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
         ], ['Accept' => 'application/json']);
 
@@ -89,6 +92,7 @@ it('stores admin mandor transfer expense with pending income confirmation', func
             'name' => 'Transfer Dana',
             'amount' => 250000,
             'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
             'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
         ], ['Accept' => 'application/json']);
 
@@ -110,6 +114,7 @@ it('stores mandor income with only sub company uuid and credits wallet', functio
             'name' => 'Pemasukan Cabang',
             'amount' => 150000,
             'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
             'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
         ], ['Accept' => 'application/json']);
 
@@ -129,6 +134,7 @@ it('stores mandor income with up to three proof images', function () {
             'name' => 'Pemasukan Multi Bukti',
             'amount' => 90000,
             'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
             'proof_files' => [
                 UploadedFile::fake()->create('proof-1.jpg', 100, 'image/jpeg'),
                 UploadedFile::fake()->create('proof-2.jpg', 100, 'image/jpeg'),
@@ -150,6 +156,7 @@ it('allows mandor to update own internal branch income', function () {
             'name' => 'Pemasukan Cabang',
             'amount' => 150000,
             'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
             'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
         ], ['Accept' => 'application/json']);
 
@@ -161,6 +168,7 @@ it('allows mandor to update own internal branch income', function () {
             'name' => 'Pemasukan Cabang Updated',
             'amount' => 175000,
             'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
             'reason' => 'Koreksi nominal',
         ])
         ->assertOk()
@@ -195,6 +203,7 @@ it('allows mandor to update income by record mandor id after branch reassignment
             'name' => 'Pemasukan Lama Updated',
             'amount' => 120000,
             'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
             'reason' => 'Koreksi',
         ])
         ->assertOk()
@@ -228,6 +237,7 @@ it('allows current branch mandor to update income after branch reassignment', fu
             'name' => 'Pemasukan Cabang Updated',
             'amount' => 90000,
             'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
             'reason' => 'Koreksi',
         ])
         ->assertOk()
@@ -259,6 +269,7 @@ it('forbids mandor from editing admin transfer income', function () {
             'name' => 'Updated',
             'amount' => 100000,
             'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
         ])
         ->assertStatus(422)
         ->assertJsonPath('message', __('operational.incomes.not_editable'));
@@ -270,6 +281,70 @@ it('returns empty array when income show uuid is not found', function () {
         ->assertOk()
         ->assertJsonPath('success', true)
         ->assertJsonPath('data', []);
+});
+
+it('stores income with transfer payment method', function () {
+    $this->actingAs($this->admin)
+        ->post('/api/v1/operational/incomes', [
+            'name' => 'Pemasukan Transfer',
+            'amount' => 300000,
+            'date' => now()->toDateString(),
+            'payment_method' => 'TRANSFER',
+            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+        ], ['Accept' => 'application/json'])
+        ->assertCreated()
+        ->assertJsonPath('data.payment_method', 'TRANSFER');
+});
+
+it('allows income backdate up to H-3', function () {
+    $this->actingAs($this->admin)
+        ->post('/api/v1/operational/incomes', [
+            'name' => 'Pemasukan H-3',
+            'amount' => 100000,
+            'date' => now()->subDays(3)->toDateString(),
+            'payment_method' => 'CASH',
+            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+        ], ['Accept' => 'application/json'])
+        ->assertCreated();
+});
+
+it('rejects income backdate beyond H-3', function () {
+    $this->actingAs($this->admin)
+        ->post('/api/v1/operational/incomes', [
+            'name' => 'Pemasukan Terlalu Lama',
+            'amount' => 100000,
+            'date' => now()->subDays(4)->toDateString(),
+            'payment_method' => 'CASH',
+            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+        ], ['Accept' => 'application/json'])
+        ->assertStatus(422)
+        ->assertJsonPath('message', __('operational.incomes.store_window_expired', ['days' => 3]));
+});
+
+it('rejects income edit after H+3 from creation', function () {
+    $income = OpsIncome::create([
+        'name' => 'Pemasukan Lama',
+        'amount' => 100000,
+        'date' => now()->toDateString(),
+        'payment_method' => 'CASH',
+        'proof_files' => ['proofs/test.jpg'],
+        'source_type' => OpsSourceType::INTERNAL,
+        'created_by' => $this->admin->id,
+        'company_id' => $this->company->id,
+    ]);
+
+    $income->forceFill(['created_at' => now()->subDays(4)])->save();
+
+    $this->actingAs($this->admin)
+        ->patchJson('/api/v1/operational/incomes/' . $income->uuid, [
+            'name' => 'Pemasukan Lama',
+            'amount' => 100000,
+            'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
+            'reason' => 'Koreksi',
+        ])
+        ->assertStatus(422)
+        ->assertJsonPath('message', __('operational.incomes.edit_window_expired', ['days' => 3]));
 });
 
 it('includes sub companies in admin dashboard', function () {

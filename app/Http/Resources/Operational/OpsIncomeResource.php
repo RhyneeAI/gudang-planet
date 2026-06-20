@@ -19,6 +19,7 @@ class OpsIncomeResource extends JsonResource
             'name' => $this->name,
             'amount' => (float) $this->amount,
             'date' => $this->date?->toDateString(),
+            'payment_method' => $this->payment_method?->value,
             ...$this->mapProofFiles($fileService),
             'note' => $this->note,
             'source_type' => $this->source_type?->value,
