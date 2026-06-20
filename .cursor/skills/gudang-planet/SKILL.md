@@ -1,9 +1,9 @@
 ---
 name: gudang-planet
-description: Backend Laravel multi-modul (POS, Operasional, Absensi) untuk Gudang Planet. Gunakan skill ini saat mengembangkan fitur, refactor, atau debug di project ini — termasuk role/permission, pricing marketing MLM, modul operasional cabang, dan absensi dengan geofencing + payroll.
+description: Backend Laravel multi-modul (POS, Operasional, Absensi) untuk Gudang Planet. Gunakan skill ini saat mengembangkan fitur, refactor, atau debug di project ini — termasuk role/permission, pricing marketing MLM, modul operasional cabang (wallet, transfer, payment_method, batas waktu input/edit), dan absensi dengan geofencing + payroll.
 ---
 
-# Gudang Planet — Project Skill (v1)
+# Gudang Planet — Project Skill (v1.3)
 
 ## Ringkasan Project
 
@@ -77,7 +77,7 @@ enum Role: string
 - Global scope `CompanyScope` otomatis filter query berdasarkan `auth()->user()->company_id`.
 - `**Company`** = kantor pusat (milik OWNER).
 - `**SubCompany**` = cabang (**tabel terpisah**, FK `company_id` + `mandor_id`) — dipakai **Operasional & Absensi saja**.
-- Satu mandor bisa kelola banyak sub-company (max 5 via config DB).
+- Satu mandor bisa kelola banyak sub-company (max via `ops_configurations` key `max_sub_companies_per_mandor`, default **10**).
 
 ### Scope Modul vs Company / SubCompany
 
@@ -250,6 +250,7 @@ Modul operasional mengelola keuangan cabang dengan sistem dompet digital mandor.
 | Model                   | Tabel                      | Fungsi                                     |
 | ----------------------- | -------------------------- | ------------------------------------------ |
 | SubCompany            | sub_companies              | Cabang operasional (FK mandor_id)          |
+| OpsConfiguration        | ops_configurations         | Config per company (limit cabang, batas waktu input/edit) |
 | OpsIncome               | ops_incomes                | Pemasukan pusat (admin) / cabang (mandor) / pending transfer (admin→mandor) |
 | OpsExpense              | ops_expenses               | Pengeluaran pusat (admin INTERNAL) / transfer mandor (admin MANDOR) / cabang (mandor) |
 | OpsWallet               | ops_wallets                | Dompet digital mandor                      |
@@ -288,7 +289,7 @@ Field wajib saat `MANDOR`: `mandor_uuid`, `sub_company_uuid`. Link expense→inc
 1. Admin POST expense expense_type=MANDOR ke mandor + sub_company
 2. Sistem buat income pending + transfer confirmation + notifikasi mandor
 3. Mandor confirm/reject via /transfer-confirmations/{uuid}/confirm|reject
-4. Confirm → kredit dompet digital mandor
+4. Confirm → kredit dompet digital mandor (mandor dapat sesuaikan `confirmed_amount` saat confirm)
 ```
 
 > Transfer **bukan** lewat admin income — hanya lewat admin expense `MANDOR`.
@@ -301,15 +302,52 @@ Field wajib saat `MANDOR`: `mandor_uuid`, `sub_company_uuid`. Link expense→inc
 #### Mandor — Pengeluaran (`POST /expenses`)
 
 - Hanya pengeluaran **internal cabang** (`expense_type: INTERNAL`, auto-set).
-- Field wajib: `sub_company_uuid`, name, amount, date, proof_file.
+- Field wajib: `sub_company_uuid`, `name`, `amount`, `date`, `payment_method`, bukti (`proof_files[]` atau legacy `proof_file`).
 - Debit wallet; block jika saldo tidak cukup + notifikasi admin.
 
-### Aturan Input
+#### Field transaksi income & expense (store + update)
 
-- CRUD pemasukan & pengeluaran (admin & mandor — logic berbeda per role).
-- Input tanggal: **backdate max 3 hari** — berlaku untuk **semua role** dan **semua jenis**.
-- Upload bukti: jpg/jpeg/png/pdf, **max 10MB** (`max:10240`).
-- Field: keterangan, judul, tanggal, bukti.
+| Field | Keterangan |
+| ----- | ---------- |
+| `name`, `amount`, `date` | Wajib |
+| `payment_method` | Wajib — enum `TRANSFER` \| `CASH` (`App\Enums\OpsPaymentMethod`) |
+| `proof_files[]` | 1–3 gambar (jpg/jpeg/png/webp, max 10MB/file). Legacy `proof_file` (1 file) masih didukung |
+| `note` | Opsional |
+| `reason` | Opsional — disarankan saat update (audit log) |
+
+Response API: `proof_files` (array URL) + `proof_file` (URL pertama, backward compat) + `payment_method`.
+
+### Batas Waktu Input & Edit
+
+Dikelola via **`ops_configurations`** (per `company_id`) dengan fallback `config/operational.php`. Service: `OpsOperationalConfigService`.
+
+| Key config | Default | Arti |
+| ---------- | ------- | ---- |
+| `income_store_backdate_days` | 3 | Input pemasukan max **H-3** |
+| `income_edit_days_after_create` | 3 | Edit pemasukan sampai **H+3** setelah `created_at` |
+| `expense_store_backdate_days` | 1 | Input pengeluaran max **H-1** |
+| `expense_edit_days_after_create` | 1 | Edit pengeluaran sampai **H+1** setelah `created_at` |
+| `max_sub_companies_per_mandor` | 10 | Max cabang per mandor |
+
+Validasi di controller via trait `UsesOperationalTransactionWindow`:
+
+- **Store** — tanggal transaksi tidak boleh lebih lama dari batas backdate.
+- **Update** — cek batas edit (berdasarkan `created_at`) **dan** batas backdate tanggal baru.
+
+Env override (opsional): `OPS_INCOME_STORE_BACKDATE_DAYS`, `OPS_INCOME_EDIT_DAYS_AFTER_CREATE`, `OPS_EXPENSE_STORE_BACKDATE_DAYS`, `OPS_EXPENSE_EDIT_DAYS_AFTER_CREATE`, `OPS_MAX_SUB_COMPANIES_PER_MANDOR`.
+
+### Aturan Upload Bukti
+
+- Format: **jpg, jpeg, png, webp** (bukan PDF).
+- Max **10MB** per file.
+- **1–3 gambar** per transaksi (`proof_files[]`); legacy single `proof_file` tetap diterima.
+- Helper: trait `ValidatesOperationalProofFiles` (request), `HandlesOperationalProofFiles` + `MapsOperationalProofFiles` (controller/resource).
+- Kolom DB: `proof_files` (JSON array path).
+
+### Akses Mandor & Wallet
+
+- Trait `ScopesOperationalBySubCompany`: mandor dapat akses record jika `mandor_id` record = user **atau** mandor saat ini dari cabang terkait (penting setelah reassignment cabang).
+- `OpsWalletService::getOrCreateWallet()`: reuse wallet existing by `(sub_company_id, mandor_id)` — hindari duplikat wallet setelah cabang dipindah.
 
 ### API Behavior
 
@@ -347,8 +385,8 @@ Model `SubCompany` (`sub_companies`) sudah ada dan dipakai modul operasional:
 ```
 
 - `sub_company.code` auto-generate (`{company_code}-{seq}`).
-- Response: `data.sub_company`, `data.mandor`, `data.credentials` (phone, username, password).
-- Role: SUPERADMIN, OWNER, ADMIN.
+- Response create: `message` berisi phone + password; `data.credentials` juga tersedia.
+- Role write: SUPERADMIN, OWNER, ADMIN. Role read: + MANDOR (milik sendiri).
 
 **Endpoint cabang:**
 
@@ -356,7 +394,9 @@ Model `SubCompany` (`sub_companies`) sudah ada dan dipakai modul operasional:
 | ----- | ---- | ---------- |
 | `POST /api/v1/sub-companies` | ADMIN, OWNER, SUPERADMIN | Buat cabang + mandor |
 | `GET /api/v1/sub-companies` | ADMIN, OWNER, SUPERADMIN, MANDOR | List cabang (+ mandor lihat milik sendiri) |
-| `GET /api/v1/sub-companies/{uuid}` | ADMIN, OWNER, SUPERADMIN, MANDOR | Detail cabang; not found → `data: []` |
+| `GET /api/v1/sub-companies/{uuid}` | ADMIN, OWNER, SUPERADMIN, MANDOR | Detail `{ sub_company, mandor }`; not found → `data: []` |
+| `PATCH /api/v1/sub-companies/{uuid}` | ADMIN, OWNER, SUPERADMIN | Update unified mandor + sub_company |
+| `DELETE /api/v1/sub-companies/{uuid}` | ADMIN, OWNER, SUPERADMIN | Soft delete cascade (income, expense, mandor jika tidak dipakai); block jika transfer pending |
 
 **Wallet mandor (`GET /operational/wallet`):**
 
@@ -481,14 +521,14 @@ tests/Feature/Api/Attendance/         # Pest tests
 
 ### Pola yang Sudah Ada (Operasional = Referensi)
 
-- Service layer untuk logic kompleks (`OpsWalletService` pattern).
-- Audit log untuk edit (`OpsEditLog` pattern).
+- Service layer untuk logic kompleks (`OpsWalletService`, `OpsOperationalConfigService`, `SubCompanyService`).
+- Audit log untuk edit (`OpsEditLog` pattern) — payload auditable termasuk `payment_method`.
 - Notifikasi in-app (`OpsNotification` pattern).
-- File upload via dedicated service (`OpsFileService` pattern).
-- Enum backed string dengan `values()` dan `label()`.
-- Form Request untuk validasi.
+- File upload via dedicated service (`OpsFileService` pattern) + multi-file trait.
+- Enum backed string dengan `values()` (`OpsPaymentMethod`, `OpsExpenseType`, dll.).
+- Form Request untuk validasi — satu request per resource dengan branch by role (`OpsIncomeRequest`, `OpsExpenseRequest`).
 - API Resource untuk response transformation.
-- Factory + Seeder untuk testing data.
+- Factory + Seeder untuk testing data (`OpsConfigurationSeeder` untuk default config company).
 
 ### Database
 
@@ -502,7 +542,8 @@ tests/Feature/Api/Attendance/         # Pest tests
 
 - Framework: Pest.
 - Lokasi: `tests/Feature/Api/`.
-- POS sudah punya feature tests; Operasional: `tests/Feature/Api/OperationalIncomeTest.php`, `SubCompanyTest.php`.
+- Operasional: `OperationalIncomeTest.php`, `OperationalExpenseTest.php`, `OperationalTransferConfirmationTest.php`, `SubCompanyTest.php`.
+- Rate limit API (non-testing): auth 120/min, guest write 30/min, guest read 80/min (`AppServiceProvider`).
 
 ---
 
@@ -533,8 +574,10 @@ tests/Feature/Api/Attendance/         # Pest tests
 | OWNER akses           | **Read-only** di semua modul (GET/rekapitulasi saja)                                          |
 | POS tenancy           | **Langsung ke `Company` saja** — tidak ke SubCompany                                          |
 | SubCompany            | Tabel terpisah; untuk **Operasional & Absensi**; mandor max cabang via `ops_configurations` |
-| Backdate operasional  | Max 3 hari — berlaku **semua role & semua jenis** (pemasukan & pengeluaran)                   |
-| Transfer admin→mandor | Admin input **pengeluaran** → mandor **approve/reject pemasukan** (`OpsTransferConfirmation`) |
+| Backdate operasional  | **Pemasukan H-3 / edit H+3**; **Pengeluaran H-1 / edit H+1** — configurable per company |
+| Payment method        | Wajib `TRANSFER` \| `CASH` di semua create/update income & expense |
+| Bukti transaksi       | Max **3 gambar** per transaksi (jpg/jpeg/png/webp) |
+| Transfer admin→mandor | Admin input **pengeluaran** → mandor **approve/reject**; `confirmed_amount` dapat disesuaikan mandor |
 | Payroll               | **Manual per bulan** saat Admin memproses — tidak auto-generate draft                         |
 | Geofencing absensi    | Di luar radius → **block** langsung                                                           |
 | Jam absensi (Hadir)   | Masuk **wajib**; keluar **boleh ditolerir** jika lupa                                         |
@@ -550,6 +593,7 @@ tests/Feature/Api/Attendance/         # Pest tests
 | Area                  | Path                                                           |
 | --------------------- | -------------------------------------------------------------- |
 | Role enum             | `app/Enums/Role.php`                                           |
+| Payment method enum   | `app/Enums/OpsPaymentMethod.php`                               |
 | Auth middleware       | `app/Http/Middleware/CheckRole.php`                            |
 | Route registration    | `bootstrap/app.php`                                            |
 | POS routes            | `routes/api.php`                                               |
@@ -557,9 +601,16 @@ tests/Feature/Api/Attendance/         # Pest tests
 | Company + scope       | `app/Models/Company.php`, `app/Models/Scopes/CompanyScope.php` |
 | Marketing commission  | `app/Http/Controllers/Api/ReportController.php`                |
 | SubCompany            | `app/Models/SubCompany.php`, `app/Services/SubCompanyService.php` |
-| Ops mandor + cabang   | `app/Http/Controllers/Api/Operational/OpsMandorController.php`    |
+| SubCompany controller | `app/Http/Controllers/Api/SubCompanyController.php`            |
+| Ops config service    | `app/Services/Operational/OpsOperationalConfigService.php`     |
+| Ops config model      | `app/Models/OpsConfiguration.php`                              |
+| Ops mandor + cabang   | `app/Http/Controllers/Api/Operational/OpsMandorController.php` |
 | Ops Form Requests     | `app/Http/Requests/Operational/OpsIncomeRequest.php`, `OpsExpenseRequest.php` |
+| Ops proof helpers     | `ValidatesOperationalProofFiles`, `HandlesOperationalProofFiles`, `MapsOperationalProofFiles` |
+| Ops date window trait | `app/Http/Controllers/Api/Operational/UsesOperationalTransactionWindow.php` |
+| Ops mandor scope      | `app/Http/Controllers/Api/Operational/ScopesOperationalBySubCompany.php` |
 | Ops config            | `config/operational.php`                                       |
+| Ops config seeder     | `database/seeders/OpsConfigurationSeeder.php`                  |
 | Postman collection    | `docs/postman/operational-api.postman_collection.json`         |
 | Flowchart operasional | `public/flowchart_operasional.pdf`                             |
 
