@@ -20,14 +20,17 @@ class AbsPayrollController extends Controller
 
     public function index(Request $request)
     {
+        $orderByKey = $request->input('order_by', 'user_id');
+        $orderByValue = $request->input('order_by_value', 'DESC');
+
         $month = (int) $request->input('month', now(config('absence.timezone'))->month);
         $year = (int) $request->input('year', now(config('absence.timezone'))->year);
 
         $records = AbsPayrollPeriod::with(['user', 'deductions'])
             ->where('period_month', $month)
             ->where('period_year', $year)
-            ->when($request->status, fn ($q, $status) => $q->where('status', $status))
-            ->orderBy('user_id')
+            ->when($request->status, fn($q, $status) => $q->where('status', $status))
+            ->orderBy($orderByKey, $orderByValue)
             ->paginate($request->input('per_page', 15));
 
         return response()->json([

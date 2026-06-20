@@ -189,6 +189,7 @@ class AbsPayrollService
         $period = $this->getOrGenerateForUser($user, (int) $now->month, (int) $now->year);
 
         return [
+            'ulid' => (string) $period->ulid,
             'period_month' => $period->period_month,
             'period_year' => $period->period_year,
             'daily_rate' => (float) $period->daily_rate,
@@ -197,7 +198,7 @@ class AbsPayrollService
             'total_deduction' => (float) $period->total_deduction,
             'net_salary' => (float) $period->net_salary,
             'status' => $period->status->value,
-            'deductions' => $period->deductions->map(fn ($d) => [
+            'deductions' => $period->deductions->map(fn($d) => [
                 'ulid' => (string) $d->ulid,
                 'reason' => $d->reason,
                 'amount' => (float) $d->amount,
