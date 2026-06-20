@@ -42,6 +42,11 @@ class UserFactory extends Factory
         return $this->state(['role' => Role::MARKETING]);
     }
 
+    public function karyawan(): static
+    {
+        return $this->state(['role' => Role::KARYAWAN]);
+    }
+
     public function mandor(): static
     {
         return $this->state(['role' => Role::MANDOR]);

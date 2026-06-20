@@ -1,0 +1,202 @@
+<?php
+
+namespace App\Services\Absence;
+
+use App\Enums\AbsPayrollStatus;
+use App\Models\AbsAttendance;
+use App\Models\AbsDeduction;
+use App\Models\AbsEmployeeProfile;
+use App\Models\AbsPayrollPeriod;
+use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+
+class AbsPayrollService
+{
+    public function getOrGenerateForUser(User $user, int $month, int $year): AbsPayrollPeriod
+    {
+        $existing = AbsPayrollPeriod::where('user_id', $user->id)
+            ->where('period_month', $month)
+            ->where('period_year', $year)
+            ->first();
+
+        if ($existing) {
+            return $this->recalculate($existing);
+        }
+
+        $profile = $user->absEmployeeProfile;
+
+        if (!$profile) {
+            throw new \RuntimeException(__('absence.payroll.profile_not_found'));
+        }
+
+        $period = AbsPayrollPeriod::create([
+            'user_id' => $user->id,
+            'period_month' => $month,
+            'period_year' => $year,
+            'daily_rate' => $profile->daily_rate,
+            'status' => AbsPayrollStatus::DRAFT,
+            'generated_at' => now(),
+            'company_id' => $user->company_id,
+        ]);
+
+        return $this->recalculate($period);
+    }
+
+    public function generateForCompany(int $companyId, int $month, int $year): int
+    {
+        $profiles = AbsEmployeeProfile::with('user')
+            ->where('company_id', $companyId)
+            ->get();
+
+        $count = 0;
+
+        foreach ($profiles as $profile) {
+            if (!$profile->user?->is_active) {
+                continue;
+            }
+
+            $this->getOrGenerateForUser($profile->user, $month, $year);
+            $count++;
+        }
+
+        return $count;
+    }
+
+    public function recalculate(AbsPayrollPeriod $period): AbsPayrollPeriod
+    {
+        if ($period->isFinal()) {
+            return $period;
+        }
+
+        $totalDays = AbsAttendance::where('user_id', $period->user_id)
+            ->whereYear('date', $period->period_year)
+            ->whereMonth('date', $period->period_month)
+            ->whereIn('status', config('absence.attended_statuses'))
+            ->count();
+
+        $gross = round((float) $period->daily_rate * $totalDays, 2);
+        $deduction = (float) $period->deductions()->sum('amount');
+        $net = round($gross - $deduction, 2);
+
+        $period->update([
+            'total_days' => $totalDays,
+            'gross_salary' => $gross,
+            'total_deduction' => $deduction,
+            'net_salary' => $net,
+        ]);
+
+        return $period->fresh(['deductions', 'user.absEmployeeProfile.branch', 'user.absEmployeeProfile.shift']);
+    }
+
+    public function addDeduction(
+        AbsPayrollPeriod $period,
+        User $admin,
+        string $reason,
+        float $amount,
+        ?int $attendanceId = null
+    ): AbsDeduction {
+        if ($period->isFinal()) {
+            throw new \RuntimeException(__('absence.payroll.already_final'));
+        }
+
+        $deduction = AbsDeduction::create([
+            'abs_payroll_period_id' => $period->id,
+            'user_id' => $period->user_id,
+            'abs_attendance_id' => $attendanceId,
+            'reason' => $reason,
+            'amount' => $amount,
+            'created_by' => $admin->id,
+            'company_id' => $period->company_id,
+        ]);
+
+        return $deduction;
+    }
+
+    public function updateDeduction(AbsDeduction $deduction, array $data): AbsDeduction
+    {
+        if ($deduction->payrollPeriod->isFinal()) {
+            throw new \RuntimeException(__('absence.payroll.already_final'));
+        }
+
+        $deduction->update($data);
+
+        $this->recalculate($deduction->payrollPeriod);
+
+        return $deduction->fresh();
+    }
+
+    public function deleteDeduction(AbsDeduction $deduction): void
+    {
+        if ($deduction->payrollPeriod->isFinal()) {
+            throw new \RuntimeException(__('absence.payroll.already_final'));
+        }
+
+        $period = $deduction->payrollPeriod;
+        $deduction->delete();
+        $this->recalculate($period);
+    }
+
+    public function finalize(AbsPayrollPeriod $period): AbsPayrollPeriod
+    {
+        if ($period->isFinal()) {
+            throw new \RuntimeException(__('absence.payroll.already_final'));
+        }
+
+        $period = $this->recalculate($period);
+        $period->update(['status' => AbsPayrollStatus::FINAL]);
+
+        return $period->fresh(['deductions', 'user']);
+    }
+
+    public function unlock(AbsPayrollPeriod $period): AbsPayrollPeriod
+    {
+        $period->update(['status' => AbsPayrollStatus::DRAFT]);
+
+        return $period->fresh(['deductions', 'user']);
+    }
+
+    public function generateSlipPdf(AbsPayrollPeriod $period)
+    {
+        $period->load([
+            'user.absEmployeeProfile.branch',
+            'user.absEmployeeProfile.shift',
+            'deductions',
+        ]);
+
+        $attendances = AbsAttendance::where('user_id', $period->user_id)
+            ->whereYear('date', $period->period_year)
+            ->whereMonth('date', $period->period_month)
+            ->whereIn('status', config('absence.attended_statuses'))
+            ->orderBy('date')
+            ->get();
+
+        return Pdf::loadView('pdf.abs-payroll-slip', [
+            'period' => $period,
+            'attendances' => $attendances,
+        ])->setPaper('a4');
+    }
+
+    public function currentPeriodPreview(User $user): array
+    {
+        $now = Carbon::now(config('absence.timezone'));
+        $period = $this->getOrGenerateForUser($user, (int) $now->month, (int) $now->year);
+
+        return [
+            'period_month' => $period->period_month,
+            'period_year' => $period->period_year,
+            'daily_rate' => (float) $period->daily_rate,
+            'total_days' => (int) $period->total_days,
+            'gross_salary' => (float) $period->gross_salary,
+            'total_deduction' => (float) $period->total_deduction,
+            'net_salary' => (float) $period->net_salary,
+            'status' => $period->status->value,
+            'deductions' => $period->deductions->map(fn ($d) => [
+                'ulid' => (string) $d->ulid,
+                'reason' => $d->reason,
+                'amount' => (float) $d->amount,
+            ])->values(),
+        ];
+    }
+}
