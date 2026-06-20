@@ -25,6 +25,7 @@ it('allows mandor to update own internal branch expense', function () {
             'name' => 'Saldo Awal',
             'amount' => 500000,
             'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
             'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
         ], ['Accept' => 'application/json'])
         ->assertCreated();
@@ -35,6 +36,7 @@ it('allows mandor to update own internal branch expense', function () {
             'name' => 'Pengeluaran Cabang',
             'amount' => 100000,
             'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
             'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
         ], ['Accept' => 'application/json']);
 
@@ -46,6 +48,7 @@ it('allows mandor to update own internal branch expense', function () {
             'name' => 'Pengeluaran Cabang Updated',
             'amount' => 120000,
             'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
             'reason' => 'Koreksi nominal',
         ])
         ->assertOk()
@@ -80,6 +83,7 @@ it('allows mandor to update expense by record mandor id even after branch reassi
             'name' => 'Pengeluaran Lama Updated',
             'amount' => 80000,
             'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
             'reason' => 'Koreksi',
         ])
         ->assertOk()
@@ -99,6 +103,7 @@ it('forbids mandor from updating admin transfer expense', function () {
             'name' => 'Transfer Dana',
             'amount' => 250000,
             'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
             'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
         ], ['Accept' => 'application/json'])
         ->assertCreated();
@@ -110,8 +115,82 @@ it('forbids mandor from updating admin transfer expense', function () {
             'name' => 'Should Fail',
             'amount' => 250000,
             'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
             'reason' => 'Test',
         ])
         ->assertStatus(422)
         ->assertJsonPath('message', __('operational.expenses.not_editable'));
+});
+
+it('rejects expense backdate beyond H-1', function () {
+    $this->actingAs($this->mandor)
+        ->post('/api/v1/operational/expenses', [
+            'sub_company_uuid' => $this->subCompany->uuid,
+            'name' => 'Pengeluaran Terlalu Lama',
+            'amount' => 50000,
+            'date' => now()->subDays(2)->toDateString(),
+            'payment_method' => 'CASH',
+            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+        ], ['Accept' => 'application/json'])
+        ->assertStatus(422)
+        ->assertJsonPath('message', __('operational.expenses.store_window_expired', ['days' => 1]));
+});
+
+it('allows expense backdate on H-1', function () {
+    app(\App\Services\Operational\OpsWalletService::class)
+        ->getOrCreateWallet($this->mandor, $this->subCompany);
+
+    $this->actingAs($this->mandor)
+        ->post('/api/v1/operational/incomes', [
+            'sub_company_uuid' => $this->subCompany->uuid,
+            'name' => 'Saldo',
+            'amount' => 200000,
+            'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
+            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+        ], ['Accept' => 'application/json'])
+        ->assertCreated();
+
+    $this->actingAs($this->mandor)
+        ->post('/api/v1/operational/expenses', [
+            'sub_company_uuid' => $this->subCompany->uuid,
+            'name' => 'Pengeluaran H-1',
+            'amount' => 50000,
+            'date' => now()->subDay()->toDateString(),
+            'payment_method' => 'TRANSFER',
+            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+        ], ['Accept' => 'application/json'])
+        ->assertCreated()
+        ->assertJsonPath('data.payment_method', 'TRANSFER');
+});
+
+it('rejects expense edit after H+1 from creation', function () {
+    app(\App\Services\Operational\OpsWalletService::class)
+        ->getOrCreateWallet($this->mandor, $this->subCompany);
+
+    $expense = OpsExpense::create([
+        'name' => 'Pengeluaran Lama',
+        'amount' => 50000,
+        'date' => now()->toDateString(),
+        'payment_method' => 'CASH',
+        'proof_files' => ['proofs/test.jpg'],
+        'expense_type' => OpsExpenseType::INTERNAL,
+        'mandor_id' => $this->mandor->id,
+        'sub_company_id' => $this->subCompany->id,
+        'created_by' => $this->mandor->id,
+        'company_id' => $this->company->id,
+    ]);
+
+    $expense->forceFill(['created_at' => now()->subDays(2)])->save();
+
+    $this->actingAs($this->mandor)
+        ->patchJson('/api/v1/operational/expenses/' . $expense->uuid, [
+            'name' => 'Pengeluaran Lama',
+            'amount' => 50000,
+            'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
+            'reason' => 'Koreksi',
+        ])
+        ->assertStatus(422)
+        ->assertJsonPath('message', __('operational.expenses.edit_window_expired', ['days' => 1]));
 });

@@ -14,6 +14,7 @@ return new class extends Migration
             $table->string('name');
             $table->decimal('amount', 15, 2);
             $table->date('date');
+            $table->enum('payment_method', ['TRANSFER', 'CASH'])->default('CASH');
             $table->json('proof_files')->nullable();
             $table->text('note')->nullable();
             $table->enum('source_type', ['INTERNAL', 'MANDOR']);

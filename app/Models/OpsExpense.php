@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\OpsExpenseType;
+use App\Enums\OpsPaymentMethod;
 use App\Models\Scopes\CompanyScope;
 use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,6 +19,7 @@ class OpsExpense extends Model
         'name',
         'amount',
         'date',
+        'payment_method',
         'proof_files',
         'note',
         'expense_type',
@@ -31,6 +33,7 @@ class OpsExpense extends Model
     protected $casts = [
         'date' => 'date',
         'amount' => 'decimal:2',
+        'payment_method' => OpsPaymentMethod::class,
         'proof_files' => 'array',
         'expense_type' => OpsExpenseType::class,
     ];

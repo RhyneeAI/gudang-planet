@@ -53,6 +53,6 @@ trait HandlesOperationalProofFiles
 
     protected function auditablePayload(OpsIncome|OpsExpense $record): array
     {
-        return $record->only(['name', 'amount', 'date', 'proof_files', 'note']);
+        return $record->only(['name', 'amount', 'date', 'payment_method', 'proof_files', 'note']);
     }
 }

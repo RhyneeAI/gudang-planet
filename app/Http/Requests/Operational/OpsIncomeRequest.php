@@ -10,6 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
 class OpsIncomeRequest extends FormRequest
 {
     use ValidatesOperationalProofFiles;
+    use ValidatesOperationalPaymentMethod;
 
     public function authorize(): bool
     {
@@ -83,6 +84,7 @@ class OpsIncomeRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'date' => ['required', 'date'],
+            ...$this->paymentMethodRules(),
             ...$this->proofFileRules($isStore),
             'note' => ['nullable', 'string'],
             'reason' => ['nullable', 'string'],
@@ -117,6 +119,7 @@ class OpsIncomeRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'date' => ['required', 'date'],
+            ...$this->paymentMethodRules(),
             ...$this->proofFileRules($isStore),
             'note' => ['nullable', 'string'],
             'reason' => ['nullable', 'string'],
@@ -137,6 +140,7 @@ class OpsIncomeRequest extends FormRequest
             'amount.min' => __('operational.validation.amount_min'),
             'date.required' => __('operational.validation.date_required'),
             'date.date' => __('operational.validation.date_invalid'),
+            ...$this->paymentMethodMessages(),
             ...$this->proofFileMessages(),
             'note.string' => __('operational.validation.note_invalid'),
         ];

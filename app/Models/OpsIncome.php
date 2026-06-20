@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\OpsPaymentMethod;
 use App\Enums\OpsSourceType;
 use App\Models\Scopes\CompanyScope;
 use App\Traits\HasUuid;
@@ -18,6 +19,7 @@ class OpsIncome extends Model
         'name',
         'amount',
         'date',
+        'payment_method',
         'proof_files',
         'note',
         'source_type',
@@ -30,6 +32,7 @@ class OpsIncome extends Model
     protected $casts = [
         'date' => 'date',
         'amount' => 'decimal:2',
+        'payment_method' => OpsPaymentMethod::class,
         'proof_files' => 'array',
         'source_type' => OpsSourceType::class,
     ];

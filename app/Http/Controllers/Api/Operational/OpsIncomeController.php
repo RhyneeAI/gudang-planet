@@ -11,9 +11,9 @@ use App\Http\Resources\Operational\OpsIncomeResource;
 use App\Models\OpsEditLog;
 use App\Models\OpsIncome;
 use App\Services\Operational\OpsFileService;
+use App\Services\Operational\OpsOperationalConfigService;
 use App\Services\Operational\OpsWalletService;
 use App\Services\SubCompanyService;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -22,6 +22,7 @@ class OpsIncomeController extends Controller
     use ReturnsEmptyShowResponse;
     use ScopesOperationalBySubCompany;
     use HandlesOperationalProofFiles;
+    use UsesOperationalTransactionWindow;
 
     protected array $sortableColumns = ['name', 'date', 'amount', 'source_type'];
 
@@ -29,6 +30,7 @@ class OpsIncomeController extends Controller
         protected OpsFileService $fileService,
         protected SubCompanyService $subCompanyService,
         protected OpsWalletService $walletService,
+        protected OpsOperationalConfigService $operationalConfig,
     ) {}
 
     public function index(Request $request)
@@ -38,7 +40,7 @@ class OpsIncomeController extends Controller
 
     public function store(OpsIncomeRequest $request)
     {
-        if ($response = $this->validateStoreWindow($request->date, 'store')) {
+        if ($response = $this->validateOperationalStoreDate('income', $request->date)) {
             return $response;
         }
 
@@ -76,7 +78,11 @@ class OpsIncomeController extends Controller
             ], 404);
         }
 
-        if ($response = $this->validateStoreWindow($request->date, 'edit')) {
+        if ($response = $this->validateOperationalEditWindow('income', $opsIncome)) {
+            return $response;
+        }
+
+        if ($response = $this->validateOperationalStoreDate('income', $request->date)) {
             return $response;
         }
 
@@ -127,6 +133,7 @@ class OpsIncomeController extends Controller
             'name' => $request->name,
             'amount' => $request->amount,
             'date' => $request->date,
+            'payment_method' => $request->payment_method,
             'proof_files' => $this->storeProofFilesFromRequest($request),
             'note' => $request->note,
             'source_type' => OpsSourceType::INTERNAL,
@@ -157,6 +164,7 @@ class OpsIncomeController extends Controller
                 'name' => $request->name,
                 'amount' => $request->amount,
                 'date' => $request->date,
+                'payment_method' => $request->payment_method,
                 'proof_files' => $this->storeProofFilesFromRequest($request),
                 'note' => $request->note,
                 'source_type' => OpsSourceType::INTERNAL,
@@ -215,6 +223,7 @@ class OpsIncomeController extends Controller
             'name' => $request->name,
             'amount' => $request->amount,
             'date' => $request->date,
+            'payment_method' => $request->payment_method,
             'note' => $request->note,
             'mandor_id' => $mandorId,
             'sub_company_id' => $subCompanyId,
@@ -285,6 +294,7 @@ class OpsIncomeController extends Controller
                 'name' => $request->name,
                 'amount' => $request->amount,
                 'date' => $request->date,
+                'payment_method' => $request->payment_method,
                 'note' => $request->note,
                 'sub_company_id' => $subCompany->id,
             ];
@@ -435,27 +445,6 @@ class OpsIncomeController extends Controller
                 $opsIncome->load(['mandor', 'subCompany', 'createdBy', 'transferConfirmation', 'editLogs'])
             ),
         ]);
-    }
-
-    protected function validateStoreWindow(string $date, string $action): ?\Illuminate\Http\JsonResponse
-    {
-        $editWindowDays = config('operational.expense_edit_window_days');
-        $requestDate = Carbon::parse($date)->startOfDay();
-        $limitDate = now()->subDays($editWindowDays)->startOfDay();
-
-        if ($requestDate->lt($limitDate)) {
-            $messageKey = $action === 'store'
-                ? 'operational.incomes.store_window_expired'
-                : 'operational.incomes.edit_window_expired';
-
-            return response()->json([
-                'success' => false,
-                'message' => __($messageKey, ['days' => $editWindowDays]),
-                'code' => 422,
-            ], 422);
-        }
-
-        return null;
     }
 
     protected function assertAdminEditableIncome(OpsIncome $income): ?\Illuminate\Http\JsonResponse

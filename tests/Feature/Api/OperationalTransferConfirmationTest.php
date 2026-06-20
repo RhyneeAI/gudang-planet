@@ -35,6 +35,7 @@ function createPendingTransferConfirmation(User $admin, User $mandor, SubCompany
             'name' => 'Transfer Dana',
             'amount' => 250000,
             'date' => now()->toDateString(),
+            'payment_method' => 'CASH',
             'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
         ], ['Accept' => 'application/json']);
 

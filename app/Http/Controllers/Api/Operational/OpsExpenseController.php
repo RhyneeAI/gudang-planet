@@ -16,9 +16,9 @@ use App\Models\OpsIncome;
 use App\Models\OpsTransferConfirmation;
 use App\Services\Operational\OpsFileService;
 use App\Services\Operational\OpsNotificationService;
+use App\Services\Operational\OpsOperationalConfigService;
 use App\Services\Operational\OpsWalletService;
 use App\Services\SubCompanyService;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -27,6 +27,7 @@ class OpsExpenseController extends Controller
     use ReturnsEmptyShowResponse;
     use ScopesOperationalBySubCompany;
     use HandlesOperationalProofFiles;
+    use UsesOperationalTransactionWindow;
 
     protected array $sortableColumns = ['name', 'date', 'amount', 'expense_type'];
 
@@ -35,6 +36,7 @@ class OpsExpenseController extends Controller
         protected OpsWalletService $walletService,
         protected OpsNotificationService $notificationService,
         protected SubCompanyService $subCompanyService,
+        protected OpsOperationalConfigService $operationalConfig,
     ) {}
 
     public function index(Request $request)
@@ -44,7 +46,7 @@ class OpsExpenseController extends Controller
 
     public function store(OpsExpenseRequest $request)
     {
-        if ($response = $this->validateStoreWindow($request->date, 'store')) {
+        if ($response = $this->validateOperationalStoreDate('expense', $request->date)) {
             return $response;
         }
 
@@ -82,7 +84,11 @@ class OpsExpenseController extends Controller
             ], 404);
         }
 
-        if ($response = $this->validateStoreWindow($request->date, 'edit')) {
+        if ($response = $this->validateOperationalEditWindow('expense', $opsExpense)) {
+            return $response;
+        }
+
+        if ($response = $this->validateOperationalStoreDate('expense', $request->date)) {
             return $response;
         }
 
@@ -123,6 +129,7 @@ class OpsExpenseController extends Controller
                 'name' => $request->name,
                 'amount' => $request->amount,
                 'date' => $request->date,
+                'payment_method' => $request->payment_method,
                 'proof_files' => $proofFiles,
                 'note' => $request->note,
                 'expense_type' => OpsExpenseType::INTERNAL,
@@ -152,6 +159,7 @@ class OpsExpenseController extends Controller
                 'name' => $request->name,
                 'amount' => $request->amount,
                 'date' => $request->date,
+                'payment_method' => $request->payment_method,
                 'proof_files' => $proofFiles,
                 'note' => $request->note,
                 'expense_type' => OpsExpenseType::MANDOR,
@@ -165,6 +173,7 @@ class OpsExpenseController extends Controller
                 'name' => $request->name,
                 'amount' => $request->amount,
                 'date' => $request->date,
+                'payment_method' => $request->payment_method,
                 'proof_files' => $proofFiles,
                 'note' => $request->note,
                 'source_type' => OpsSourceType::MANDOR,
@@ -227,6 +236,7 @@ class OpsExpenseController extends Controller
                 'name' => $request->name,
                 'amount' => $request->amount,
                 'date' => $request->date,
+                'payment_method' => $request->payment_method,
                 'proof_files' => $this->storeProofFilesFromRequest($request),
                 'note' => $request->note,
                 'expense_type' => OpsExpenseType::INTERNAL,
@@ -283,6 +293,7 @@ class OpsExpenseController extends Controller
             'name' => $request->name,
             'amount' => $request->amount,
             'date' => $request->date,
+            'payment_method' => $request->payment_method,
             'note' => $request->note,
         ];
 
@@ -322,6 +333,7 @@ class OpsExpenseController extends Controller
             'name' => $request->name,
             'amount' => $request->amount,
             'date' => $request->date,
+            'payment_method' => $request->payment_method,
             'note' => $request->note,
         ];
 
@@ -338,6 +350,7 @@ class OpsExpenseController extends Controller
                     'name' => $request->name,
                     'amount' => $request->amount,
                     'date' => $request->date,
+                    'payment_method' => $request->payment_method,
                     'note' => $request->note,
                 ];
 
@@ -411,6 +424,7 @@ class OpsExpenseController extends Controller
                 'name' => $request->name,
                 'amount' => $request->amount,
                 'date' => $request->date,
+                'payment_method' => $request->payment_method,
                 'note' => $request->note,
             ];
 
@@ -605,27 +619,6 @@ class OpsExpenseController extends Controller
                 $opsExpense->load(['mandor', 'subCompany', 'createdBy', 'transferIncome.transferConfirmation', 'editLogs'])
             ),
         ]);
-    }
-
-    protected function validateStoreWindow(string $date, string $action): ?\Illuminate\Http\JsonResponse
-    {
-        $editWindowDays = config('operational.expense_edit_window_days');
-        $requestDate = Carbon::parse($date)->startOfDay();
-        $limitDate = now()->subDays($editWindowDays)->startOfDay();
-
-        if ($requestDate->lt($limitDate)) {
-            $messageKey = $action === 'store'
-                ? 'operational.expenses.store_window_expired'
-                : 'operational.expenses.edit_window_expired';
-
-            return response()->json([
-                'success' => false,
-                'message' => __($messageKey, ['days' => $editWindowDays]),
-                'code' => 422,
-            ], 422);
-        }
-
-        return null;
     }
 
     protected function authorizeExpenseAccess(OpsExpense $expense, ?Role $mandorOnly = null): void
