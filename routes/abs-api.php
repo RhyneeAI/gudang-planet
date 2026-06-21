@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\Absence\AbsEmployeePayrollController;
 use App\Http\Controllers\Api\Absence\AbsPayrollController;
 use App\Http\Controllers\Api\Absence\AbsReportController;
 use App\Http\Controllers\Api\Absence\AbsShiftController;
+use App\Models\AbsDeduction;
+use App\Models\AbsPayrollPeriod;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/abs')->middleware(['throttle:api'])->group(function () {
@@ -44,11 +46,11 @@ Route::prefix('v1/abs')->middleware(['throttle:api'])->group(function () {
             Route::delete('/shifts/{absShift:uuid}', [AbsShiftController::class, 'destroy']);
 
             Route::post('/payrolls/generate', [AbsPayrollController::class, 'generate']);
-            Route::post('/payrolls/{absPayrollPeriod:ulid}/deductions', [AbsPayrollController::class, 'storeDeduction']);
-            Route::put('/payrolls/{absPayrollPeriod:ulid}/deductions/{absDeduction:ulid}', [AbsPayrollController::class, 'updateDeduction']);
-            Route::delete('/payrolls/{absPayrollPeriod:ulid}/deductions/{absDeduction:ulid}', [AbsPayrollController::class, 'destroyDeduction']);
-            Route::put('/payrolls/{absPayrollPeriod:ulid}/finalize', [AbsPayrollController::class, 'finalize']);
-            Route::put('/payrolls/{absPayrollPeriod:ulid}/unlock', [AbsPayrollController::class, 'unlock']);
+            Route::post('/payrolls/{absPayrollPeriod}/deductions', [AbsPayrollController::class, 'storeDeduction']);
+            Route::put('/payrolls/{absPayrollPeriod}/deductions/{absDeduction}', [AbsPayrollController::class, 'updateDeduction']);
+            Route::delete('/payrolls/{absPayrollPeriod}/deductions/{absDeduction}', [AbsPayrollController::class, 'destroyDeduction']);
+            Route::put('/payrolls/{absPayrollPeriod}/finalize', [AbsPayrollController::class, 'finalize']);
+            Route::put('/payrolls/{absPayrollPeriod}/unlock', [AbsPayrollController::class, 'unlock']);
         });
     });
 });

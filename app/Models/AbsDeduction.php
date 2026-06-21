@@ -33,6 +33,11 @@ class AbsDeduction extends Model
         static::addGlobalScope(new CompanyScope());
     }
 
+    public function getRouteKeyName()
+    {
+        return 'ulid';
+    }
+
     public function payrollPeriod()
     {
         return $this->belongsTo(AbsPayrollPeriod::class, 'abs_payroll_period_id');

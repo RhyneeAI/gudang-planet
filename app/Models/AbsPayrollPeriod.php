@@ -44,6 +44,11 @@ class AbsPayrollPeriod extends Model
         static::addGlobalScope(new CompanyScope());
     }
 
+    public function getRouteKeyName()
+    {
+        return 'ulid';
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
