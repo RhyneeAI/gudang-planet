@@ -7,8 +7,6 @@ use App\Http\Controllers\Api\Absence\AbsEmployeePayrollController;
 use App\Http\Controllers\Api\Absence\AbsPayrollController;
 use App\Http\Controllers\Api\Absence\AbsReportController;
 use App\Http\Controllers\Api\Absence\AbsShiftController;
-use App\Models\AbsDeduction;
-use App\Models\AbsPayrollPeriod;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/abs')->middleware(['throttle:api'])->group(function () {
@@ -37,6 +35,7 @@ Route::prefix('v1/abs')->middleware(['throttle:api'])->group(function () {
 
             Route::get('/reports/attendance', [AbsReportController::class, 'attendance']);
             Route::get('/reports/payroll', [AbsReportController::class, 'payroll']);
+            Route::get('/reports/deductions', [AbsReportController::class, 'deductions']);
         });
 
         Route::middleware(['role:SUPERADMIN,ADMIN'])->group(function () {

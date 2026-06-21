@@ -61,7 +61,11 @@ return [
     ],
     'reports' => [
         'attendance' => 'Attendance report retrieved successfully.',
+        'attendance_exported' => 'Attendance report exported successfully.',
         'payroll' => 'Payroll report retrieved successfully.',
+        'payroll_exported' => 'Payroll report exported successfully.',
+        'deductions' => 'Deduction report retrieved successfully.',
+        'deductions_exported' => 'Deduction report exported successfully.',
     ],
     'validation' => [
         'branch_uuid_not_found' => 'Branch not found.',

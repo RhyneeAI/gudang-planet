@@ -61,7 +61,11 @@ return [
     ],
     'reports' => [
         'attendance' => 'Laporan kehadiran berhasil diambil.',
+        'attendance_exported' => 'Laporan kehadiran berhasil diekspor.',
         'payroll' => 'Laporan payroll berhasil diambil.',
+        'payroll_exported' => 'Laporan payroll berhasil diekspor.',
+        'deductions' => 'Laporan pemotongan gaji berhasil diambil.',
+        'deductions_exported' => 'Laporan pemotongan gaji berhasil diekspor.',
     ],
     'validation' => [
         'branch_uuid_not_found' => 'Cabang tidak ditemukan.',
