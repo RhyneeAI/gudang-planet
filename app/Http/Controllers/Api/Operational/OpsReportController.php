@@ -112,6 +112,7 @@ class OpsReportController extends Controller
 
                 $groups->push([
                     'mandor'        => null,
+                    'sub_companies' => collect(),
                     'saldo_awal'    => (float) $internalSaldoAwalIncome - (float) $internalSaldoAwalExpense,
                     'saldo_akhir'   => (float) $internalSaldoAkhirIncome - (float) $internalSaldoAkhirExpense,
                     'total_income'  => $totalInternalIncome,
@@ -133,6 +134,14 @@ class OpsReportController extends Controller
             $mandorSaldoAkhirIncome  = OpsIncome::where('mandor_id', $mandor->id)->whereDate('date', '<=', $endDate)->sum('amount');
             $mandorSaldoAkhirExpense = OpsExpense::where('mandor_id', $mandor->id)->whereDate('date', '<=', $endDate)->sum('amount');
 
+            $mandorSubCompanies = $mandor->subCompanies()
+                ->get(['uuid', 'name', 'code'])
+                ->map(fn ($sc) => [
+                    'uuid' => $sc->uuid,
+                    'name' => $sc->name,
+                    'code' => $sc->code,
+                ]);
+
             if ($incomes->isNotEmpty() || $expenses->isNotEmpty()) {
                 $totalIncome  = (float) $incomes->sum('amount');
                 $totalExpense = (float) $expenses->sum('amount');
@@ -142,6 +151,7 @@ class OpsReportController extends Controller
                         'uuid' => $mandor->uuid,
                         'name' => $mandor->name,
                     ],
+                    'sub_companies' => $mandorSubCompanies,
                     'saldo_awal'    => (float) $mandorSaldoAwalIncome - (float) $mandorSaldoAwalExpense,
                     'saldo_akhir'   => (float) $mandorSaldoAkhirIncome - (float) $mandorSaldoAkhirExpense,
                     'total_income'  => $totalIncome,
@@ -175,7 +185,6 @@ class OpsReportController extends Controller
         return OpsIncome::where('mandor_id', $mandorId)
             ->whereDate('date', '>=', $startDate)
             ->whereDate('date', '<=', $endDate)
-            ->with('subCompany:id,uuid,name')
             ->orderBy('date')
             ->orderBy('created_at')
             ->get()
@@ -186,11 +195,7 @@ class OpsReportController extends Controller
                 'date'           => $income->date->format('Y-m-d'),
                 'payment_method' => $income->payment_method->value,
                 'source_type'    => $income->source_type->value,
-                'sub_company'    => $income->subCompany ? [
-                    'uuid' => $income->subCompany->uuid,
-                    'name' => $income->subCompany->name,
-                ] : null,
-                'note' => $income->note,
+                'note'           => $income->note,
             ]);
     }
 
@@ -199,7 +204,6 @@ class OpsReportController extends Controller
         return OpsExpense::where('mandor_id', $mandorId)
             ->whereDate('date', '>=', $startDate)
             ->whereDate('date', '<=', $endDate)
-            ->with('subCompany:id,uuid,name')
             ->orderBy('date')
             ->orderBy('created_at')
             ->get()
@@ -210,11 +214,7 @@ class OpsReportController extends Controller
                 'date'           => $expense->date->format('Y-m-d'),
                 'payment_method' => $expense->payment_method->value,
                 'expense_type'   => $expense->expense_type->value,
-                'sub_company'    => $expense->subCompany ? [
-                    'uuid' => $expense->subCompany->uuid,
-                    'name' => $expense->subCompany->name,
-                ] : null,
-                'note' => $expense->note,
+                'note'           => $expense->note,
             ]);
     }
 
@@ -233,7 +233,6 @@ class OpsReportController extends Controller
                 'date'           => $income->date->format('Y-m-d'),
                 'payment_method' => $income->payment_method->value,
                 'source_type'    => $income->source_type->value,
-                'sub_company'    => null,
                 'note'           => $income->note,
             ]);
     }
@@ -253,7 +252,6 @@ class OpsReportController extends Controller
                 'date'           => $expense->date->format('Y-m-d'),
                 'payment_method' => $expense->payment_method->value,
                 'expense_type'   => $expense->expense_type->value,
-                'sub_company'    => null,
                 'note'           => $expense->note,
             ]);
     }
@@ -283,7 +281,10 @@ class OpsReportController extends Controller
         $rows = collect();
 
         foreach ($data['groups'] as $group) {
-            $mandorName = $group['mandor'] ? $group['mandor']['name'] : 'PUSAT (Internal)';
+            $mandorName  = $group['mandor'] ? $group['mandor']['name'] : 'PUSAT (Internal)';
+            $cabangNama  = $group['sub_companies']
+                ? $group['sub_companies']->pluck('name')->implode(', ')
+                : '-';
 
             foreach ($group['incomes'] as $income) {
                 $rows->push([
@@ -291,7 +292,7 @@ class OpsReportController extends Controller
                     $income['date'],
                     $income['name'],
                     'Pemasukan',
-                    $income['sub_company']['name'] ?? '-',
+                    $cabangNama,
                     $income['payment_method'],
                     (float) $income['amount'],
                     0,
@@ -305,7 +306,7 @@ class OpsReportController extends Controller
                     $expense['date'],
                     $expense['name'],
                     'Pengeluaran',
-                    $expense['sub_company']['name'] ?? '-',
+                    $cabangNama,
                     $expense['payment_method'],
                     0,
                     (float) $expense['amount'],

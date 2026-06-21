@@ -66,6 +66,12 @@
                 <span>Saldo Awal: <strong>Rp {{ number_format($group['saldo_awal'], 0, ',', '.') }}</strong></span>
                 &nbsp;|&nbsp;
                 <span>Saldo Akhir: <strong>Rp {{ number_format($group['saldo_akhir'], 0, ',', '.') }}</strong></span>
+                @if ($group['sub_companies']->isNotEmpty())
+                    &nbsp;|&nbsp;
+                    <span>Cabang:
+                        <strong>{{ $group['sub_companies']->pluck('name')->join(', ') }}</strong>
+                    </span>
+                @endif
             </div>
 
             @if ($group['incomes']->isNotEmpty())
@@ -76,7 +82,6 @@
                             <th>Tanggal</th>
                             <th>Nama</th>
                             <th>Tipe</th>
-                            <th>Cabang</th>
                             <th>Metode</th>
                             <th class="number">Nominal</th>
                         </tr>
@@ -88,7 +93,6 @@
                             <td>{{ $income['date'] }}</td>
                             <td>{{ $income['name'] }}</td>
                             <td><span class="type-badge income">Pemasukan</span></td>
-                            <td>{{ $income['sub_company']['name'] ?? '-' }}</td>
                             <td>{{ $income['payment_method'] }}</td>
                             <td class="number type-income">Rp {{ number_format($income['amount'], 0, ',', '.') }}</td>
                         </tr>
@@ -105,7 +109,6 @@
                             <th>Tanggal</th>
                             <th>Nama</th>
                             <th>Tipe</th>
-                            <th>Cabang</th>
                             <th>Metode</th>
                             <th class="number">Nominal</th>
                         </tr>
@@ -117,7 +120,6 @@
                             <td>{{ $expense['date'] }}</td>
                             <td>{{ $expense['name'] }}</td>
                             <td><span class="type-badge expense">Pengeluaran</span></td>
-                            <td>{{ $expense['sub_company']['name'] ?? '-' }}</td>
                             <td>{{ $expense['payment_method'] }}</td>
                             <td class="number type-expense">Rp {{ number_format($expense['amount'], 0, ',', '.') }}</td>
                         </tr>
