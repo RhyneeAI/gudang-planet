@@ -269,8 +269,8 @@ class OpsReportController extends Controller
             'total_remaining'=> $data['total_remaining'],
         ])->setPaper('a4', 'landscape');
 
-        $filename    = 'laporan-operasional-' . now()->format('YmdHis') . '.pdf';
-        $storagePath = 'reports/operasional/' . $filename;
+        $filename    = 'income-expense-' . now()->format('YmdHis') . '.pdf';
+        $storagePath = 'reports/operational/' . $filename;
 
         FileHelper::saveFile($storagePath, $pdf->output());
 
@@ -279,8 +279,8 @@ class OpsReportController extends Controller
 
     protected function generateXlsx($request, array $data): string
     {
-        $filename    = 'laporan-operasional-' . now()->format('YmdHis') . '.xlsx';
-        $storagePath = 'reports/operasional/' . $filename;
+        $filename    = 'income-expense-' . now()->format('YmdHis') . '.xlsx';
+        $storagePath = 'reports/operational/' . $filename;
 
         FileHelper::saveExcel(new OpsIncomeExpenseExport($data, 'Laporan Operasional'), $storagePath);
 

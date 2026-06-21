@@ -1,5 +1,21 @@
 # Redis Queue Setup Guide
 
+## Storage Structure
+
+```
+storage/app/public/reports/
+├── absence/
+│   ├── attendance/          # attendance-20260621.xlsx
+│   ├── bonus/               # bonus-20260621.xlsx
+│   ├── deduction/           # deduction-20260621.xlsx
+│   ├── employee/            # employee-20260621.xlsx
+│   └── payroll/             # payroll-20260621.xlsx
+├── operational/             # income-expense-20260621.pdf / .xlsx
+└── pos/
+    ├── marketing-commission/ # marketing-commission-20260621.pdf
+    └── revenue/             # revenue-20260621.pdf
+```
+
 ## Development
 
 ### 1. Install Redis locally
@@ -42,7 +58,7 @@ Buka endpoint export (misal absensi), pastikan job terkirim ke Redis:
 php artisan tinker
 > \App\Jobs\GenerateReportExport::dispatch(
     \App\Models\Company::first(),
-    'absensi',
+    'absence/attendance',
     ['date_from' => '2026-01-01', 'date_to' => '2026-06-21'],
     'xlsx'
   );
@@ -58,7 +74,7 @@ redis-cli
 
 ---
 
-## Server (Shared Hosting dengan Redis)
+## Server (Shared Hosting dengan Redis Socket)
 
 ### 1. Cek PHP extension Redis
 
@@ -94,7 +110,7 @@ while true; do
 done
 ```
 
-Jalankan via **nohup** atau **screen**:
+Jalankan via **screen** atau **nohup**:
 
 ```bash
 # Via screen (disarankan)

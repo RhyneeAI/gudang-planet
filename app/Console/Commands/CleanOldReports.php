@@ -17,14 +17,14 @@ class CleanOldReports extends Command
     {
         $days = (int) $this->option('days');
         $directories = [
-            'reports/absensi',
-            'reports/bonus',
-            'reports/karyawan',
-            'reports/payroll',
-            'reports/pemotongan',
-            'reports/operasional',
-            'reports/marketing-commission',
-            'reports/revenue',
+            'reports/absence/attendance',
+            'reports/absence/payroll',
+            'reports/absence/deduction',
+            'reports/absence/bonus',
+            'reports/absence/employee',
+            'reports/operational',
+            'reports/pos/marketing-commission',
+            'reports/pos/revenue',
         ];
         $count = 0;
 

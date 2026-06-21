@@ -27,8 +27,8 @@ class AbsReportController extends Controller
             $records = $query->get();
             $export = $this->reportService->storeXlsxExport(
                 $request,
-                'absensi',
-                'laporan-absensi-' . now()->format('YmdHis') . '.xlsx',
+                'absence/attendance',
+                'attendance-' . now()->format('YmdHis') . '.xlsx',
                 ['No', 'Tanggal', 'Karyawan', 'Cabang', 'Shift', 'Status', 'Jam Masuk', 'Jam Keluar', 'Alasan Terlambat', 'Alasan Pulang Awal'],
                 $this->reportService->attendanceExportRows($records),
             );
@@ -57,8 +57,8 @@ class AbsReportController extends Controller
             $records = $query->get();
             $export = $this->reportService->storeXlsxExport(
                 $request,
-                'payroll',
-                'laporan-payroll-' . now()->format('YmdHis') . '.xlsx',
+                'absence/payroll',
+                'payroll-' . now()->format('YmdHis') . '.xlsx',
                 ['No', 'Periode', 'Karyawan', 'Tarif Harian', 'Total Hari', 'Gaji Kotor', 'Total Bonus', 'Total Potongan', 'Gaji Bersih', 'Status'],
                 $this->reportService->payrollExportRows($records),
             );
@@ -87,8 +87,8 @@ class AbsReportController extends Controller
             $records = $query->get();
             $export = $this->reportService->storeXlsxExport(
                 $request,
-                'pemotongan',
-                'laporan-pemotongan-' . now()->format('YmdHis') . '.xlsx',
+                'absence/deduction',
+                'deduction-' . now()->format('YmdHis') . '.xlsx',
                 ['No', 'Tanggal', 'Karyawan', 'Cabang', 'Periode Payroll', 'Alasan', 'Nominal', 'Dibuat Oleh'],
                 $this->reportService->deductionsExportRows($records),
             );
@@ -117,8 +117,8 @@ class AbsReportController extends Controller
             $records = $query->get();
             $export = $this->reportService->storeXlsxExport(
                 $request,
-                'bonus',
-                'laporan-bonus-' . now()->format('YmdHis') . '.xlsx',
+                'absence/bonus',
+                'bonus-' . now()->format('YmdHis') . '.xlsx',
                 ['No', 'Tanggal', 'Karyawan', 'Cabang', 'Periode Payroll', 'Alasan', 'Nominal', 'Dibuat Oleh'],
                 $this->reportService->bonusesExportRows($records),
             );
@@ -147,8 +147,8 @@ class AbsReportController extends Controller
             $records = $query->get();
             $export = $this->reportService->storeXlsxExport(
                 $request,
-                'karyawan',
-                'laporan-karyawan-' . now()->format('YmdHis') . '.xlsx',
+                'absence/employee',
+                'employee-' . now()->format('YmdHis') . '.xlsx',
                 ['No', 'Karyawan', 'Nomor Telepon', 'Cabang', 'Jabatan', 'Status', 'Shift'],
                 $this->reportService->employeesExportRows($records),
             );

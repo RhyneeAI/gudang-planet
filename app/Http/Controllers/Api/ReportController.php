@@ -126,8 +126,8 @@ class ReportController extends Controller
             'grand_total' => $grandTotals,
         ])->setPaper('a4', 'portrait');
 
-        $filename    = 'laporan-komisi-marketing-' . now()->format('YmdHis') . '.pdf';
-        $storagePath = 'reports/marketing-commission/' . $filename;
+        $filename    = 'marketing-commission-' . now()->format('YmdHis') . '.pdf';
+        $storagePath = 'reports/pos/marketing-commission/' . $filename;
 
         FileHelper::saveFile($storagePath, $pdf->output());
 
@@ -301,8 +301,8 @@ class ReportController extends Controller
             'period'       => $period,
         ])->setPaper('a4', 'landscape');
 
-        $filename    = 'laporan-omset-penjualan-' . now()->format('YmdHis') . '.pdf';
-        $storagePath = 'reports/revenue/' . $filename;
+        $filename    = 'revenue-' . now()->format('YmdHis') . '.pdf';
+        $storagePath = 'reports/pos/revenue/' . $filename;
 
         FileHelper::saveFile($storagePath, $pdf->output());
 
