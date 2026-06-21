@@ -14,7 +14,7 @@ class OpsTransferConfirmationFactory extends Factory
             'confirmable_id' => null,
             'status' => 'PENDING',
             'confirmed_amount' => 0,
-            'mandor_proof_file' => null,
+            'mandor_proof_files' => null,
             'confirmed_at' => null,
             'note' => null,
             'confirmed_by' => null,

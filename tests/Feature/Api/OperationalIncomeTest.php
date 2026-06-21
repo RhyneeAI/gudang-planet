@@ -34,7 +34,7 @@ it('stores admin income without mandor as internal pusat income', function () {
             'amount' => 500000,
             'date' => now()->toDateString(),
             'payment_method' => 'CASH',
-            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+            'proof_files' => [UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json']);
 
     $response->assertCreated()
@@ -54,7 +54,7 @@ it('stores admin income with optional mandor attribution', function () {
             'amount' => 200000,
             'date' => now()->toDateString(),
             'payment_method' => 'CASH',
-            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+            'proof_files' => [UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json']);
 
     $response->assertCreated()
@@ -72,7 +72,7 @@ it('stores admin internal expense without mandor', function () {
             'amount' => 100000,
             'date' => now()->toDateString(),
             'payment_method' => 'CASH',
-            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+            'proof_files' => [UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json']);
 
     $response->assertCreated()
@@ -93,7 +93,7 @@ it('stores admin mandor transfer expense with pending income confirmation', func
             'amount' => 250000,
             'date' => now()->toDateString(),
             'payment_method' => 'CASH',
-            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+            'proof_files' => [UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json']);
 
     $response->assertCreated()
@@ -115,7 +115,7 @@ it('stores mandor income with only sub company uuid and credits wallet', functio
             'amount' => 150000,
             'date' => now()->toDateString(),
             'payment_method' => 'CASH',
-            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+            'proof_files' => [UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json']);
 
     $response->assertCreated()
@@ -142,11 +142,10 @@ it('stores mandor income with up to three proof images', function () {
             ],
         ], ['Accept' => 'application/json']);
 
-    $response->assertCreated()
-        ->assertJsonCount(3, 'data.proof_files');
+        $response->assertCreated()
+            ->assertJsonCount(3, 'data.proof_files');
 
-    expect($response->json('data.proof_file'))->toBeString()->not->toBeEmpty();
-    expect(OpsIncome::first()->proof_files)->toHaveCount(3);
+        expect(OpsIncome::first()->proof_files)->toHaveCount(3);
 });
 
 it('allows mandor to update own internal branch income', function () {
@@ -157,7 +156,7 @@ it('allows mandor to update own internal branch income', function () {
             'amount' => 150000,
             'date' => now()->toDateString(),
             'payment_method' => 'CASH',
-            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+            'proof_files' => [UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json']);
 
     $incomeResponse->assertCreated();
@@ -290,7 +289,7 @@ it('stores income with transfer payment method', function () {
             'amount' => 300000,
             'date' => now()->toDateString(),
             'payment_method' => 'TRANSFER',
-            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+            'proof_files' => [UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json'])
         ->assertCreated()
         ->assertJsonPath('data.payment_method', 'TRANSFER');
@@ -303,7 +302,7 @@ it('allows income backdate up to H-3', function () {
             'amount' => 100000,
             'date' => now()->subDays(3)->toDateString(),
             'payment_method' => 'CASH',
-            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+            'proof_files' => [UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json'])
         ->assertCreated();
 });
@@ -315,7 +314,7 @@ it('rejects income backdate beyond H-3', function () {
             'amount' => 100000,
             'date' => now()->subDays(4)->toDateString(),
             'payment_method' => 'CASH',
-            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+            'proof_files' => [UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json'])
         ->assertStatus(422)
         ->assertJsonPath('message', __('operational.incomes.store_window_expired', ['days' => 3]));

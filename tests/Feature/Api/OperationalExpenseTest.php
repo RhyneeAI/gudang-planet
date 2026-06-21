@@ -26,7 +26,7 @@ it('allows mandor to update own internal branch expense', function () {
             'amount' => 500000,
             'date' => now()->toDateString(),
             'payment_method' => 'CASH',
-            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+            'proof_files' => [UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json'])
         ->assertCreated();
 
@@ -37,7 +37,7 @@ it('allows mandor to update own internal branch expense', function () {
             'amount' => 100000,
             'date' => now()->toDateString(),
             'payment_method' => 'CASH',
-            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+            'proof_files' => [UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json']);
 
     $response->assertCreated();
@@ -104,7 +104,7 @@ it('forbids mandor from updating admin transfer expense', function () {
             'amount' => 250000,
             'date' => now()->toDateString(),
             'payment_method' => 'CASH',
-            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+            'proof_files' => [UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json'])
         ->assertCreated();
 
@@ -130,7 +130,7 @@ it('rejects expense backdate beyond H-1', function () {
             'amount' => 50000,
             'date' => now()->subDays(2)->toDateString(),
             'payment_method' => 'CASH',
-            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+            'proof_files' => [UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json'])
         ->assertStatus(422)
         ->assertJsonPath('message', __('operational.expenses.store_window_expired', ['days' => 1]));
@@ -147,7 +147,7 @@ it('allows expense backdate on H-1', function () {
             'amount' => 200000,
             'date' => now()->toDateString(),
             'payment_method' => 'CASH',
-            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+            'proof_files' => [UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json'])
         ->assertCreated();
 
@@ -158,7 +158,7 @@ it('allows expense backdate on H-1', function () {
             'amount' => 50000,
             'date' => now()->subDay()->toDateString(),
             'payment_method' => 'TRANSFER',
-            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+            'proof_files' => [UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json'])
         ->assertCreated()
         ->assertJsonPath('data.payment_method', 'TRANSFER');

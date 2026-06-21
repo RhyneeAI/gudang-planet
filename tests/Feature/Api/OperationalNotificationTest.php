@@ -33,7 +33,7 @@ function createMandorPendingNotification(User $admin, User $mandor, SubCompany $
             'amount' => 250000,
             'date' => now()->toDateString(),
             'payment_method' => 'CASH',
-            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+            'proof_files' => [UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json'])
         ->assertCreated();
 

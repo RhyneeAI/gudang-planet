@@ -342,7 +342,7 @@ it('forbids deleting sub company with pending transfer confirmation', function (
             'amount' => 100000,
             'date' => now()->toDateString(),
             'payment_method' => 'CASH',
-            'proof_file' => UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg'),
+            'proof_files' => [UploadedFile::fake()->create('proof.jpg', 100, 'image/jpeg')],
         ])
         ->assertCreated();
 

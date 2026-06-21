@@ -21,16 +21,12 @@ trait HandlesOperationalProofFiles
             return is_array($files) ? array_values($files) : [$files];
         }
 
-        if ($request->hasFile('proof_file')) {
-            return [$request->file('proof_file')];
-        }
-
         return [];
     }
 
     protected function requestHasProofUpload(Request $request): bool
     {
-        return $request->hasFile('proof_files') || $request->hasFile('proof_file');
+        return $request->hasFile('proof_files');
     }
 
     protected function replaceProofFilesOnUpdate(Request $request, OpsIncome|OpsExpense $record, string $type = 'income'): ?array
