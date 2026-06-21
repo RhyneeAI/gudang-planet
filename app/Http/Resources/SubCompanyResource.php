@@ -16,6 +16,9 @@ class SubCompanyResource extends JsonResource
             'name' => $this->name,
             'code' => $this->code,
             'address' => $this->address,
+            'latitude' => $this->latitude !== null ? (float) $this->latitude : null,
+            'longitude' => $this->longitude !== null ? (float) $this->longitude : null,
+            'radius_meter' => (int) ($this->radius_meter ?? config('absence.default_radius_meter', 50)),
             'is_active' => (bool) $this->is_active,
             'mandor' => $this->whenLoaded('mandor', function () {
                 $mandor = $this->mandor;

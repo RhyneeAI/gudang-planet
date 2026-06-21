@@ -113,6 +113,21 @@ class User extends Authenticatable
         return $this->hasMany(OpsNotification::class);
     }
 
+    public function absEmployeeProfile()
+    {
+        return $this->hasOne(AbsEmployeeProfile::class);
+    }
+
+    public function absAttendances()
+    {
+        return $this->hasMany(AbsAttendance::class);
+    }
+
+    public function absPayrollPeriods()
+    {
+        return $this->hasMany(AbsPayrollPeriod::class);
+    }
+
     // Helper methods
     public function isSuperAdmin(): bool
     {

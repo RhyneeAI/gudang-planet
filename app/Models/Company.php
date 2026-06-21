@@ -96,4 +96,19 @@ class Company extends Model
     {
         return $this->hasMany(SubCompany::class);
     }
+
+    public function absShifts()
+    {
+        return $this->hasMany(AbsShift::class);
+    }
+
+    public function absAttendances()
+    {
+        return $this->hasMany(AbsAttendance::class);
+    }
+
+    public function absPayrollPeriods()
+    {
+        return $this->hasMany(AbsPayrollPeriod::class);
+    }
 }

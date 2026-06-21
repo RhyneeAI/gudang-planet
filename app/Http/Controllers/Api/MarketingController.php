@@ -52,13 +52,17 @@ class MarketingController extends Controller
 
         $marketing = User::create([
             'name'       => $request->name,
-            'phone'      => $phone, // ← username → phone
+            'phone'      => $phone,
             'email'      => $request->email,
             'password'   => Hash::make($rawPassword),
             'address'    => $request->address,
             'role'       => Role::MARKETING,
             'company_id' => $request->user()->company_id,
         ]);
+
+        app(\App\Services\Absence\AbsEmployeeProfileService::class)->syncFromRequest($marketing, $request->only([
+            'jabatan_uuid', 'sub_company_uuid', 'shift_uuid',
+        ]));
 
         return response()->json([
             'success' => true,
@@ -102,6 +106,12 @@ class MarketingController extends Controller
         }
 
         $marketing->update($data);
+
+        app(\App\Services\Absence\AbsEmployeeProfileService::class)->syncFromRequest($marketing, [
+            'jabatan_uuid' => $request->input('jabatan_uuid'),
+            'sub_company_uuid' => $request->input('sub_company_uuid'),
+            'shift_uuid' => $request->input('shift_uuid'),
+        ]);
 
         return response()->json([
             'success' => true,

@@ -22,6 +22,9 @@ class DatabaseSeeder extends Seeder
             // Operasional: config + sub-company otomatis per mandor
             OpsConfigurationSeeder::class,
             SubCompanySeeder::class,
+            AbsJabatanSeeder::class,
+            AbsShiftSeeder::class,
+            AbsEmployeeProfileSeeder::class,
 
             // Laporan: company terpisah, data transaksi fokus
             MarketingCommissionReportSeeder::class,

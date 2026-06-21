@@ -76,6 +76,22 @@ return [
     'edit_logs' => [
         'list' => 'Log audit edit berhasil diambil.',
     ],
+    'employees' => [
+        'list' => 'Daftar karyawan berhasil diambil.',
+        'detail' => 'Detail karyawan berhasil diambil.',
+        'stored' => 'Karyawan berhasil ditambahkan.',
+        'updated' => 'Data karyawan berhasil diperbarui.',
+        'deactivated' => 'Karyawan berhasil dinonaktifkan.',
+        'password_reset' => 'Password karyawan berhasil direset.',
+    ],
+    'jabatans' => [
+        'list' => 'Daftar jabatan berhasil diambil.',
+        'detail' => 'Detail jabatan berhasil diambil.',
+        'stored' => 'Jabatan berhasil ditambahkan.',
+        'updated' => 'Jabatan berhasil diperbarui.',
+        'deleted' => 'Jabatan berhasil dihapus.',
+        'in_use' => 'Jabatan masih digunakan oleh karyawan dan tidak dapat dihapus.',
+    ],
     'mandors' => [
         'list' => 'Daftar mandor berhasil diambil.',
         'stored' => 'Mandor dan cabang operasional berhasil dibuat.',
