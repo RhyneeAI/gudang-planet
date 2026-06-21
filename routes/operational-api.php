@@ -47,6 +47,7 @@ Route::prefix('v1/operational')->middleware(['auth:sanctum'])->group(function ()
         Route::get('edit-logs', [OpsEditLogController::class, 'index']);
 
         Route::get('reports/income-expense', [OpsReportController::class, 'incomeExpenseReport']);
+        Route::get('reports/income-expense/download', [OpsReportController::class, 'downloadIncomeExpenseReport']);
     });
 
     Route::middleware(['role:SUPERADMIN,ADMIN'])->group(function () {

@@ -108,6 +108,7 @@ return [
     ],
     'report' => [
         'income_expense_report' => 'Laporan pemasukan dan pengeluaran berhasil diambil.',
+        'download_ready' => 'File laporan siap diunduh.',
     ],
     'validation' => [
         'mandor_uuid_required' => 'Mandor wajib dipilih.',

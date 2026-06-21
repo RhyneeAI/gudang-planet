@@ -108,6 +108,7 @@ return [
     ],
     'report' => [
         'income_expense_report' => 'Income and expense report retrieved successfully.',
+        'download_ready' => 'Report files are ready for download.',
     ],
     'validation' => [
         'mandor_uuid_required' => 'Mandor is required.',
