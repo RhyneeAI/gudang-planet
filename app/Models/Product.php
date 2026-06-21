@@ -63,7 +63,7 @@ class Product extends Model
 
     public function unit()
     {
-        return $this->belongsTo(Unit::class);
+        return $this->belongsTo(PosUnit::class);
     }
 
 
@@ -89,6 +89,6 @@ class Product extends Model
 
     public function stockMutations()
     {
-        return $this->hasMany(StockMutation::class);
+        return $this->hasMany(PosStockMutation::class);
     }
 }

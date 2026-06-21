@@ -30,7 +30,7 @@ class PurchaseDetail extends Model
     // Relationships
     public function purchaseTransaction()
     {
-        return $this->belongsTo(PurchaseTransaction::class, 'purchase_id');
+        return $this->belongsTo(PosPurchaseTransaction::class, 'purchase_id');
     }
 
     public function product()
@@ -40,6 +40,6 @@ class PurchaseDetail extends Model
     
     public function stockMutations()
     {
-        return $this->morphMany(StockMutation::class, 'reference');
+        return $this->morphMany(PosStockMutation::class, 'reference');
     }
 }

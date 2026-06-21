@@ -32,7 +32,7 @@ class SalesDetail extends Model
     // Relationships
     public function saleTransaction()
     {
-        return $this->belongsTo(SalesTransaction::class, 'sale_id');
+        return $this->belongsTo(PosSalesTransaction::class, 'sale_id');
     }
 
     public function product()
@@ -44,6 +44,6 @@ class SalesDetail extends Model
     // Stock Mutation
     public function stockMutations()
     {
-        return $this->morphMany(StockMutation::class, 'reference');
+        return $this->morphMany(PosStockMutation::class, 'reference');
     }
 }

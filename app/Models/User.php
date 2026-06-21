@@ -69,12 +69,12 @@ class User extends Authenticatable
 
     public function salesTransactions()
     {
-        return $this->hasMany(SalesTransaction::class, 'created_by', 'id');
+        return $this->hasMany(PosSalesTransaction::class, 'created_by', 'id');
     }
 
     public function createdStockMutations()
     {
-        return $this->hasMany(StockMutation::class, 'created_by');
+        return $this->hasMany(PosStockMutation::class, 'created_by');
     }
 
     public function opsWallet()

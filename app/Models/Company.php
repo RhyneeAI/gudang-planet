@@ -64,17 +64,17 @@ class Company extends Model
 
     public function purchaseTransactions()
     {
-        return $this->hasMany(PurchaseTransaction::class);
+        return $this->hasMany(PosPurchaseTransaction::class);
     }
 
     public function salesTransactions()
     {
-        return $this->hasMany(SalesTransaction::class);
+        return $this->hasMany(PosSalesTransaction::class);
     }
 
     public function stockMutations()
     {
-        return $this->hasMany(StockMutation::class);
+        return $this->hasMany(PosStockMutation::class);
     }
 
     public function opsIncomes()

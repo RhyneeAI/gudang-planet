@@ -8,7 +8,7 @@ use App\Http\Requests\HomeRequest;
 use App\Http\Resources\HomeResource;
 use App\Models\Customer;
 use App\Models\Product;
-use App\Models\SalesTransaction;
+use App\Models\PosSalesTransaction;
 use App\Models\User;
 use Carbon\Carbon;
 
@@ -30,7 +30,7 @@ class HomeController extends Controller
         $totalCustomers  = Customer::where('company_id', $company_id)->count();
 
         // Sales data filtered by period
-        $salesQuery = SalesTransaction::where('company_id', $company_id)
+        $salesQuery = PosSalesTransaction::where('company_id', $company_id)
             ->whereBetween('transaction_date', [$startDate, $endDate]);
 
         $totalSalesNominal   = $salesQuery->sum('total');
