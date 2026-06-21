@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Enums\PaymentType;
 use App\Enums\Role;
 use App\Enums\TransactionStatus;
+use App\Helpers\FileHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MarketingCommissionRequest;
 use App\Http\Requests\SalesRevenueRequest;
@@ -128,9 +129,7 @@ class ReportController extends Controller
         $filename    = 'laporan-komisi-marketing-' . now()->format('YmdHis') . '.pdf';
         $storagePath = 'reports/marketing-commission/' . $filename;
 
-        Storage::disk('public')->put($storagePath, $pdf->output());
-
-        $downloadUrl = $request->getSchemeAndHttpHost() . '/storage/' . $storagePath;
+        FileHelper::saveFile($storagePath, $pdf->output());
 
         return response()->json([
             'success' => true,
@@ -138,7 +137,7 @@ class ReportController extends Controller
             'data'    => [
                 'period'       => $period,
                 'grand_total'  => $grandTotals,
-                'download_url' => $downloadUrl,
+                'download_url' => FileHelper::downloadUrl($storagePath),
             ],
         ]);
     }
@@ -305,17 +304,15 @@ class ReportController extends Controller
         $filename    = 'laporan-omset-penjualan-' . now()->format('YmdHis') . '.pdf';
         $storagePath = 'reports/revenue/' . $filename;
 
-        Storage::disk('public')->put($storagePath, $pdf->output());
+        FileHelper::saveFile($storagePath, $pdf->output());
 
-        $downloadUrl = $request->getSchemeAndHttpHost() . '/storage/' . $storagePath;
-     
         return response()->json([
             'success' => true,
             'message' => 'Laporan omset penjualan berhasil dibuat.',
             'data'    => [
                 'period'       => $period,
                 'grand_total'  => $grandTotal,
-                'download_url' => $downloadUrl,
+                'download_url' => FileHelper::downloadUrl($storagePath),
             ],
         ]);
     }

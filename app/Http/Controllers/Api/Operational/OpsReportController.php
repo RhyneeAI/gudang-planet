@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Operational;
 
 use App\Enums\Role;
 use App\Exports\OpsIncomeExpenseExport;
+use App\Helpers\FileHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Operational\OpsReportRequest;
 use App\Models\OpsExpense;
@@ -269,24 +270,20 @@ class OpsReportController extends Controller
         ])->setPaper('a4', 'landscape');
 
         $filename    = 'laporan-operasional-' . now()->format('YmdHis') . '.pdf';
-        $storagePath = 'reports/operational/' . $filename;
+        $storagePath = 'reports/operasional/' . $filename;
 
-        Storage::disk('public')->put($storagePath, $pdf->output());
+        FileHelper::saveFile($storagePath, $pdf->output());
 
-        return $request->getSchemeAndHttpHost() . '/storage/' . $storagePath;
+        return FileHelper::downloadUrl($storagePath);
     }
 
     protected function generateXlsx($request, array $data): string
     {
         $filename    = 'laporan-operasional-' . now()->format('YmdHis') . '.xlsx';
-        $storagePath = 'reports/operational/' . $filename;
+        $storagePath = 'reports/operasional/' . $filename;
 
-        Excel::store(
-            new OpsIncomeExpenseExport($data, 'Laporan Operasional'),
-            $storagePath,
-            'public',
-        );
+        FileHelper::saveExcel(new OpsIncomeExpenseExport($data, 'Laporan Operasional'), $storagePath);
 
-        return $request->getSchemeAndHttpHost() . '/storage/' . $storagePath;
+        return FileHelper::downloadUrl($storagePath);
     }
 }
