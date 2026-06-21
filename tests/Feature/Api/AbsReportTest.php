@@ -18,12 +18,12 @@ beforeEach(function () {
         'is_active' => true,
     ]);
 
+    User::$skipSubCompanyAutoCreate = true;
+
     $this->mandor = User::factory()->mandor()->create([
         'company_id' => $this->company->id,
         'is_active' => true,
     ]);
-
-    User::$skipSubCompanyAutoCreate = true;
     $this->subCompany = SubCompany::create([
         'name' => 'Cabang Test',
         'code' => 'TST-01',
