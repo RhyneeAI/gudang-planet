@@ -61,7 +61,7 @@
                     <td>{{ $attendance->date->format('d/m/Y') }}</td>
                     <td>{{ $attendance->check_in_time ?? '-' }}</td>
                     <td>{{ $attendance->check_out_time ?? '-' }}</td>
-                    <td>{{ $attendance->status->value }}</td>
+                    <td>{{ ucwords(str_replace('_', ' ', $attendance->status->value)) }}</td>
                 </tr>
                 @endforeach
             </tbody>
