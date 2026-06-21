@@ -1,32 +1,32 @@
 <?php
 
-use App\Models\Category;
+use App\Models\PosCategory;
 use App\Models\Company;
-use App\Models\MarketingProduct;
-use App\Models\Product;
-use App\Models\Unit;
+use App\Models\PosMarketingProduct;
+use App\Models\PosProduct;
+use App\Models\PosUnit;
 use App\Models\User;
 
 beforeEach(function () {
     $this->company   = Company::factory()->create();
     $this->owner     = User::factory()->owner()->create(['company_id' => $this->company->id]);
     $this->marketing = User::factory()->marketing()->create(['company_id' => $this->company->id]);
-    $this->category  = Category::factory()->create([
+    $this->category  = PosCategory::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->owner->id,
     ]);
-    $this->unit      = Unit::factory()->create([
+    $this->unit      = PosUnit::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->owner->id,
     ]);
-    $this->product   = Product::factory()->create([
+    $this->product   = PosProduct::factory()->create([
         'sales_price' => 15000,
         'category_id' => $this->category->id,
         'unit_id'     => $this->unit->id,
         'created_by'  => $this->owner->id,
         'company_id'  => $this->company->id,
     ]);
-    $this->product2  = Product::factory()->create([
+    $this->product2  = PosProduct::factory()->create([
         'sales_price' => 20000,
         'category_id' => $this->category->id,
         'unit_id'     => $this->unit->id,
@@ -46,7 +46,7 @@ beforeEach(function () {
 // =============================
 
 it('can get marketing product list', function () {
-    MarketingProduct::factory()->create([
+    PosMarketingProduct::factory()->create([
         'product_id'      => $this->product->id,
         'marketing_id'    => $this->marketing->id,
         'marketing_price' => 12000,
@@ -69,7 +69,7 @@ it('only returns marketing products belonging to the same company', function () 
     $otherMarketing = User::factory()->marketing()->create(['company_id' => $otherCompany->id]);
     
     // Company lain punya 3 marketing product dengan produk berbeda
-    $otherProducts = Product::factory(3)->create([
+    $otherProducts = PosProduct::factory(3)->create([
         'company_id'  => $otherCompany->id,
         'created_by'  => $otherOwner->id,
         'category_id' => $this->category->id,
@@ -77,7 +77,7 @@ it('only returns marketing products belonging to the same company', function () 
     ]);
     
     foreach ($otherProducts as $otherProduct) {
-        MarketingProduct::factory()->create([
+        PosMarketingProduct::factory()->create([
             'product_id'   => $otherProduct->id,
             'marketing_id' => $otherMarketing->id,
             'created_by'   => $otherOwner->id,
@@ -86,14 +86,14 @@ it('only returns marketing products belonging to the same company', function () 
     }
 
     // Company sendiri punya 2
-    MarketingProduct::factory()->create([
+    PosMarketingProduct::factory()->create([
         'product_id'      => $this->product->id,
         'marketing_id'    => $this->marketing->id,
         'marketing_price' => 12000,
         'created_by'      => $this->owner->id,
         'company_id'      => $this->company->id,
     ]);
-    MarketingProduct::factory()->create([
+    PosMarketingProduct::factory()->create([
         'product_id'      => $this->product2->id,
         'marketing_id'    => $this->marketing->id,
         'marketing_price' => 18000,
@@ -112,14 +112,14 @@ it('can filter by marketing_uuid', function () {
     $marketing2 = User::factory()->marketing()->create(['company_id' => $this->company->id]);
 
     // Marketing 1 punya 2 produk
-    MarketingProduct::factory()->create([
+    PosMarketingProduct::factory()->create([
         'product_id'      => $this->product->id,
         'marketing_id'    => $this->marketing->id,
         'marketing_price' => 12000,
         'created_by'      => $this->owner->id,
         'company_id'      => $this->company->id,
     ]);
-    MarketingProduct::factory()->create([
+    PosMarketingProduct::factory()->create([
         'product_id'      => $this->product2->id,
         'marketing_id'    => $this->marketing->id,
         'marketing_price' => 18000,
@@ -128,7 +128,7 @@ it('can filter by marketing_uuid', function () {
     ]);
 
     // Marketing 2 punya 1 produk
-    MarketingProduct::factory()->create([
+    PosMarketingProduct::factory()->create([
         'product_id'      => $this->product->id,
         'marketing_id'    => $marketing2->id,
         'marketing_price' => 11000,
@@ -145,14 +145,14 @@ it('can filter by marketing_uuid', function () {
 
 it('can search marketing products by product name', function () {
     // Buat produk dengan nama spesifik
-    $productA = Product::factory()->create([
+    $productA = PosProduct::factory()->create([
         'name'        => 'Sabun Mandi',
         'category_id' => $this->category->id,
         'unit_id'     => $this->unit->id,
         'created_by'  => $this->owner->id,
         'company_id'  => $this->company->id,
     ]);
-    $productB = Product::factory()->create([
+    $productB = PosProduct::factory()->create([
         'name'        => 'Shampoo Rambut',
         'category_id' => $this->category->id,
         'unit_id'     => $this->unit->id,
@@ -160,13 +160,13 @@ it('can search marketing products by product name', function () {
         'company_id'  => $this->company->id,
     ]);
 
-    MarketingProduct::factory()->create([
+    PosMarketingProduct::factory()->create([
         'product_id'   => $productA->id,
         'marketing_id' => $this->marketing->id,
         'created_by'   => $this->owner->id,
         'company_id'   => $this->company->id,
     ]);
-    MarketingProduct::factory()->create([
+    PosMarketingProduct::factory()->create([
         'product_id'   => $productB->id,
         'marketing_id' => $this->marketing->id,
         'created_by'   => $this->owner->id,
@@ -182,14 +182,14 @@ it('can search marketing products by product name', function () {
 });
 
 it('can search marketing products by product code', function () {
-    $productA = Product::factory()->create([
+    $productA = PosProduct::factory()->create([
         'code'        => 'PRD-SABUN-001',
         'category_id' => $this->category->id,
         'unit_id'     => $this->unit->id,
         'created_by'  => $this->owner->id,
         'company_id'  => $this->company->id,
     ]);
-    $productB = Product::factory()->create([
+    $productB = PosProduct::factory()->create([
         'code'        => 'PRD-SHAMPOO-001',
         'category_id' => $this->category->id,
         'unit_id'     => $this->unit->id,
@@ -197,13 +197,13 @@ it('can search marketing products by product code', function () {
         'company_id'  => $this->company->id,
     ]);
 
-    MarketingProduct::factory()->create([
+    PosMarketingProduct::factory()->create([
         'product_id'   => $productA->id,
         'marketing_id' => $this->marketing->id,
         'created_by'   => $this->owner->id,
         'company_id'   => $this->company->id,
     ]);
-    MarketingProduct::factory()->create([
+    PosMarketingProduct::factory()->create([
         'product_id'   => $productB->id,
         'marketing_id' => $this->marketing->id,
         'created_by'   => $this->owner->id,
@@ -218,14 +218,14 @@ it('can search marketing products by product code', function () {
 });
 
 it('can sort by product name ascending', function () {
-    $productA = Product::factory()->create([
+    $productA = PosProduct::factory()->create([
         'name'        => 'Zee Product',
         'category_id' => $this->category->id,
         'unit_id'     => $this->unit->id,
         'created_by'  => $this->owner->id,
         'company_id'  => $this->company->id,
     ]);
-    $productB = Product::factory()->create([
+    $productB = PosProduct::factory()->create([
         'name'        => 'Aaa Product',
         'category_id' => $this->category->id,
         'unit_id'     => $this->unit->id,
@@ -233,13 +233,13 @@ it('can sort by product name ascending', function () {
         'company_id'  => $this->company->id,
     ]);
 
-    MarketingProduct::factory()->create([
+    PosMarketingProduct::factory()->create([
         'product_id'   => $productA->id,
         'marketing_id' => $this->marketing->id,
         'created_by'   => $this->owner->id,
         'company_id'   => $this->company->id,
     ]);
-    MarketingProduct::factory()->create([
+    PosMarketingProduct::factory()->create([
         'product_id'   => $productB->id,
         'marketing_id' => $this->marketing->id,
         'created_by'   => $this->owner->id,
@@ -255,14 +255,14 @@ it('can sort by product name ascending', function () {
 });
 
 it('can sort by product name descending', function () {
-    $productA = Product::factory()->create([
+    $productA = PosProduct::factory()->create([
         'name'        => 'Zee Product',
         'category_id' => $this->category->id,
         'unit_id'     => $this->unit->id,
         'created_by'  => $this->owner->id,
         'company_id'  => $this->company->id,
     ]);
-    $productB = Product::factory()->create([
+    $productB = PosProduct::factory()->create([
         'name'        => 'Aaa Product',
         'category_id' => $this->category->id,
         'unit_id'     => $this->unit->id,
@@ -270,13 +270,13 @@ it('can sort by product name descending', function () {
         'company_id'  => $this->company->id,
     ]);
 
-    MarketingProduct::factory()->create([
+    PosMarketingProduct::factory()->create([
         'product_id'   => $productA->id,
         'marketing_id' => $this->marketing->id,
         'created_by'   => $this->owner->id,
         'company_id'   => $this->company->id,
     ]);
-    MarketingProduct::factory()->create([
+    PosMarketingProduct::factory()->create([
         'product_id'   => $productB->id,
         'marketing_id' => $this->marketing->id,
         'created_by'   => $this->owner->id,
@@ -292,7 +292,7 @@ it('can sort by product name descending', function () {
 });
 
 it('can paginate marketing products', function () {
-    $products = Product::factory(10)->create([
+    $products = PosProduct::factory(10)->create([
         'category_id' => $this->category->id,
         'unit_id'     => $this->unit->id,
         'created_by'  => $this->owner->id,
@@ -300,7 +300,7 @@ it('can paginate marketing products', function () {
     ]);
 
     foreach ($products as $product) {
-        MarketingProduct::factory()->create([
+        PosMarketingProduct::factory()->create([
             'product_id'   => $product->id,
             'marketing_id' => $this->marketing->id,
             'created_by'   => $this->owner->id,
@@ -429,7 +429,7 @@ it('returns 401 when not authenticated on store', function () {
 // =============================
 
 it('can get marketing product detail', function () {
-    $mp = MarketingProduct::factory()->create([
+    $mp = PosMarketingProduct::factory()->create([
         'product_id'      => $this->product->id,
         'marketing_id'    => $this->marketing->id,
         'marketing_price' => 12000,
@@ -453,14 +453,14 @@ it('returns 404 when accessing marketing product from other company', function (
     $otherCompany   = Company::factory()->create();
     $otherOwner     = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
     $otherMarketing = User::factory()->marketing()->create(['company_id' => $otherCompany->id]);
-    $otherProduct   = Product::factory()->create([
+    $otherProduct   = PosProduct::factory()->create([
         'company_id' => $otherCompany->id,
         'created_by' => $otherOwner->id,
         'category_id' => $this->category->id,
         'unit_id'     => $this->unit->id,
     ]);
 
-    $mp = MarketingProduct::factory()->create([
+    $mp = PosMarketingProduct::factory()->create([
         'product_id'      => $otherProduct->id,
         'marketing_id'    => $otherMarketing->id,
         'marketing_price' => 12000,
@@ -478,7 +478,7 @@ it('returns 404 when accessing marketing product from other company', function (
 // =============================
 
 it('can update marketing price', function () {
-    $mp = MarketingProduct::factory()->create([
+    $mp = PosMarketingProduct::factory()->create([
         'product_id'      => $this->product->id,
         'marketing_id'    => $this->marketing->id,
         'marketing_price' => 12000,
@@ -495,7 +495,7 @@ it('can update marketing price', function () {
 });
 
 it('can partial update without sending product_uuid or marketing_uuid', function () {
-    $mp = MarketingProduct::factory()->create([
+    $mp = PosMarketingProduct::factory()->create([
         'product_id'      => $this->product->id,
         'marketing_id'    => $this->marketing->id,
         'marketing_price' => 12000,
@@ -515,14 +515,14 @@ it('returns 404 when updating marketing product from other company', function ()
     $otherCompany   = Company::factory()->create();
     $otherOwner     = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
     $otherMarketing = User::factory()->marketing()->create(['company_id' => $otherCompany->id]);
-    $otherProduct   = Product::factory()->create([
+    $otherProduct   = PosProduct::factory()->create([
         'company_id'  => $otherCompany->id,
         'created_by'  => $otherOwner->id,
         'category_id' => $this->category->id,
         'unit_id'     => $this->unit->id,
     ]);
 
-    $mp = MarketingProduct::factory()->create([
+    $mp = PosMarketingProduct::factory()->create([
         'product_id'      => $otherProduct->id,
         'marketing_id'    => $otherMarketing->id,
         'marketing_price' => 12000,
@@ -540,7 +540,7 @@ it('returns 404 when updating marketing product from other company', function ()
 // =============================
 
 it('can delete a marketing product', function () {
-    $mp = MarketingProduct::factory()->create([
+    $mp = PosMarketingProduct::factory()->create([
         'product_id'      => $this->product->id,
         'marketing_id'    => $this->marketing->id,
         'marketing_price' => 12000,
@@ -553,21 +553,21 @@ it('can delete a marketing product', function () {
         ->assertStatus(200)
         ->assertJsonPath('success', true);
 
-    expect(MarketingProduct::withTrashed()->find($mp->id)->deleted_at)->not->toBeNull();
+    expect(PosMarketingProduct::withTrashed()->find($mp->id)->deleted_at)->not->toBeNull();
 });
 
 it('returns 404 when deleting marketing product from other company', function () {
     $otherCompany   = Company::factory()->create();
     $otherOwner     = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
     $otherMarketing = User::factory()->marketing()->create(['company_id' => $otherCompany->id]);
-    $otherProduct   = Product::factory()->create([
+    $otherProduct   = PosProduct::factory()->create([
         'company_id'  => $otherCompany->id,
         'created_by'  => $otherOwner->id,
         'category_id' => $this->category->id,
         'unit_id'     => $this->unit->id,
     ]);
 
-    $mp = MarketingProduct::factory()->create([
+    $mp = PosMarketingProduct::factory()->create([
         'product_id'      => $otherProduct->id,
         'marketing_id'    => $otherMarketing->id,
         'marketing_price' => 12000,
@@ -581,7 +581,7 @@ it('returns 404 when deleting marketing product from other company', function ()
 });
 
 it('returns 401 when not authenticated on delete', function () {
-    $mp = MarketingProduct::factory()->create([
+    $mp = PosMarketingProduct::factory()->create([
         'product_id'      => $this->product->id,
         'marketing_id'    => $this->marketing->id,
         'marketing_price' => 12000,

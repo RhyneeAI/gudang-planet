@@ -1,9 +1,9 @@
 <?php
 
-use App\Models\Supplier;
+use App\Models\PosSupplier;
 use App\Models\User;
 use App\Models\Company;
-use App\Models\PurchaseTransaction;
+use App\Models\PosPurchaseTransaction;
 
 beforeEach(function () {
     $this->company = Company::factory()->create();
@@ -17,7 +17,7 @@ beforeEach(function () {
 // =============================
 
 it('can get supplier list', function () {
-    Supplier::factory(5)->create(['company_id' => $this->company->id]);
+    PosSupplier::factory(5)->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->getJson('/api/v1/suppliers')
@@ -34,8 +34,8 @@ it('can get supplier list', function () {
 
 it('only returns suppliers belonging to the same company', function () {
     $otherCompany = Company::factory()->create();
-    Supplier::factory(3)->create(['company_id' => $otherCompany->id]);
-    Supplier::factory(2)->create(['company_id' => $this->company->id]);
+    PosSupplier::factory(3)->create(['company_id' => $otherCompany->id]);
+    PosSupplier::factory(2)->create(['company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/suppliers');
@@ -45,8 +45,8 @@ it('only returns suppliers belonging to the same company', function () {
 });
 
 it('can filter suppliers by search name', function () {
-    Supplier::factory()->create(['name' => 'Laptop Gaming', 'company_id' => $this->company->id]);
-    Supplier::factory()->create(['name' => 'Mouse Wireless', 'company_id' => $this->company->id]);
+    PosSupplier::factory()->create(['name' => 'Laptop Gaming', 'company_id' => $this->company->id]);
+    PosSupplier::factory()->create(['name' => 'Mouse Wireless', 'company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/suppliers?search=laptop');
@@ -56,9 +56,9 @@ it('can filter suppliers by search name', function () {
 });
 
 it('can sort suppliers by name', function () {
-    Supplier::factory()->create(['name' => 'Zebra', 'company_id' => $this->company->id]);
-    Supplier::factory()->create(['name' => 'Apple', 'company_id' => $this->company->id]);
-    Supplier::factory()->create(['name' => 'Banana', 'company_id' => $this->company->id]);
+    PosSupplier::factory()->create(['name' => 'Zebra', 'company_id' => $this->company->id]);
+    PosSupplier::factory()->create(['name' => 'Apple', 'company_id' => $this->company->id]);
+    PosSupplier::factory()->create(['name' => 'Banana', 'company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/suppliers?order_by_key=name&order_by_value=asc');
@@ -69,7 +69,7 @@ it('can sort suppliers by name', function () {
 });
 
 it('can paginate suppliers with custom per_page', function () {
-    Supplier::factory(20)->create(['company_id' => $this->company->id]);
+    PosSupplier::factory(20)->create(['company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/suppliers?per_page=5');
@@ -120,7 +120,7 @@ it('returns 422 when name exceeds 255 characters', function () {
 });
 
 it('returns 422 when name is duplicate within same company', function () {
-    Supplier::factory()->create([
+    PosSupplier::factory()->create([
         'name'       => 'PT Maju Jaya',
         'company_id' => $this->company->id,
     ]);
@@ -132,7 +132,7 @@ it('returns 422 when name is duplicate within same company', function () {
 
 it('allows same supplier name in different companies', function () {
     $otherCompany = Company::factory()->create();
-    Supplier::factory()->create([
+    PosSupplier::factory()->create([
         'name'       => 'PT Maju Jaya',
         'company_id' => $otherCompany->id,
     ]);
@@ -170,7 +170,7 @@ it('returns 401 when not authenticated on store', function () {
 // =============================
 
 it('can get supplier detail', function () {
-    $supplier = Supplier::factory()->create(['company_id' => $this->company->id]);
+    $supplier = PosSupplier::factory()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->getJson("/api/v1/suppliers/{$supplier->uuid}")
@@ -187,7 +187,7 @@ it('returns 404 when supplier not found on show', function () {
 
 it('returns 404 when accessing supplier from other company', function () {
     $otherCompany = Company::factory()->create();
-    $supplier     = Supplier::factory()->create(['company_id' => $otherCompany->id]);
+    $supplier     = PosSupplier::factory()->create(['company_id' => $otherCompany->id]);
 
     $this->actingAs($this->user)
         ->getJson("/api/v1/suppliers/{$supplier->uuid}")
@@ -199,7 +199,7 @@ it('returns 404 when accessing supplier from other company', function () {
 // =============================
 
 it('can update a supplier', function () {
-    $supplier = Supplier::factory()->create(['company_id' => $this->company->id]);
+    $supplier = PosSupplier::factory()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->patchJson("/api/v1/suppliers/{$supplier->uuid}", ['name' => 'PT Updated'])
@@ -208,7 +208,7 @@ it('can update a supplier', function () {
 });
 
 it('can partial update (PATCH) supplier without sending all fields', function () {
-    $supplier = Supplier::factory()->create([
+    $supplier = PosSupplier::factory()->create([
         'name'       => 'PT Original',
         'company_id' => $this->company->id,
     ]);
@@ -220,7 +220,7 @@ it('can partial update (PATCH) supplier without sending all fields', function ()
 });
 
 it('can update only address without affecting other fields', function () {
-    $supplier = Supplier::factory()->create([
+    $supplier = PosSupplier::factory()->create([
         'name'       => 'PT Original',
         'phone'      => '08123456789',
         'company_id' => $this->company->id,
@@ -237,12 +237,12 @@ it('can update only address without affecting other fields', function () {
 });
 
 it('returns 422 when updating with duplicate name', function () {
-    Supplier::factory()->create([
+    PosSupplier::factory()->create([
         'name'       => 'PT Maju Jaya',
         'company_id' => $this->company->id,
     ]);
 
-    $supplier = Supplier::factory()->create([
+    $supplier = PosSupplier::factory()->create([
         'name'       => 'PT Sejahtera',
         'company_id' => $this->company->id,
     ]);
@@ -254,7 +254,7 @@ it('returns 422 when updating with duplicate name', function () {
 
 it('returns 404 when updating supplier from other company', function () {
     $otherCompany = Company::factory()->create();
-    $supplier     = Supplier::factory()->create(['company_id' => $otherCompany->id]);
+    $supplier     = PosSupplier::factory()->create(['company_id' => $otherCompany->id]);
 
     $this->actingAs($this->user)
         ->patchJson("/api/v1/suppliers/{$supplier->uuid}", ['name' => 'Hacked'])
@@ -272,20 +272,20 @@ it('returns 404 when updating non-existent supplier', function () {
 // =============================
 
 it('can delete a supplier', function () {
-    $supplier = Supplier::factory()->create(['company_id' => $this->company->id]);
+    $supplier = PosSupplier::factory()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->deleteJson("/api/v1/suppliers/{$supplier->uuid}")
         ->assertStatus(200)
         ->assertJsonPath('success', true);
 
-    expect(Supplier::withTrashed()->find($supplier->id)->deleted_at)->not->toBeNull();
+    expect(PosSupplier::withTrashed()->find($supplier->id)->deleted_at)->not->toBeNull();
 });
 
 it('returns 422 when deleting supplier that has purchase transactions', function () {
-    $supplier = Supplier::factory()->create(['company_id' => $this->company->id]);
+    $supplier = PosSupplier::factory()->create(['company_id' => $this->company->id]);
 
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'supplier_id' => $supplier->id,
         'company_id'  => $this->company->id,
     ]);
@@ -298,7 +298,7 @@ it('returns 422 when deleting supplier that has purchase transactions', function
 
 it('returns 404 when deleting supplier from other company', function () {
     $otherCompany = Company::factory()->create();
-    $supplier     = Supplier::factory()->create(['company_id' => $otherCompany->id]);
+    $supplier     = PosSupplier::factory()->create(['company_id' => $otherCompany->id]);
 
     $this->actingAs($this->user)
         ->deleteJson("/api/v1/suppliers/{$supplier->uuid}")
@@ -312,7 +312,7 @@ it('returns 404 when deleting non-existent supplier', function () {
 });
 
 it('returns 401 when not authenticated on delete', function () {
-    $supplier = Supplier::factory()->create(['company_id' => $this->company->id]);
+    $supplier = PosSupplier::factory()->create(['company_id' => $this->company->id]);
 
     $this->deleteJson("/api/v1/suppliers/{$supplier->uuid}")
         ->assertStatus(401);

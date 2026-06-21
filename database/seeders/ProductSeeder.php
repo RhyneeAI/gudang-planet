@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\Category;
-use App\Models\Product;
-use App\Models\Unit;
+use App\Models\PosCategory;
+use App\Models\PosProduct;
+use App\Models\PosUnit;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -12,8 +12,8 @@ class ProductSeeder extends Seeder
 {
     public function run(): void
     {
-        $categoryId = Category::where('company_id', 1)->value('id');
-        $unitId = Unit::where('company_id', 1)->value('id');
+        $categoryId = PosCategory::where('company_id', 1)->value('id');
+        $unitId = PosUnit::where('company_id', 1)->value('id');
 
         $products = [
             ['name' => 'Indomie Goreng', 'code' => 'PRD-001', 'base' => 2500, 'sell' => 4000, 'marketing' => 3500, 'stock' => 200],
@@ -24,7 +24,7 @@ class ProductSeeder extends Seeder
         ];
 
         foreach ($products as $product) {
-            Product::updateOrCreate(
+            PosProduct::updateOrCreate(
                 ['code' => $product['code'], 'company_id' => 1],
                 [
                     'uuid' => (string) Str::uuid(),

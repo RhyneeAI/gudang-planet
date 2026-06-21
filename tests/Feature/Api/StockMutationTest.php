@@ -1,9 +1,9 @@
 <?php
 
-use App\Enums\StockMutationType;
+use App\Enums\PosStockMutationType;
 use App\Models\Company;
-use App\Models\Product;
-use App\Models\StockMutation;
+use App\Models\PosProduct;
+use App\Models\PosStockMutation;
 use App\Models\User;
 
 beforeEach(function () {
@@ -18,8 +18,8 @@ beforeEach(function () {
 // =============================
 
 it('can get product list that has stock mutations', function () {
-    $product = Product::factory()->create(['company_id' => $this->company->id]);
-    StockMutation::factory(5)->create([
+    $product = PosProduct::factory()->create(['company_id' => $this->company->id]);
+    PosStockMutation::factory(5)->create([
         'product_id' => $product->id,
         'company_id' => $this->company->id,
     ]);
@@ -39,11 +39,11 @@ it('can get product list that has stock mutations', function () {
 
 it('only returns products belonging to the same company', function () {
     $otherCompany = Company::factory()->create();
-    $product1 = Product::factory()->create(['company_id' => $otherCompany->id]);
-    $product2 = Product::factory()->create(['company_id' => $this->company->id]);
+    $product1 = PosProduct::factory()->create(['company_id' => $otherCompany->id]);
+    $product2 = PosProduct::factory()->create(['company_id' => $this->company->id]);
     
-    StockMutation::factory(3)->create(['product_id' => $product1->id, 'company_id' => $otherCompany->id]);
-    StockMutation::factory(2)->create(['product_id' => $product2->id, 'company_id' => $this->company->id]);
+    PosStockMutation::factory(3)->create(['product_id' => $product1->id, 'company_id' => $otherCompany->id]);
+    PosStockMutation::factory(2)->create(['product_id' => $product2->id, 'company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/stock-mutations/products'); // ← route baru
@@ -56,14 +56,14 @@ it('returns 401 when not authenticated on index', function () {
 });
 
 it('can filter stock mutations by date range', function () {
-    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    $product = PosProduct::factory()->create(['company_id' => $this->company->id]);
     
-    StockMutation::factory()->create([
+    PosStockMutation::factory()->create([
         'product_id' => $product->id,
         'created_at' => '2026-01-15',
         'company_id' => $this->company->id,
     ]);
-    StockMutation::factory()->create([
+    PosStockMutation::factory()->create([
         'product_id' => $product->id,
         'created_at' => '2026-02-15',
         'company_id' => $this->company->id,
@@ -77,11 +77,11 @@ it('can filter stock mutations by date range', function () {
 });
 
 it('can sort products by name', function () {
-    $product1 = Product::factory()->create(['name' => 'Zebra', 'company_id' => $this->company->id]);
-    $product2 = Product::factory()->create(['name' => 'Apple', 'company_id' => $this->company->id]);
+    $product1 = PosProduct::factory()->create(['name' => 'Zebra', 'company_id' => $this->company->id]);
+    $product2 = PosProduct::factory()->create(['name' => 'Apple', 'company_id' => $this->company->id]);
     
-    StockMutation::factory()->create(['product_id' => $product1->id, 'company_id' => $this->company->id]);
-    StockMutation::factory()->create(['product_id' => $product2->id, 'company_id' => $this->company->id]);
+    PosStockMutation::factory()->create(['product_id' => $product1->id, 'company_id' => $this->company->id]);
+    PosStockMutation::factory()->create(['product_id' => $product2->id, 'company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/stock-mutations/products?order_by_key=product_name&order_by_value=asc'); // ← route baru
@@ -95,8 +95,8 @@ it('can sort products by name', function () {
 // =============================
 
 it('can get stock mutations for a specific product', function () {
-    $product = Product::factory()->create(['company_id' => $this->company->id]);
-    StockMutation::factory(5)->create([
+    $product = PosProduct::factory()->create(['company_id' => $this->company->id]);
+    PosStockMutation::factory(5)->create([
         'product_id' => $product->id,
         'company_id' => $this->company->id,
     ]);
@@ -120,24 +120,24 @@ it('can get stock mutations for a specific product', function () {
 });
 
 it('can filter stock mutations by date range (show)', function () {
-    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    $product = PosProduct::factory()->create(['company_id' => $this->company->id]);
     
     // Mutasi di tanggal 15 Januari
-    StockMutation::factory()->create([
+    PosStockMutation::factory()->create([
         'product_id' => $product->id,
         'company_id' => $this->company->id,
         'created_at' => '2026-01-15 10:00:00',
     ]);
     
     // Mutasi di tanggal 20 Januari
-    StockMutation::factory()->create([
+    PosStockMutation::factory()->create([
         'product_id' => $product->id,
         'company_id' => $this->company->id,
         'created_at' => '2026-01-20 14:00:00',
     ]);
     
     // Mutasi di tanggal 25 Januari
-    StockMutation::factory()->create([
+    PosStockMutation::factory()->create([
         'product_id' => $product->id,
         'company_id' => $this->company->id,
         'created_at' => '2026-01-25 09:00:00',
@@ -151,50 +151,50 @@ it('can filter stock mutations by date range (show)', function () {
 });
 
 it('can filter stock mutations by type (show)', function () {
-    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    $product = PosProduct::factory()->create(['company_id' => $this->company->id]);
     
-    StockMutation::factory()->create([
+    PosStockMutation::factory()->create([
         'product_id' => $product->id,
         'company_id' => $this->company->id,
-        'type' => StockMutationType::PURCHASE_IN,
+        'type' => PosStockMutationType::PURCHASE_IN,
     ]);
     
-    StockMutation::factory()->create([
+    PosStockMutation::factory()->create([
         'product_id' => $product->id,
         'company_id' => $this->company->id,
-        'type' => StockMutationType::SALES_OUT,
+        'type' => PosStockMutationType::SALES_OUT,
     ]);
     
-    StockMutation::factory()->create([
+    PosStockMutation::factory()->create([
         'product_id' => $product->id,
         'company_id' => $this->company->id,
-        'type' => StockMutationType::ADJUST_IN,
+        'type' => PosStockMutationType::ADJUST_IN,
     ]);
 
     $response = $this->actingAs($this->user)
-        ->getJson("/api/v1/stock-mutations/products/{$product->uuid}?type=" . StockMutationType::PURCHASE_IN->value);
+        ->getJson("/api/v1/stock-mutations/products/{$product->uuid}?type=" . PosStockMutationType::PURCHASE_IN->value);
 
     $response->assertStatus(200);
     expect($response->json('data.mutations.data'))->toHaveCount(1);
-    expect($response->json('data.mutations.data.0.type'))->toBe(StockMutationType::PURCHASE_IN->value);
+    expect($response->json('data.mutations.data.0.type'))->toBe(PosStockMutationType::PURCHASE_IN->value);
 });
 
 it('can search stock mutations by notes (show)', function () {
-    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    $product = PosProduct::factory()->create(['company_id' => $this->company->id]);
     
-    StockMutation::factory()->create([
+    PosStockMutation::factory()->create([
         'product_id' => $product->id,
         'company_id' => $this->company->id,
         'notes' => 'Pembelian awal dari supplier',
     ]);
     
-    StockMutation::factory()->create([
+    PosStockMutation::factory()->create([
         'product_id' => $product->id,
         'company_id' => $this->company->id,
         'notes' => 'Penjualan ke customer',
     ]);
     
-    StockMutation::factory()->create([
+    PosStockMutation::factory()->create([
         'product_id' => $product->id,
         'company_id' => $this->company->id,
         'notes' => 'Adjustment stok opname',
@@ -209,21 +209,21 @@ it('can search stock mutations by notes (show)', function () {
 });
 
 it('can sort stock mutations by quantity (show)', function () {
-    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    $product = PosProduct::factory()->create(['company_id' => $this->company->id]);
     
-    StockMutation::factory()->create([
+    PosStockMutation::factory()->create([
         'product_id' => $product->id,
         'company_id' => $this->company->id,
         'quantity' => 10,
     ]);
     
-    StockMutation::factory()->create([
+    PosStockMutation::factory()->create([
         'product_id' => $product->id,
         'company_id' => $this->company->id,
         'quantity' => 50,
     ]);
     
-    StockMutation::factory()->create([
+    PosStockMutation::factory()->create([
         'product_id' => $product->id,
         'company_id' => $this->company->id,
         'quantity' => 25,
@@ -240,37 +240,37 @@ it('can sort stock mutations by quantity (show)', function () {
 });
 
 it('can combine multiple filters (date range, type, search) (show)', function () {
-    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    $product = PosProduct::factory()->create(['company_id' => $this->company->id]);
     
     // Data yang cocok: PURCHASE_IN, notes mengandung "supplier", tanggal 20 Jan
-    StockMutation::factory()->create([
+    PosStockMutation::factory()->create([
         'product_id' => $product->id,
         'company_id' => $this->company->id,
-        'type' => StockMutationType::PURCHASE_IN,
+        'type' => PosStockMutationType::PURCHASE_IN,
         'notes' => 'Pembelian dari supplier utama',
         'created_at' => '2026-01-20 10:00:00',
     ]);
     
     // Data yang tidak cocok: type SALES_OUT
-    StockMutation::factory()->create([
+    PosStockMutation::factory()->create([
         'product_id' => $product->id,
         'company_id' => $this->company->id,
-        'type' => StockMutationType::SALES_OUT,
+        'type' => PosStockMutationType::SALES_OUT,
         'notes' => 'Pembelian dari supplier utama',
         'created_at' => '2026-01-20 10:00:00',
     ]);
     
     // Data yang tidak cocok: tanggal di luar range
-    StockMutation::factory()->create([
+    PosStockMutation::factory()->create([
         'product_id' => $product->id,
         'company_id' => $this->company->id,
-        'type' => StockMutationType::PURCHASE_IN,
+        'type' => PosStockMutationType::PURCHASE_IN,
         'notes' => 'Pembelian dari supplier utama',
         'created_at' => '2026-01-30 10:00:00',
     ]);
 
     $response = $this->actingAs($this->user)
-        ->getJson("/api/v1/stock-mutations/products/{$product->uuid}?date_from=2026-01-15&date_to=2026-01-25&type=" . StockMutationType::PURCHASE_IN->value . "&search=supplier");
+        ->getJson("/api/v1/stock-mutations/products/{$product->uuid}?date_from=2026-01-15&date_to=2026-01-25&type=" . PosStockMutationType::PURCHASE_IN->value . "&search=supplier");
 
     $response->assertStatus(200);
     expect($response->json('data.mutations.data'))->toHaveCount(1);
@@ -284,7 +284,7 @@ it('returns 404 when product not found', function () {
 
 it('returns 404 when accessing product from other company', function () {
     $otherCompany = Company::factory()->create();
-    $product = Product::factory()->create(['company_id' => $otherCompany->id]);
+    $product = PosProduct::factory()->create(['company_id' => $otherCompany->id]);
 
     $this->actingAs($this->user)
         ->getJson("/api/v1/stock-mutations/products/{$product->uuid}") // ← route baru
@@ -296,14 +296,14 @@ it('returns 404 when accessing product from other company', function () {
 // =============================
 
 it('can create ADJUST_IN stock mutation', function () {
-    $product = Product::factory()->create([
+    $product = PosProduct::factory()->create([
         'stock' => 100,
         'company_id' => $this->company->id,
     ]);
 
     $this->actingAs($this->user)
         ->postJson('/api/v1/stock-mutations', [
-            'type' => StockMutationType::ADJUST_IN->value,
+            'type' => PosStockMutationType::ADJUST_IN->value,
             'quantity' => 50,
             'product_uuid' => $product->uuid, // ← ganti product_id ke product_uuid
             'notes' => 'Adjustment tambah stok',
@@ -316,14 +316,14 @@ it('can create ADJUST_IN stock mutation', function () {
 });
 
 it('can create ADJUST_OUT stock mutation', function () {
-    $product = Product::factory()->create([
+    $product = PosProduct::factory()->create([
         'stock' => 100,
         'company_id' => $this->company->id,
     ]);
 
     $this->actingAs($this->user)
         ->postJson('/api/v1/stock-mutations', [
-            'type' => StockMutationType::ADJUST_OUT->value,
+            'type' => PosStockMutationType::ADJUST_OUT->value,
             'quantity' => 30,
             'product_uuid' => $product->uuid, // ← ganti product_id ke product_uuid
         ])
@@ -335,14 +335,14 @@ it('can create ADJUST_OUT stock mutation', function () {
 });
 
 it('can create OPNAME stock mutation', function () {
-    $product = Product::factory()->create([
+    $product = PosProduct::factory()->create([
         'stock' => 100,
         'company_id' => $this->company->id,
     ]);
 
     $this->actingAs($this->user)
         ->postJson('/api/v1/stock-mutations', [
-            'type' => StockMutationType::OPNAME->value,
+            'type' => PosStockMutationType::OPNAME->value,
             'quantity' => 120,
             'product_uuid' => $product->uuid, // ← ganti product_id ke product_uuid
         ])
@@ -354,14 +354,14 @@ it('can create OPNAME stock mutation', function () {
 });
 
 it('returns 422 when adjusting more stock than available', function () {
-    $product = Product::factory()->create([
+    $product = PosProduct::factory()->create([
         'stock' => 10,
         'company_id' => $this->company->id,
     ]);
 
     $this->actingAs($this->user)
         ->postJson('/api/v1/stock-mutations', [
-            'type' => StockMutationType::ADJUST_OUT->value,
+            'type' => PosStockMutationType::ADJUST_OUT->value,
             'quantity' => 100,
             'product_uuid' => $product->uuid, // ← ganti product_id ke product_uuid
         ])
@@ -371,7 +371,7 @@ it('returns 422 when adjusting more stock than available', function () {
 it('returns 422 when product not found on store', function () {
     $this->actingAs($this->user)
         ->postJson('/api/v1/stock-mutations', [
-            'type' => StockMutationType::ADJUST_IN->value,
+            'type' => PosStockMutationType::ADJUST_IN->value,
             'quantity' => 50,
             'product_uuid' => 'invalid-uuid', // ← ganti
         ])
@@ -379,11 +379,11 @@ it('returns 422 when product not found on store', function () {
 });
 
 it('returns 422 when type is not allowed for manual creation', function () {
-    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    $product = PosProduct::factory()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->postJson('/api/v1/stock-mutations', [
-            'type' => StockMutationType::PURCHASE_IN->value,
+            'type' => PosStockMutationType::PURCHASE_IN->value,
             'quantity' => 50,
             'product_uuid' => $product->uuid, // ← ganti
         ])

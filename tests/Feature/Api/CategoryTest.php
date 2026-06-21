@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Category;
-use App\Models\Product;
+use App\Models\PosCategory;
+use App\Models\PosProduct;
 use App\Models\User;
 use App\Models\Company;
 
@@ -17,7 +17,7 @@ beforeEach(function () {
 // =============================
 
 it('can get category list', function () {
-    Category::factory(5)->create(['company_id' => $this->company->id]);
+    PosCategory::factory(5)->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->getJson('/api/v1/categories')
@@ -35,10 +35,10 @@ it('can get category list', function () {
 it('only returns categories belonging to the same company', function () {
     // Kategori company lain
     $otherCompany = Company::factory()->create();
-    Category::factory(3)->create(['company_id' => $otherCompany->id]);
+    PosCategory::factory(3)->create(['company_id' => $otherCompany->id]);
 
     // Kategori company sendiri
-    Category::factory(2)->create(['company_id' => $this->company->id]);
+    PosCategory::factory(2)->create(['company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/categories');
@@ -52,9 +52,9 @@ it('returns 401 when not authenticated on index', function () {
 });
 
 it('can filter categories by search', function () {
-    Category::factory()->create(['name' => 'Elektronik',  'company_id' => $this->company->id]);
-    Category::factory()->create(['name' => 'Makanan',     'company_id' => $this->company->id]);
-    Category::factory()->create(['name' => 'Minuman',     'company_id' => $this->company->id]);
+    PosCategory::factory()->create(['name' => 'Elektronik',  'company_id' => $this->company->id]);
+    PosCategory::factory()->create(['name' => 'Makanan',     'company_id' => $this->company->id]);
+    PosCategory::factory()->create(['name' => 'Minuman',     'company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/categories?search=makan');
@@ -65,7 +65,7 @@ it('can filter categories by search', function () {
 });
 
 it('can paginate categories with custom per_page', function () {
-    Category::factory(20)->create(['company_id' => $this->company->id]);
+    PosCategory::factory(20)->create(['company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/categories?per_page=5');
@@ -102,7 +102,7 @@ it('returns 422 when name is empty on store', function () {
 });
 
 it('returns 422 when name is duplicate within same company', function () {
-    Category::factory()->create([
+    PosCategory::factory()->create([
         'name'       => 'Elektronik',
         'company_id' => $this->company->id,
     ]);
@@ -113,7 +113,7 @@ it('returns 422 when name is duplicate within same company', function () {
 });
 
 it('prevents duplicate name with different case', function () {
-    Category::factory()->create([
+    PosCategory::factory()->create([
         'name' => 'Elektronik',
         'company_id' => $this->company->id,
     ]);
@@ -130,7 +130,7 @@ it('prevents duplicate name with different case', function () {
 
 it('allows same category name in different companies', function () {
     $otherCompany = Company::factory()->create();
-    Category::factory()->create([
+    PosCategory::factory()->create([
         'name'       => 'Elektronik',
         'company_id' => $otherCompany->id,
     ]);
@@ -150,7 +150,7 @@ it('returns 401 when not authenticated on store', function () {
 // =============================
 
 it('can get category detail', function () {
-    $category = Category::factory()->create(['company_id' => $this->company->id]);
+    $category = PosCategory::factory()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->getJson("/api/v1/categories/{$category->uuid}")
@@ -167,7 +167,7 @@ it('returns 404 when category not found on show', function () {
 
 it('returns 404 when accessing category from other company', function () {
     $otherCompany = Company::factory()->create();
-    $category     = Category::factory()->create(['company_id' => $otherCompany->id]);
+    $category     = PosCategory::factory()->create(['company_id' => $otherCompany->id]);
 
     $this->actingAs($this->user)
         ->getJson("/api/v1/categories/{$category->uuid}")
@@ -179,7 +179,7 @@ it('returns 404 when accessing category from other company', function () {
 // =============================
 
 it('can update a category', function () {
-    $category = Category::factory()->create(['company_id' => $this->company->id]);
+    $category = PosCategory::factory()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->patchJson("/api/v1/categories/{$category->uuid}", ['name' => 'Updated'])
@@ -188,7 +188,7 @@ it('can update a category', function () {
 });
 
 it('can partial update (PATCH) category without sending all fields', function () {
-    $category = Category::factory()->create([
+    $category = PosCategory::factory()->create([
         'name'       => 'Original',
         'company_id' => $this->company->id,
     ]);
@@ -202,7 +202,7 @@ it('can partial update (PATCH) category without sending all fields', function ()
 
 it('returns 404 when updating category from other company', function () {
     $otherCompany = Company::factory()->create();
-    $category     = Category::factory()->create(['company_id' => $otherCompany->id]);
+    $category     = PosCategory::factory()->create(['company_id' => $otherCompany->id]);
 
     $this->actingAs($this->user)
         ->patchJson("/api/v1/categories/{$category->uuid}", ['name' => 'Hacked'])
@@ -210,12 +210,12 @@ it('returns 404 when updating category from other company', function () {
 });
 
 it('returns 422 when updating with duplicate name', function () {
-    Category::factory()->create([
+    PosCategory::factory()->create([
         'name'       => 'Elektronik',
         'company_id' => $this->company->id,
     ]);
 
-    $category = Category::factory()->create([
+    $category = PosCategory::factory()->create([
         'name'       => 'Makanan',
         'company_id' => $this->company->id,
     ]);
@@ -236,7 +236,7 @@ it('returns 404 when updating non-existent category', function () {
 // =============================
 
 it('can delete a category', function () {
-    $category = Category::factory()->create(['company_id' => $this->company->id]);
+    $category = PosCategory::factory()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->deleteJson("/api/v1/categories/{$category->uuid}")
@@ -244,7 +244,7 @@ it('can delete a category', function () {
         ->assertJsonPath('success', true);
 
     // Pastikan soft deleted
-    expect(Category::withTrashed()->find($category->id)->deleted_at)->not->toBeNull();
+    expect(PosCategory::withTrashed()->find($category->id)->deleted_at)->not->toBeNull();
 });
 
 it('returns 404 when deleting non-existent category', function () {
@@ -254,10 +254,10 @@ it('returns 404 when deleting non-existent category', function () {
 });
 
 it('returns 422 when deleting category that has products', function () {
-    $category = Category::factory()->create(['company_id' => $this->company->id]);
+    $category = PosCategory::factory()->create(['company_id' => $this->company->id]);
 
     // Buat product yang terkait
-    Product::factory()->create([
+    PosProduct::factory()->create([
         'category_id' => $category->id,
         'company_id'  => $this->company->id,
     ]);
@@ -270,7 +270,7 @@ it('returns 422 when deleting category that has products', function () {
 
 it('returns 404 when deleting category from other company', function () {
     $otherCompany = Company::factory()->create();
-    $category     = Category::factory()->create(['company_id' => $otherCompany->id]);
+    $category     = PosCategory::factory()->create(['company_id' => $otherCompany->id]);
 
     $this->actingAs($this->user)
         ->deleteJson("/api/v1/categories/{$category->uuid}")
@@ -278,7 +278,7 @@ it('returns 404 when deleting category from other company', function () {
 });
 
 it('returns 401 when not authenticated on delete', function () {
-    $category = Category::factory()->create(['company_id' => $this->company->id]);
+    $category = PosCategory::factory()->create(['company_id' => $this->company->id]);
 
     $this->deleteJson("/api/v1/categories/{$category->uuid}")
         ->assertStatus(401);

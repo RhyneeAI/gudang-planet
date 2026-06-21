@@ -1,40 +1,40 @@
 <?php
 
-use App\Enums\InstallmentStatus;
-use App\Enums\PaymentType;
+use App\Enums\PosInstallmentStatus;
+use App\Enums\PosPaymentType;
 use App\Enums\Role;
-use App\Enums\TransactionStatus;
-use App\Models\Category;
+use App\Enums\PosTransactionStatus;
+use App\Models\PosCategory;
 use App\Models\Company;
-use App\Models\Supplier;
-use App\Models\CustomerType;
-use App\Models\Product;
-use App\Models\PurchaseInstallmentPlan;
-use App\Models\PurchaseTransaction;
-use App\Models\Unit;
+use App\Models\PosSupplier;
+use App\Models\PosCustomerType;
+use App\Models\PosProduct;
+use App\Models\PosPurchaseInstallmentPlan;
+use App\Models\PosPurchaseTransaction;
+use App\Models\PosUnit;
 use App\Models\User;
 use Illuminate\Support\Str;
 
 beforeEach(function () {
     $this->company      = Company::factory()->create();
     $this->owner        = User::factory()->owner()->create(['company_id' => $this->company->id]);
-    $this->supplierType = CustomerType::factory()->create([
+    $this->supplierType = PosCustomerType::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->owner->id,
     ]);
-    $this->supplier = Supplier::factory()->create([
+    $this->supplier = PosSupplier::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->owner->id,
     ]);
-    $this->category     = Category::factory()->create([
+    $this->category     = PosCategory::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->owner->id,
     ]);
-    $this->unit         = Unit::factory()->create([
+    $this->unit         = PosUnit::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->owner->id,
     ]);
-    $this->product      = Product::factory()->create([
+    $this->product      = PosProduct::factory()->create([
         'stock'       => 100,
         'sales_price' => 10000,
         'category_id' => $this->category->id,
@@ -45,24 +45,24 @@ beforeEach(function () {
 
     // Helper buat plan cicilan
     $this->makePlan = function (float $total = 300000) {
-        $trx = PurchaseTransaction::factory()->create([
+        $trx = PosPurchaseTransaction::factory()->create([
             'total'              => $total,
             'paid'               => 0,
-            'payment_type'       => PaymentType::CICIL,
-            'transaction_status' => TransactionStatus::PENDING,
+            'payment_type'       => PosPaymentType::CICIL,
+            'transaction_status' => PosTransactionStatus::PENDING,
             'supplier_id'        => $this->supplier->id,
             'created_by'         => $this->owner->id,
             'company_id'         => $this->company->id,
         ]);
 
-        return PurchaseInstallmentPlan::create([
+        return PosPurchaseInstallmentPlan::create([
             'ulid'                      => Str::ulid(),
             'purchase_transaction_id'   => $trx->id,
             'supplier_id'               => $this->supplier->id,
             'total_amount'              => $total,
             'paid_amount'               => 0,
             'start_date'                => now()->toDateString(),
-            'status'                    => InstallmentStatus::ACTIVE,
+            'status'                    => PosInstallmentStatus::ACTIVE,
             'company_id'                => $this->company->id,
         ]);
     };
@@ -87,7 +87,7 @@ it('can get installment plan list', function () {
 
 it('can filter by status', function () {
     $plan = ($this->makePlan)();
-    $plan->update(['status' => InstallmentStatus::COMPLETED]);
+    $plan->update(['status' => PosInstallmentStatus::COMPLETED]);
     ($this->makePlan)(); // ACTIVE
 
     $response = $this->actingAs($this->owner)
@@ -107,17 +107,17 @@ it('can filter by created_by_uuid', function () {
     ($this->makePlan)();
 
     // Plan by admin
-    $trxByAdmin = PurchaseTransaction::factory()->create([
+    $trxByAdmin = PosPurchaseTransaction::factory()->create([
         'total'              => 200000,
         'paid'               => 0,
-        'payment_type'       => PaymentType::CICIL,
-        'transaction_status' => TransactionStatus::PENDING,
+        'payment_type'       => PosPaymentType::CICIL,
+        'transaction_status' => PosTransactionStatus::PENDING,
         'supplier_id'        => $this->supplier->id,
         'created_by'         => $admin->id,
         'company_id'         => $this->company->id,
     ]);
 
-    PurchaseInstallmentPlan::create([
+    PosPurchaseInstallmentPlan::create([
         'ulid'                    => Str::ulid(),
         'purchase_transaction_id' => $trxByAdmin->id,
         'supplier_id'             => $this->supplier->id,
@@ -125,7 +125,7 @@ it('can filter by created_by_uuid', function () {
         'paid_amount'             => 0,
         'tenor'                   => 2,
         'start_date'              => now()->toDateString(),
-        'status'                  => InstallmentStatus::ACTIVE,
+        'status'                  => PosInstallmentStatus::ACTIVE,
         'company_id'              => $this->company->id,
     ]);
 
@@ -200,7 +200,7 @@ it('can record installment payment', function () {
         ->assertJsonPath('success', true);
 
     expect($plan->fresh()->paid_amount)->toEqual(100000);
-    expect($plan->fresh()->status)->toEqual(InstallmentStatus::ACTIVE);
+    expect($plan->fresh()->status)->toEqual(PosInstallmentStatus::ACTIVE);
 });
 
 it('installment_number increments on each payment', function () {
@@ -223,7 +223,7 @@ it('status becomes COMPLETED when fully paid', function () {
     $this->actingAs($this->owner)
         ->postJson("/api/v1/purchase-installments/{$plan->ulid}/pay", ['paid_amount' => 300000]);
 
-    expect($plan->fresh()->status)->toEqual(InstallmentStatus::COMPLETED);
+    expect($plan->fresh()->status)->toEqual(PosInstallmentStatus::COMPLETED);
     expect($plan->fresh()->paid_amount)->toEqual(300000.0);
 });
 
@@ -231,12 +231,12 @@ it('sales transaction status becomes PAID when installment completed', function 
     $plan = ($this->makePlan)(300000, 3);
     $trx  = $plan->PurchaseTransaction;
 
-    expect($trx->transaction_status)->toEqual(TransactionStatus::PENDING);
+    expect($trx->transaction_status)->toEqual(PosTransactionStatus::PENDING);
 
     $this->actingAs($this->owner)
         ->postJson("/api/v1/purchase-installments/{$plan->ulid}/pay", ['paid_amount' => 300000]);
 
-    expect($trx->fresh()->transaction_status)->toEqual(TransactionStatus::PAID);
+    expect($trx->fresh()->transaction_status)->toEqual(PosTransactionStatus::PAID);
     expect($trx->fresh()->paid)->toEqual(300000.0);
 });
 
@@ -249,7 +249,7 @@ it('can pay in multiple small installments', function () {
             ->postJson("/api/v1/purchase-installments/{$plan->ulid}/pay", ['paid_amount' => 10000]);
     }
 
-    expect($plan->fresh()->status)->toEqual(InstallmentStatus::COMPLETED);
+    expect($plan->fresh()->status)->toEqual(PosInstallmentStatus::COMPLETED);
     expect($plan->fresh()->payments()->count())->toBe(30);
 });
 
@@ -264,7 +264,7 @@ it('returns 422 when payment exceeds remaining', function () {
 
 it('returns 422 when paying already completed installment', function () {
     $plan = ($this->makePlan)(300000, 3);
-    $plan->update(['status' => InstallmentStatus::COMPLETED, 'paid_amount' => 300000]);
+    $plan->update(['status' => PosInstallmentStatus::COMPLETED, 'paid_amount' => 300000]);
 
     $this->actingAs($this->owner)
         ->postJson("/api/v1/purchase-installments/{$plan->ulid}/pay", ['paid_amount' => 1000])
@@ -283,16 +283,16 @@ it('returns 422 when paid_amount is zero', function () {
 it('returns 404 when plan from other company', function () {
     $otherCompany = Company::factory()->create();
     $otherOwner   = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
-    $otherCustomer = Supplier::factory()->create([
+    $otherCustomer = PosSupplier::factory()->create([
         'company_id' => $otherCompany->id,
         'created_by' => $otherOwner->id,
     ]);
 
-    $otherPlan = PurchaseInstallmentPlan::create([
+    $otherPlan = PosPurchaseInstallmentPlan::create([
         'ulid'                      => Str::ulid(),
-        'purchase_transaction_id'   => PurchaseTransaction::factory()->create([
-            'payment_type'          => PaymentType::CICIL,
-            'transaction_status'    => TransactionStatus::PENDING,
+        'purchase_transaction_id'   => PosPurchaseTransaction::factory()->create([
+            'payment_type'          => PosPaymentType::CICIL,
+            'transaction_status'    => PosTransactionStatus::PENDING,
             'supplier_id'           => $otherCustomer->id,
             'created_by'            => $otherOwner->id,
             'company_id'            => $otherCompany->id,
@@ -301,7 +301,7 @@ it('returns 404 when plan from other company', function () {
         'total_amount' => 100000,
         'paid_amount'  => 0,
         'start_date'   => now()->toDateString(),
-        'status'       => InstallmentStatus::ACTIVE,
+        'status'       => PosInstallmentStatus::ACTIVE,
         'company_id'   => $otherCompany->id,
     ]);
 

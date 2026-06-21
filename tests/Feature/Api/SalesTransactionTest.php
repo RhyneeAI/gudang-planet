@@ -1,14 +1,14 @@
 <?php
 
-use App\Enums\PaymentType;
-use App\Enums\TransactionStatus;
-use App\Models\Category;
+use App\Enums\PosPaymentType;
+use App\Enums\PosTransactionStatus;
+use App\Models\PosCategory;
 use App\Models\Company;
-use App\Models\Customer;
-use App\Models\CustomerType;
-use App\Models\Product;
-use App\Models\SalesTransaction;
-use App\Models\Unit;
+use App\Models\PosCustomer;
+use App\Models\PosCustomerType;
+use App\Models\PosProduct;
+use App\Models\PosSalesTransaction;
+use App\Models\PosUnit;
 use App\Models\User;
 
 beforeEach(function () {
@@ -16,24 +16,24 @@ beforeEach(function () {
     $this->user         = User::factory()->owner()->create([
         'company_id' => $this->company->id,
     ]);
-    $this->customerType = CustomerType::factory()->create([
+    $this->customerType = PosCustomerType::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);
-    $this->customer     = Customer::factory()->create([
+    $this->customer     = PosCustomer::factory()->create([
         'customer_type_id' => $this->customerType->id,
         'created_by'       => $this->user->id,
         'company_id'       => $this->company->id,
     ]);
-    $this->category     = Category::factory()->create([
+    $this->category     = PosCategory::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);
-    $this->unit         = Unit::factory()->create([
+    $this->unit         = PosUnit::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);
-    $this->product      = Product::factory()->create([
+    $this->product      = PosProduct::factory()->create([
         'stock'             => 20,
         'sales_price'       => 15000,
         'marketing_price'   => 13000,
@@ -42,7 +42,7 @@ beforeEach(function () {
         'created_by'        => $this->user->id,
         'company_id'        => $this->company->id,
     ]);
-    $this->product2     = Product::factory()->create([
+    $this->product2     = PosProduct::factory()->create([
         'stock'             => 10,
         'sales_price'       => 25000,
         'marketing_price'   => 20000,
@@ -58,7 +58,7 @@ beforeEach(function () {
         'discount'         => 0,
         'total'            => 45000,
         'paid'             => 45000,
-        'payment_type'     => PaymentType::CASH->value,
+        'payment_type'     => PosPaymentType::CASH->value,
         'items'            => [
             [
                 'product_uuid'      => $this->product->uuid,
@@ -76,7 +76,7 @@ beforeEach(function () {
 // =============================
 
 it('can get sales transaction list', function () {
-    SalesTransaction::factory(3)->create([
+    PosSalesTransaction::factory(3)->create([
         'customer_id' => $this->customer->id,
         'created_by'  => $this->user->id,
         'company_id'  => $this->company->id,
@@ -97,22 +97,22 @@ it('can get sales transaction list', function () {
 it('only returns transactions belonging to the same company', function () {
     $otherCompany      = Company::factory()->create();
     $otherUser         = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
-    $otherCustomerType = CustomerType::factory()->create([
+    $otherCustomerType = PosCustomerType::factory()->create([
         'company_id' => $otherCompany->id,
         'created_by' => $otherUser->id,
     ]);
-    $otherCustomer     = Customer::factory()->create([
+    $otherCustomer     = PosCustomer::factory()->create([
         'customer_type_id' => $otherCustomerType->id,
         'created_by'       => $otherUser->id,
         'company_id'       => $otherCompany->id,
     ]);
 
-    SalesTransaction::factory(2)->create([
+    PosSalesTransaction::factory(2)->create([
         'customer_id' => $otherCustomer->id,
         'created_by'  => $otherUser->id,
         'company_id'  => $otherCompany->id,
     ]);
-    SalesTransaction::factory(3)->create([
+    PosSalesTransaction::factory(3)->create([
         'customer_id' => $this->customer->id,
         'created_by'  => $this->user->id,
         'company_id'  => $this->company->id,
@@ -126,13 +126,13 @@ it('only returns transactions belonging to the same company', function () {
 });
 
 it('can filter by date range', function () {
-    SalesTransaction::factory()->create([
+    PosSalesTransaction::factory()->create([
         'transaction_date' => '2026-01-01',
         'customer_id'      => $this->customer->id,
         'created_by'       => $this->user->id,
         'company_id'       => $this->company->id,
     ]);
-    SalesTransaction::factory()->create([
+    PosSalesTransaction::factory()->create([
         'transaction_date' => '2026-06-01',
         'customer_id'      => $this->customer->id,
         'created_by'       => $this->user->id,
@@ -154,19 +154,19 @@ it('can filter by created_by_uuid', function () {
     ]);
 
     // Transaksi oleh owner
-    SalesTransaction::factory()->create([
+    PosSalesTransaction::factory()->create([
         'customer_id' => $this->customer->id,
         'created_by'  => $this->user->id,
         'company_id'  => $this->company->id,
     ]);
 
     // Transaksi oleh marketing
-    SalesTransaction::factory()->create([
+    PosSalesTransaction::factory()->create([
         'customer_id' => $this->customer->id,
         'created_by'  => $marketing->id,
         'company_id'  => $this->company->id,
     ]);
-    SalesTransaction::factory()->create([
+    PosSalesTransaction::factory()->create([
         'customer_id' => $this->customer->id,
         'created_by'  => $marketing->id,
         'company_id'  => $this->company->id,
@@ -184,12 +184,12 @@ it('returns all transactions when created_by_uuid is not provided', function () 
         'company_id' => $this->company->id,
     ]);
 
-    SalesTransaction::factory()->create([
+    PosSalesTransaction::factory()->create([
         'customer_id' => $this->customer->id,
         'created_by'  => $this->user->id,
         'company_id'  => $this->company->id,
     ]);
-    SalesTransaction::factory()->create([
+    PosSalesTransaction::factory()->create([
         'customer_id' => $this->customer->id,
         'created_by'  => $marketing->id,
         'company_id'  => $this->company->id,
@@ -203,7 +203,7 @@ it('returns all transactions when created_by_uuid is not provided', function () 
 });
 
 it('returns empty when created_by_uuid has no transactions', function () {
-    SalesTransaction::factory()->create([
+    PosSalesTransaction::factory()->create([
         'customer_id' => $this->customer->id,
         'created_by'  => $this->user->id,
         'company_id'  => $this->company->id,
@@ -246,7 +246,7 @@ it('can create a sales transaction', function () {
             ]
         ]);
 
-    expect($response->json('data.transaction_status'))->toBe(TransactionStatus::PAID->value);
+    expect($response->json('data.transaction_status'))->toBe(PosTransactionStatus::PAID->value);
 });
 
 it('can create sales transaction without customer', function () {
@@ -304,7 +304,7 @@ it('returns 422 when stock is insufficient', function () {
 it('returns 422 when product belongs to other company', function () {
     $otherCompany = Company::factory()->create();
     $otherUser    = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
-    $otherProduct = Product::factory()->create([
+    $otherProduct = PosProduct::factory()->create([
         'company_id' => $otherCompany->id,
         'created_by' => $otherUser->id,
     ]);
@@ -468,7 +468,7 @@ it('returns 401 when not authenticated on store', function () {
 // =============================
 
 it('can get sales transaction detail', function () {
-    $transaction = SalesTransaction::factory()->create([
+    $transaction = PosSalesTransaction::factory()->create([
         'customer_id' => $this->customer->id,
         'created_by'  => $this->user->id,
         'company_id'  => $this->company->id,
@@ -489,17 +489,17 @@ it('returns 404 when transaction not found on show', function () {
 it('returns 404 when accessing transaction from other company', function () {
     $otherCompany      = Company::factory()->create();
     $otherUser         = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
-    $otherCustomerType = CustomerType::factory()->create([
+    $otherCustomerType = PosCustomerType::factory()->create([
         'company_id' => $otherCompany->id,
         'created_by' => $otherUser->id,
     ]);
-    $otherCustomer     = Customer::factory()->create([
+    $otherCustomer     = PosCustomer::factory()->create([
         'customer_type_id' => $otherCustomerType->id,
         'created_by'       => $otherUser->id,
         'company_id'       => $otherCompany->id,
     ]);
 
-    $transaction = SalesTransaction::factory()->create([
+    $transaction = PosSalesTransaction::factory()->create([
         'customer_id' => $otherCustomer->id,
         'created_by'  => $otherUser->id,
         'company_id'  => $otherCompany->id,
@@ -525,7 +525,7 @@ it('can cancel a sales transaction', function () {
     $this->actingAs($this->user)
         ->patchJson("/api/v1/sales-transactions/{$ulid}/cancel")
         ->assertStatus(200)
-        ->assertJsonPath('data.transaction_status', TransactionStatus::CANCEL->value);
+        ->assertJsonPath('data.transaction_status', PosTransactionStatus::CANCEL->value);
 
     expect($this->product->fresh()->stock)->toBe($stockAfterSales + 3);
 });
@@ -595,8 +595,8 @@ it('cancel creates ADJUST_IN for each item', function () {
 });
 
 it('returns 422 when cancelling already cancelled transaction', function () {
-    $transaction = SalesTransaction::factory()->create([
-        'transaction_status' => TransactionStatus::CANCEL,
+    $transaction = PosSalesTransaction::factory()->create([
+        'transaction_status' => PosTransactionStatus::CANCEL,
         'customer_id'        => $this->customer->id,
         'created_by'         => $this->user->id,
         'company_id'         => $this->company->id,
@@ -626,17 +626,17 @@ it('cancelled transaction cannot be cancelled again', function () {
 it('returns 404 when cancelling transaction from other company', function () {
     $otherCompany      = Company::factory()->create();
     $otherUser         = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
-    $otherCustomerType = CustomerType::factory()->create([
+    $otherCustomerType = PosCustomerType::factory()->create([
         'company_id' => $otherCompany->id,
         'created_by' => $otherUser->id,
     ]);
-    $otherCustomer     = Customer::factory()->create([
+    $otherCustomer     = PosCustomer::factory()->create([
         'customer_type_id' => $otherCustomerType->id,
         'created_by'       => $otherUser->id,
         'company_id'       => $otherCompany->id,
     ]);
 
-    $transaction = SalesTransaction::factory()->create([
+    $transaction = PosSalesTransaction::factory()->create([
         'customer_id' => $otherCustomer->id,
         'created_by'  => $otherUser->id,
         'company_id'  => $otherCompany->id,
@@ -648,7 +648,7 @@ it('returns 404 when cancelling transaction from other company', function () {
 });
 
 it('returns 401 when not authenticated on cancel', function () {
-    $transaction = SalesTransaction::factory()->create([
+    $transaction = PosSalesTransaction::factory()->create([
         'customer_id' => $this->customer->id,
         'created_by'  => $this->user->id,
         'company_id'  => $this->company->id,
@@ -659,8 +659,8 @@ it('returns 401 when not authenticated on cancel', function () {
 });
 
 it('returns 422 when cancelling non-PAID transaction', function () {
-    $transaction = SalesTransaction::factory()->create([
-        'transaction_status' => TransactionStatus::PENDING,
+    $transaction = PosSalesTransaction::factory()->create([
+        'transaction_status' => PosTransactionStatus::PENDING,
         'customer_id'        => $this->customer->id,
         'created_by'         => $this->user->id,
         'company_id'         => $this->company->id,
@@ -677,13 +677,13 @@ it('returns 422 when cancelling non-PAID transaction', function () {
 // =============================
 
 it('can search by transaction_code', function () {
-    SalesTransaction::factory()->create([
+    PosSalesTransaction::factory()->create([
         'transaction_code' => 'SO-ABC12345-20260505',
         'customer_id'      => $this->customer->id,
         'created_by'       => $this->user->id,
         'company_id'       => $this->company->id,
     ]);
-    SalesTransaction::factory()->create([
+    PosSalesTransaction::factory()->create([
         'transaction_code' => 'SO-XYZ98765-20260505',
         'customer_id'      => $this->customer->id,
         'created_by'       => $this->user->id,
@@ -699,7 +699,7 @@ it('can search by transaction_code', function () {
 it('rolls back when error occurs during store', function () {
     $otherCompany = Company::factory()->create();
     $otherUser    = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
-    $otherProduct = Product::factory()->create(['company_id' => $otherCompany->id]);
+    $otherProduct = PosProduct::factory()->create(['company_id' => $otherCompany->id]);
 
     $payload = array_merge($this->payload, [
         'items' => [
@@ -811,11 +811,11 @@ it('returns 422 when item discount is negative', function () {
 it('returns 422 when customer belongs to other company', function () {
     $otherCompany      = Company::factory()->create();
     $otherUser         = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
-    $otherCustomerType = CustomerType::factory()->create([
+    $otherCustomerType = PosCustomerType::factory()->create([
         'company_id' => $otherCompany->id,
         'created_by' => $otherUser->id,
     ]);
-    $otherCustomer     = Customer::factory()->create([
+    $otherCustomer     = PosCustomer::factory()->create([
         'customer_type_id' => $otherCustomerType->id,
         'created_by'       => $otherUser->id,
         'company_id'       => $otherCompany->id,

@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Unit;
-use App\Models\Product;
+use App\Models\PosUnit;
+use App\Models\PosProduct;
 use App\Models\User;
 use App\Models\Company;
 
@@ -17,7 +17,7 @@ beforeEach(function () {
 // =============================
 
 it('can get unit list', function () {
-    Unit::factory(5)->create(['company_id' => $this->company->id]);
+    PosUnit::factory(5)->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->getJson('/api/v1/units')
@@ -34,8 +34,8 @@ it('can get unit list', function () {
 
 it('only returns units belonging to the same company', function () {
     $otherCompany = Company::factory()->create();
-    Unit::factory(3)->create(['company_id' => $otherCompany->id]);
-    Unit::factory(2)->create(['company_id' => $this->company->id]);
+    PosUnit::factory(3)->create(['company_id' => $otherCompany->id]);
+    PosUnit::factory(2)->create(['company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/units');
@@ -45,7 +45,7 @@ it('only returns units belonging to the same company', function () {
 });
 
 it('can paginate units with custom per_page', function () {
-    Unit::factory(20)->create(['company_id' => $this->company->id]);
+    PosUnit::factory(20)->create(['company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/units?per_page=5');
@@ -84,7 +84,7 @@ it('returns 422 when name exceeds 255 characters', function () {
 });
 
 it('returns 422 when name is duplicate within same company', function () {
-    Unit::factory()->create([
+    PosUnit::factory()->create([
         'name'       => 'Pcs',
         'company_id' => $this->company->id,
     ]);
@@ -96,7 +96,7 @@ it('returns 422 when name is duplicate within same company', function () {
 
 it('allows same unit name in different companies', function () {
     $otherCompany = Company::factory()->create();
-    Unit::factory()->create([
+    PosUnit::factory()->create([
         'name'       => 'Pcs',
         'company_id' => $otherCompany->id,
     ]);
@@ -116,7 +116,7 @@ it('returns 401 when not authenticated on store', function () {
 // =============================
 
 it('can get unit detail', function () {
-    $unit = Unit::factory()->create(['company_id' => $this->company->id]);
+    $unit = PosUnit::factory()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->getJson("/api/v1/units/{$unit->uuid}")
@@ -133,7 +133,7 @@ it('returns 404 when unit not found on show', function () {
 
 it('returns 404 when accessing unit from other company', function () {
     $otherCompany = Company::factory()->create();
-    $unit         = Unit::factory()->create(['company_id' => $otherCompany->id]);
+    $unit         = PosUnit::factory()->create(['company_id' => $otherCompany->id]);
 
     $this->actingAs($this->user)
         ->getJson("/api/v1/units/{$unit->uuid}")
@@ -145,7 +145,7 @@ it('returns 404 when accessing unit from other company', function () {
 // =============================
 
 it('can update a unit', function () {
-    $unit = Unit::factory()->create(['company_id' => $this->company->id]);
+    $unit = PosUnit::factory()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->patchJson("/api/v1/units/{$unit->uuid}", ['name' => 'Lusin'])
@@ -154,7 +154,7 @@ it('can update a unit', function () {
 });
 
 it('can partial update (PATCH) unit without sending all fields', function () {
-    $unit = Unit::factory()->create([
+    $unit = PosUnit::factory()->create([
         'name'       => 'Original',
         'company_id' => $this->company->id,
     ]);
@@ -166,12 +166,12 @@ it('can partial update (PATCH) unit without sending all fields', function () {
 });
 
 it('returns 422 when updating with duplicate name', function () {
-    Unit::factory()->create([
+    PosUnit::factory()->create([
         'name'       => 'Pcs',
         'company_id' => $this->company->id,
     ]);
 
-    $unit = Unit::factory()->create([
+    $unit = PosUnit::factory()->create([
         'name'       => 'Kg',
         'company_id' => $this->company->id,
     ]);
@@ -183,7 +183,7 @@ it('returns 422 when updating with duplicate name', function () {
 
 it('returns 404 when updating unit from other company', function () {
     $otherCompany = Company::factory()->create();
-    $unit         = Unit::factory()->create(['company_id' => $otherCompany->id]);
+    $unit         = PosUnit::factory()->create(['company_id' => $otherCompany->id]);
 
     $this->actingAs($this->user)
         ->patchJson("/api/v1/units/{$unit->uuid}", ['name' => 'Hacked'])
@@ -201,20 +201,20 @@ it('returns 404 when updating non-existent unit', function () {
 // =============================
 
 it('can delete a unit', function () {
-    $unit = Unit::factory()->create(['company_id' => $this->company->id]);
+    $unit = PosUnit::factory()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->deleteJson("/api/v1/units/{$unit->uuid}")
         ->assertStatus(200)
         ->assertJsonPath('success', true);
 
-    expect(Unit::withTrashed()->find($unit->id)->deleted_at)->not->toBeNull();
+    expect(PosUnit::withTrashed()->find($unit->id)->deleted_at)->not->toBeNull();
 });
 
 it('returns 422 when deleting unit that has products', function () {
-    $unit = Unit::factory()->create(['company_id' => $this->company->id]);
+    $unit = PosUnit::factory()->create(['company_id' => $this->company->id]);
 
-    Product::factory()->create([
+    PosProduct::factory()->create([
         'unit_id'    => $unit->id,
         'company_id' => $this->company->id,
     ]);
@@ -227,7 +227,7 @@ it('returns 422 when deleting unit that has products', function () {
 
 it('returns 404 when deleting unit from other company', function () {
     $otherCompany = Company::factory()->create();
-    $unit         = Unit::factory()->create(['company_id' => $otherCompany->id]);
+    $unit         = PosUnit::factory()->create(['company_id' => $otherCompany->id]);
 
     $this->actingAs($this->user)
         ->deleteJson("/api/v1/units/{$unit->uuid}")
@@ -241,7 +241,7 @@ it('returns 404 when deleting non-existent unit', function () {
 });
 
 it('returns 401 when not authenticated on delete', function () {
-    $unit = Unit::factory()->create(['company_id' => $this->company->id]);
+    $unit = PosUnit::factory()->create(['company_id' => $this->company->id]);
 
     $this->deleteJson("/api/v1/units/{$unit->uuid}")
         ->assertStatus(401);

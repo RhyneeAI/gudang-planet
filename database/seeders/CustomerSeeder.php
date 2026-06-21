@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Customer;
-use App\Models\CustomerType;
+use App\Models\PosCustomer;
+use App\Models\PosCustomerType;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -11,10 +11,10 @@ class CustomerSeeder extends Seeder
 {
     public function run(): void
     {
-        $customerTypeId = CustomerType::where('company_id', 1)->value('id');
+        $customerTypeId = PosCustomerType::where('company_id', 1)->value('id');
 
         foreach (['Andi', 'Budi', 'Siti'] as $index => $name) {
-            Customer::firstOrCreate(
+            PosCustomer::firstOrCreate(
                 ['name' => $name, 'company_id' => 1],
                 [
                     'uuid' => (string) Str::uuid(),

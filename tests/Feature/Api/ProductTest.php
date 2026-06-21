@@ -1,20 +1,20 @@
 <?php
 
-use App\Models\Category;
+use App\Models\PosCategory;
 use App\Models\Company;
-use App\Models\Product;
-use App\Models\StockMutation;
-use App\Models\Unit;
+use App\Models\PosProduct;
+use App\Models\PosStockMutation;
+use App\Models\PosUnit;
 use App\Models\User;
-use App\Models\SalesDetail;
+use App\Models\PosSalesDetail;
 
 beforeEach(function () {
     $this->company = Company::factory()->create();
     $this->user = User::factory()->owner()->create([
         'company_id' => $this->company->id,
     ]);
-    $this->category = Category::factory()->create();
-    $this->unit = Unit::factory()->create();
+    $this->category = PosCategory::factory()->create();
+    $this->unit = PosUnit::factory()->create();
 });
 
 // =============================
@@ -22,7 +22,7 @@ beforeEach(function () {
 // =============================
 
 it('can get product list', function () {
-    Product::factory(5)->create(['company_id' => $this->company->id]);
+    PosProduct::factory(5)->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->getJson('/api/v1/products')
@@ -54,11 +54,11 @@ it('can generate unique product code with company code prefix', function () {
 it('generates sequential product codes', function () {
     $this->company->update(['code' => 'XYZ']);
 
-    Product::factory()->create([
+    PosProduct::factory()->create([
         'code' => 'XYZ0001',
         'company_id' => $this->company->id,
     ]);
-    Product::factory()->create([
+    PosProduct::factory()->create([
         'code' => 'XYZ0002',
         'company_id' => $this->company->id,
     ]);
@@ -75,8 +75,8 @@ it('returns 401 when not authenticated on generate code', function () {
 
 it('only returns products belonging to the same company', function () {
     $otherCompany = Company::factory()->create();
-    Product::factory(3)->create(['company_id' => $otherCompany->id]);
-    Product::factory(2)->create(['company_id' => $this->company->id]);
+    PosProduct::factory(3)->create(['company_id' => $otherCompany->id]);
+    PosProduct::factory(2)->create(['company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/products');
@@ -89,8 +89,8 @@ it('returns 401 when not authenticated on index', function () {
 });
 
 it('can filter products by search (name or code)', function () {
-    Product::factory()->create(['name' => 'Laptop Gaming', 'code' => 'LAP-001', 'company_id' => $this->company->id]);
-    Product::factory()->create(['name' => 'Mouse Wireless', 'code' => 'MOU-001', 'company_id' => $this->company->id]);
+    PosProduct::factory()->create(['name' => 'Laptop Gaming', 'code' => 'LAP-001', 'company_id' => $this->company->id]);
+    PosProduct::factory()->create(['name' => 'Mouse Wireless', 'code' => 'MOU-001', 'company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/products?search=laptop');
@@ -100,9 +100,9 @@ it('can filter products by search (name or code)', function () {
 });
 
 it('can sort products by name', function () {
-    Product::factory()->create(['name' => 'Zebra', 'company_id' => $this->company->id]);
-    Product::factory()->create(['name' => 'Apple', 'company_id' => $this->company->id]);
-    Product::factory()->create(['name' => 'Banana', 'company_id' => $this->company->id]);
+    PosProduct::factory()->create(['name' => 'Zebra', 'company_id' => $this->company->id]);
+    PosProduct::factory()->create(['name' => 'Apple', 'company_id' => $this->company->id]);
+    PosProduct::factory()->create(['name' => 'Banana', 'company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/products?order_by_key=name&order_by_value=asc');
@@ -113,7 +113,7 @@ it('can sort products by name', function () {
 });
 
 it('can paginate products with custom per_page', function () {
-    Product::factory(20)->create(['company_id' => $this->company->id]);
+    PosProduct::factory(20)->create(['company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/products?per_page=5');
@@ -126,8 +126,8 @@ it('can paginate products with custom per_page', function () {
 // =============================
 
 it('can create a product', function () {
-    $category = Category::factory()->create(['company_id' => $this->company->id]);
-    $unit = Unit::factory()->create(['company_id' => $this->company->id]);
+    $category = PosCategory::factory()->create(['company_id' => $this->company->id]);
+    $unit = PosUnit::factory()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->postJson('/api/v1/products', [
@@ -188,7 +188,7 @@ it('returns 422 when sales_price is empty on store', function () {
 });
 
 it('returns 422 when code is duplicate within same company', function () {
-    Product::factory()->create([
+    PosProduct::factory()->create([
         'code' => 'DUP-001',
         'company_id' => $this->company->id,
     ]);
@@ -204,7 +204,7 @@ it('returns 422 when code is duplicate within same company', function () {
 
 it('allows same product code in different companies', function () {
     $otherCompany = Company::factory()->create();
-    Product::factory()->create([
+    PosProduct::factory()->create([
         'code' => 'SAME-001',
         'company_id' => $otherCompany->id,
     ]);
@@ -278,7 +278,7 @@ it('stock mutation notes contains product name', function () {
         ->postJson('/api/v1/products', $payload)
         ->assertStatus(201);
 
-    $mutation = StockMutation::first();
+    $mutation = PosStockMutation::first();
     expect($mutation->notes)->toContain('Mutasi awal produk');
 });
 
@@ -321,7 +321,7 @@ it('marketing_price defaults to 0 when not provided', function () {
 });
 
 it('can update marketing_price', function () {
-    $product = Product::factory()->create([
+    $product = PosProduct::factory()->create([
         'marketing_price' => 10000,
         'company_id'      => $this->company->id,
         'created_by'      => $this->user->id,
@@ -357,7 +357,7 @@ it('returns 401 when not authenticated on store', function () {
 // =============================
 
 it('can get product detail', function () {
-    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    $product = PosProduct::factory()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->getJson("/api/v1/products/{$product->uuid}")
@@ -374,7 +374,7 @@ it('returns 404 when product not found on show', function () {
 
 it('returns 404 when accessing product from other company', function () {
     $otherCompany = Company::factory()->create();
-    $product = Product::factory()->create(['company_id' => $otherCompany->id]);
+    $product = PosProduct::factory()->create(['company_id' => $otherCompany->id]);
 
     $this->actingAs($this->user)
         ->getJson("/api/v1/products/{$product->uuid}")
@@ -386,7 +386,7 @@ it('returns 404 when accessing product from other company', function () {
 // =============================
 
 it('can update a product', function () {
-    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    $product = PosProduct::factory()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->patchJson("/api/v1/products/{$product->uuid}", [
@@ -399,7 +399,7 @@ it('can update a product', function () {
 });
 
 it('can partial update product without sending all fields', function () {
-    $product = Product::factory()->create([
+    $product = PosProduct::factory()->create([
         'name' => 'Original Name',
         'sales_price' => 50000,
         'company_id' => $this->company->id,
@@ -414,7 +414,7 @@ it('can partial update product without sending all fields', function () {
 
 it('returns 404 when updating product from other company', function () {
     $otherCompany = Company::factory()->create();
-    $product = Product::factory()->create(['company_id' => $otherCompany->id]);
+    $product = PosProduct::factory()->create(['company_id' => $otherCompany->id]);
 
     $this->actingAs($this->user)
         ->patchJson("/api/v1/products/{$product->uuid}", ['name' => 'Hacked'])
@@ -432,21 +432,21 @@ it('returns 404 when updating non-existent product', function () {
 // =============================
 
 it('can delete a product', function () {
-    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    $product = PosProduct::factory()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->deleteJson("/api/v1/products/{$product->uuid}")
         ->assertStatus(200)
         ->assertJsonPath('success', true);
 
-    expect(Product::withTrashed()->find($product->id)->deleted_at)->not->toBeNull();
+    expect(PosProduct::withTrashed()->find($product->id)->deleted_at)->not->toBeNull();
 });
 
 it('returns 422 when deleting product that has sales details', function () {
-    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    $product = PosProduct::factory()->create(['company_id' => $this->company->id]);
     
     // Buat sales detail tanpa harus membuat sales transaction terpisah
-    SalesDetail::factory()->create([
+    PosSalesDetail::factory()->create([
         'product_id' => $product->id,
         'company_id' => $this->company->id
     ]);
@@ -459,7 +459,7 @@ it('returns 422 when deleting product that has sales details', function () {
 
 it('returns 404 when deleting product from other company', function () {
     $otherCompany = Company::factory()->create();
-    $product = Product::factory()->create(['company_id' => $otherCompany->id]);
+    $product = PosProduct::factory()->create(['company_id' => $otherCompany->id]);
 
     $this->actingAs($this->user)
         ->deleteJson("/api/v1/products/{$product->uuid}")
@@ -473,7 +473,7 @@ it('returns 404 when deleting non-existent product', function () {
 });
 
 it('returns 401 when not authenticated on delete', function () {
-    $product = Product::factory()->create(['company_id' => $this->company->id]);
+    $product = PosProduct::factory()->create(['company_id' => $this->company->id]);
 
     $this->deleteJson("/api/v1/products/{$product->uuid}")
         ->assertStatus(401);

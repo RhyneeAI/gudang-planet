@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\Customer;
-use App\Models\CustomerType;
-use App\Models\SalesTransaction;
+use App\Models\PosCustomer;
+use App\Models\PosCustomerType;
+use App\Models\PosSalesTransaction;
 use App\Models\User;
 use App\Models\Company;
 
@@ -11,7 +11,7 @@ beforeEach(function () {
     $this->user         = User::factory()->owner()->create([
         'company_id' => $this->company->id,
     ]);
-    $this->customerType = CustomerType::factory()->create([
+    $this->customerType = PosCustomerType::factory()->create([
         'type'       => 'Regular',
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
@@ -23,7 +23,7 @@ beforeEach(function () {
 // =============================
 
 it('can get customer list', function () {
-    Customer::factory(5)->create(['company_id' => $this->company->id]);
+    PosCustomer::factory(5)->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->getJson('/api/v1/customers')
@@ -40,8 +40,8 @@ it('can get customer list', function () {
 
 it('only returns customers belonging to the same company', function () {
     $otherCompany = Company::factory()->create();
-    Customer::factory(3)->create(['company_id' => $otherCompany->id]);
-    Customer::factory(2)->create(['company_id' => $this->company->id]);
+    PosCustomer::factory(3)->create(['company_id' => $otherCompany->id]);
+    PosCustomer::factory(2)->create(['company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/customers');
@@ -51,7 +51,7 @@ it('only returns customers belonging to the same company', function () {
 });
 
 it('can paginate customers with custom per_page', function () {
-    Customer::factory(20)->create(['company_id' => $this->company->id]);
+    PosCustomer::factory(20)->create(['company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/customers?per_page=5');
@@ -61,9 +61,9 @@ it('can paginate customers with custom per_page', function () {
 });
 
 it('can search customers by name', function () {
-    Customer::factory()->create(['name' => 'Budi Santoso',  'company_id' => $this->company->id]);
-    Customer::factory()->create(['name' => 'Siti Aminah',   'company_id' => $this->company->id]);
-    Customer::factory()->create(['name' => 'Ahmad Fauzi',   'company_id' => $this->company->id]);
+    PosCustomer::factory()->create(['name' => 'Budi Santoso',  'company_id' => $this->company->id]);
+    PosCustomer::factory()->create(['name' => 'Siti Aminah',   'company_id' => $this->company->id]);
+    PosCustomer::factory()->create(['name' => 'Ahmad Fauzi',   'company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/customers?search=budi');
@@ -74,8 +74,8 @@ it('can search customers by name', function () {
 });
 
 it('can search customers by phone', function () {
-    Customer::factory()->create(['phone' => '081234567890', 'company_id' => $this->company->id]);
-    Customer::factory()->create(['phone' => '089876543210', 'company_id' => $this->company->id]);
+    PosCustomer::factory()->create(['phone' => '081234567890', 'company_id' => $this->company->id]);
+    PosCustomer::factory()->create(['phone' => '089876543210', 'company_id' => $this->company->id]);
 
     $response = $this->actingAs($this->user)
         ->getJson('/api/v1/customers?search=081234');
@@ -117,7 +117,7 @@ it('can create a customer without optional fields', function () {
 });
 
 it('can create a customer with customer type', function () {
-    $vipType = CustomerType::factory()->create([
+    $vipType = PosCustomerType::factory()->create([
         'type'       => 'VIP',
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
@@ -166,7 +166,7 @@ it('returns 401 when not authenticated on store', function () {
 // =============================
 
 it('can get customer detail', function () {
-    $customer = Customer::factory()->create(['company_id' => $this->company->id]);
+    $customer = PosCustomer::factory()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->getJson("/api/v1/customers/{$customer->uuid}")
@@ -183,7 +183,7 @@ it('returns 404 when customer not found on show', function () {
 
 it('returns 404 when accessing customer from other company', function () {
     $otherCompany = Company::factory()->create();
-    $customer     = Customer::factory()->create(['company_id' => $otherCompany->id]);
+    $customer     = PosCustomer::factory()->create(['company_id' => $otherCompany->id]);
 
     $this->actingAs($this->user)
         ->getJson("/api/v1/customers/{$customer->uuid}")
@@ -195,7 +195,7 @@ it('returns 404 when accessing customer from other company', function () {
 // =============================
 
 it('can update a customer', function () {
-    $customer = Customer::factory()->create(['company_id' => $this->company->id]);
+    $customer = PosCustomer::factory()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->patchJson("/api/v1/customers/{$customer->uuid}", ['name' => 'Updated Name'])
@@ -204,7 +204,7 @@ it('can update a customer', function () {
 });
 
 it('can partial update (PATCH) customer without sending all fields', function () {
-    $customer = Customer::factory()->create([
+    $customer = PosCustomer::factory()->create([
         'name'       => 'Original Name',
         'company_id' => $this->company->id,
     ]);
@@ -216,13 +216,13 @@ it('can partial update (PATCH) customer without sending all fields', function ()
 });
 
 it('can update customer type', function () {
-    $customer = Customer::factory()->create([
+    $customer = PosCustomer::factory()->create([
         'customer_type_id' => $this->customerType->id,
         'created_by'       => $this->user->id,
         'company_id'       => $this->company->id,
     ]);
 
-    $vipType = CustomerType::factory()->create([
+    $vipType = PosCustomerType::factory()->create([
         'type'       => 'VIP',
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
@@ -238,7 +238,7 @@ it('can update customer type', function () {
 
 it('returns 404 when updating customer from other company', function () {
     $otherCompany = Company::factory()->create();
-    $customer     = Customer::factory()->create(['company_id' => $otherCompany->id]);
+    $customer     = PosCustomer::factory()->create(['company_id' => $otherCompany->id]);
 
     $this->actingAs($this->user)
         ->patchJson("/api/v1/customers/{$customer->uuid}", ['name' => 'Hacked'])
@@ -256,24 +256,24 @@ it('returns 404 when updating non-existent customer', function () {
 // =============================
 
 it('can delete a customer', function () {
-    $customer = Customer::factory()->create(['company_id' => $this->company->id]);
+    $customer = PosCustomer::factory()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
         ->deleteJson("/api/v1/customers/{$customer->uuid}")
         ->assertStatus(200)
         ->assertJsonPath('success', true);
 
-    expect(Customer::withTrashed()->find($customer->id)->deleted_at)->not->toBeNull();
+    expect(PosCustomer::withTrashed()->find($customer->id)->deleted_at)->not->toBeNull();
 });
 
 it('returns 422 when deleting customer that has sales transactions', function () {
-    $customer = Customer::factory()->create([
+    $customer = PosCustomer::factory()->create([
         'customer_type_id' => $this->customerType->id,
         'created_by'       => $this->user->id,
         'company_id'       => $this->company->id,
     ]);
 
-    SalesTransaction::factory()->create([
+    PosSalesTransaction::factory()->create([
         'customer_id'  => $customer->id,
         'created_by'   => $this->user->id,
         'company_id'   => $this->company->id,
@@ -287,7 +287,7 @@ it('returns 422 when deleting customer that has sales transactions', function ()
 
 it('returns 404 when deleting customer from other company', function () {
     $otherCompany = Company::factory()->create();
-    $customer     = Customer::factory()->create(['company_id' => $otherCompany->id]);
+    $customer     = PosCustomer::factory()->create(['company_id' => $otherCompany->id]);
 
     $this->actingAs($this->user)
         ->deleteJson("/api/v1/customers/{$customer->uuid}")
@@ -301,7 +301,7 @@ it('returns 404 when deleting non-existent customer', function () {
 });
 
 it('returns 401 when not authenticated on delete', function () {
-    $customer = Customer::factory()->create(['company_id' => $this->company->id]);
+    $customer = PosCustomer::factory()->create(['company_id' => $this->company->id]);
 
     $this->deleteJson("/api/v1/customers/{$customer->uuid}")
         ->assertStatus(401);

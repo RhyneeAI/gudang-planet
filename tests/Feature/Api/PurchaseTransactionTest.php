@@ -1,40 +1,40 @@
 <?php
 
-use App\Enums\PaymentType;
-use App\Enums\TransactionStatus;
+use App\Enums\PosPaymentType;
+use App\Enums\PosTransactionStatus;
 use App\Models\Company;
-use App\Models\Product;
-use App\Models\PurchaseTransaction;
-use App\Models\Supplier;
-use App\Models\Unit;
+use App\Models\PosProduct;
+use App\Models\PosPurchaseTransaction;
+use App\Models\PosSupplier;
+use App\Models\PosUnit;
 use App\Models\User;
-use App\Models\Category;
+use App\Models\PosCategory;
 
 beforeEach(function () {
     $this->company  = Company::factory()->create();
     $this->user     = User::factory()->owner()->create([
         'company_id' => $this->company->id,
     ]);
-    $this->supplier = Supplier::factory()->create([
+    $this->supplier = PosSupplier::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);
-    $this->category = Category::factory()->create([
+    $this->category = PosCategory::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);
-    $this->unit = Unit::factory()->create([
+    $this->unit = PosUnit::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);
-    $this->product = Product::factory()->create([
+    $this->product = PosProduct::factory()->create([
         'stock'       => 10,
         'category_id' => $this->category->id,
         'unit_id'     => $this->unit->id,
         'created_by'  => $this->user->id,
         'company_id'  => $this->company->id,
     ]);
-    $this->product2 = Product::factory()->create([
+    $this->product2 = PosProduct::factory()->create([
         'stock'       => 5,
         'category_id' => $this->category->id,
         'unit_id'     => $this->unit->id,
@@ -49,7 +49,7 @@ beforeEach(function () {
         'discount'         => 0,
         'total'            => 50000, // ← tambah
         'paid'             => 50000, // ← tambah
-        'payment_type'     => PaymentType::CASH->value,
+        'payment_type'     => PosPaymentType::CASH->value,
         'items'            => [
             [
                 'product_uuid' => $this->product->uuid,
@@ -66,7 +66,7 @@ beforeEach(function () {
 // =============================
 
 it('can get purchase transaction list', function () {
-    PurchaseTransaction::factory(3)->create([
+    PosPurchaseTransaction::factory(3)->create([
         'supplier_id' => $this->supplier->id,
         'created_by'  => $this->user->id,
         'company_id'  => $this->company->id,
@@ -87,17 +87,17 @@ it('can get purchase transaction list', function () {
 it('only returns transactions belonging to the same company', function () {
     $otherCompany = Company::factory()->create();
     $otherUser    = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
-    $otherSupplier = Supplier::factory()->create([
+    $otherSupplier = PosSupplier::factory()->create([
         'company_id' => $otherCompany->id,
         'created_by' => $otherUser->id,
     ]);
 
-    PurchaseTransaction::factory(2)->create([
+    PosPurchaseTransaction::factory(2)->create([
         'supplier_id' => $otherSupplier->id,
         'created_by'  => $otherUser->id,
         'company_id'  => $otherCompany->id,
     ]);
-    PurchaseTransaction::factory(3)->create([
+    PosPurchaseTransaction::factory(3)->create([
         'supplier_id' => $this->supplier->id,
         'created_by'  => $this->user->id,
         'company_id'  => $this->company->id,
@@ -111,13 +111,13 @@ it('only returns transactions belonging to the same company', function () {
 });
 
 it('can filter by date range', function () {
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'transaction_date' => '2026-01-01',
         'supplier_id'      => $this->supplier->id,
         'created_by'       => $this->user->id,
         'company_id'       => $this->company->id,
     ]);
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'transaction_date' => '2026-06-01',
         'supplier_id'      => $this->supplier->id,
         'created_by'       => $this->user->id,
@@ -136,12 +136,12 @@ it('returns 401 when not authenticated on index', function () {
 });
 
 it('can search by transaction_code', function () {
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'transaction_code' => 'PO-ABC12345-20260505',
         'supplier_id' => $this->supplier->id,
         'company_id'  => $this->company->id,
     ]);
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'transaction_code' => 'PO-XYZ98765-20260505',
         'supplier_id' => $this->supplier->id,
         'company_id'  => $this->company->id,
@@ -154,12 +154,12 @@ it('can search by transaction_code', function () {
 });
 
 it('can sort by different columns', function () {
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'transaction_code' => 'PO-001',
         'supplier_id' => $this->supplier->id,
         'company_id'  => $this->company->id,
     ]);
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'transaction_code' => 'PO-002',
         'supplier_id' => $this->supplier->id,
         'company_id'  => $this->company->id,
@@ -174,7 +174,7 @@ it('can sort by different columns', function () {
 });
 
 it('respects pagination per_page parameter', function () {
-    PurchaseTransaction::factory(20)->create([
+    PosPurchaseTransaction::factory(20)->create([
         'supplier_id' => $this->supplier->id,
         'company_id'  => $this->company->id,
     ]);
@@ -186,15 +186,15 @@ it('respects pagination per_page parameter', function () {
 });
 
 it('can search purchase transactions by transaction code', function () {
-    $supplier = Supplier::factory()->create(['company_id' => $this->company->id]);
+    $supplier = PosSupplier::factory()->create(['company_id' => $this->company->id]);
     
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'transaction_code' => 'PO-ABC-123',
         'supplier_id' => $supplier->id,
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'transaction_code' => 'PO-XYZ-789',
         'supplier_id' => $supplier->id,
         'company_id' => $this->company->id,
@@ -210,21 +210,21 @@ it('can search purchase transactions by transaction code', function () {
 });
 
 it('can search purchase transactions by supplier name', function () {
-    $supplier1 = Supplier::factory()->create([
+    $supplier1 = PosSupplier::factory()->create([
         'name' => 'PT Sumber Makmur',
         'company_id' => $this->company->id,
     ]);
-    $supplier2 = Supplier::factory()->create([
+    $supplier2 = PosSupplier::factory()->create([
         'name' => 'CV Maju Jaya',
         'company_id' => $this->company->id,
     ]);
     
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'supplier_id' => $supplier1->id,
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'supplier_id' => $supplier2->id,
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
@@ -238,12 +238,12 @@ it('can search purchase transactions by supplier name', function () {
 });
 
 it('can search purchase transactions by supplier name with case insensitive', function () {
-    $supplier = Supplier::factory()->create([
+    $supplier = PosSupplier::factory()->create([
         'name' => 'PT SUMBER MAKMUR',
         'company_id' => $this->company->id,
     ]);
     
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'supplier_id' => $supplier->id,
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
@@ -257,18 +257,18 @@ it('can search purchase transactions by supplier name with case insensitive', fu
 });
 
 it('can search purchase transactions by transaction code and supplier name together', function () {
-    $supplier = Supplier::factory()->create([
+    $supplier = PosSupplier::factory()->create([
         'name' => 'PT Sumber Makmur',
         'company_id' => $this->company->id,
     ]);
     
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'transaction_code' => 'PO-ABC-123',
         'supplier_id' => $supplier->id,
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'transaction_code' => 'PO-DEF-456',
         'supplier_id' => $supplier->id,
         'company_id' => $this->company->id,
@@ -292,19 +292,19 @@ it('can filter by created_by_uuid', function () {
     ]);
 
     // Transaksi oleh owner (user utama)
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'supplier_id' => $this->supplier->id,
         'created_by'  => $this->user->id,
         'company_id'  => $this->company->id,
     ]);
 
     // Transaksi oleh admin lain
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'supplier_id' => $this->supplier->id,
         'created_by'  => $admin->id,
         'company_id'  => $this->company->id,
     ]);
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'supplier_id' => $this->supplier->id,
         'created_by'  => $admin->id,
         'company_id'  => $this->company->id,
@@ -323,12 +323,12 @@ it('returns all purchase transactions when created_by_uuid is not provided', fun
         'company_id' => $this->company->id,
     ]);
 
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'supplier_id' => $this->supplier->id,
         'created_by'  => $this->user->id,
         'company_id'  => $this->company->id,
     ]);
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'supplier_id' => $this->supplier->id,
         'created_by'  => $admin->id,
         'company_id'  => $this->company->id,
@@ -342,7 +342,7 @@ it('returns all purchase transactions when created_by_uuid is not provided', fun
 });
 
 it('returns empty when created_by_uuid has no purchase transactions', function () {
-    PurchaseTransaction::factory()->create([
+    PosPurchaseTransaction::factory()->create([
         'supplier_id' => $this->supplier->id,
         'created_by'  => $this->user->id,
         'company_id'  => $this->company->id,
@@ -382,7 +382,7 @@ it('can create a purchase transaction', function () {
         ]);
 
     // Status harus PAID
-    expect($response->json('data.transaction_status'))->toBe(TransactionStatus::PAID->value);
+    expect($response->json('data.transaction_status'))->toBe(PosTransactionStatus::PAID->value);
 });
 
 it('stock increases after purchase transaction', function () {
@@ -629,7 +629,7 @@ it('returns 422 when buy_price is negative', function () {
 it('returns 422 when supplier belongs to other company', function () {
     $otherCompany = Company::factory()->create();
     $otherUser    = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
-    $otherSupplier = Supplier::factory()->create([
+    $otherSupplier = PosSupplier::factory()->create([
         'company_id' => $otherCompany->id,
         'created_by' => $otherUser->id,
     ]);
@@ -646,7 +646,7 @@ it('returns 422 when supplier belongs to other company', function () {
 it('returns 422 when product belongs to other company', function () {
     $otherCompany = Company::factory()->create();
     $otherUser    = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
-    $otherProduct = Product::factory()->create([
+    $otherProduct = PosProduct::factory()->create([
         'company_id' => $otherCompany->id,
         'created_by' => $otherUser->id,
     ]);
@@ -717,7 +717,7 @@ it('rolls back when error occurs during store', function () {
     // Simulasi error dengan product dari company lain
     $otherCompany  = Company::factory()->create();
     $otherUser     = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
-    $otherProduct  = Product::factory()->create([
+    $otherProduct  = PosProduct::factory()->create([
         'company_id' => $otherCompany->id,
         'created_by' => $otherUser->id,
     ]);
@@ -750,7 +750,7 @@ it('returns 401 when not authenticated on store', function () {
 // =============================
 
 it('can get purchase transaction detail', function () {
-    $transaction = PurchaseTransaction::factory()->create([
+    $transaction = PosPurchaseTransaction::factory()->create([
         'supplier_id' => $this->supplier->id,
         'created_by'  => $this->user->id,
         'company_id'  => $this->company->id,
@@ -771,12 +771,12 @@ it('returns 404 when transaction not found on show', function () {
 it('returns 404 when accessing transaction from other company', function () {
     $otherCompany = Company::factory()->create();
     $otherUser    = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
-    $otherSupplier = Supplier::factory()->create([
+    $otherSupplier = PosSupplier::factory()->create([
         'company_id' => $otherCompany->id,
         'created_by' => $otherUser->id,
     ]);
 
-    $transaction = PurchaseTransaction::factory()->create([
+    $transaction = PosPurchaseTransaction::factory()->create([
         'supplier_id' => $otherSupplier->id,
         'created_by'  => $otherUser->id,
         'company_id'  => $otherCompany->id,
@@ -804,7 +804,7 @@ it('can cancel a purchase transaction', function () {
     $this->actingAs($this->user)
         ->patchJson("/api/v1/purchase-transactions/{$ulid}/cancel")
         ->assertStatus(200)
-        ->assertJsonPath('data.transaction_status', TransactionStatus::CANCEL->value);
+        ->assertJsonPath('data.transaction_status', PosTransactionStatus::CANCEL->value);
 
     // Stok harus kembali berkurang
     expect($this->product->fresh()->stock)->toBe($stockAfterPurchase - 5);
@@ -827,8 +827,8 @@ it('stock_mutation ADJUST_OUT is created after cancel', function () {
 });
 
 it('returns 422 when cancelling already cancelled transaction', function () {
-    $transaction = PurchaseTransaction::factory()->create([
-        'transaction_status' => TransactionStatus::CANCEL,
+    $transaction = PosPurchaseTransaction::factory()->create([
+        'transaction_status' => PosTransactionStatus::CANCEL,
         'supplier_id'        => $this->supplier->id,
         'created_by'         => $this->user->id,
         'company_id'         => $this->company->id,
@@ -843,12 +843,12 @@ it('returns 422 when cancelling already cancelled transaction', function () {
 it('returns 404 when cancelling transaction from other company', function () {
     $otherCompany  = Company::factory()->create();
     $otherUser     = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
-    $otherSupplier = Supplier::factory()->create([
+    $otherSupplier = PosSupplier::factory()->create([
         'company_id' => $otherCompany->id,
         'created_by' => $otherUser->id,
     ]);
 
-    $transaction = PurchaseTransaction::factory()->create([
+    $transaction = PosPurchaseTransaction::factory()->create([
         'supplier_id' => $otherSupplier->id,
         'created_by'  => $otherUser->id,
         'company_id'  => $otherCompany->id,
@@ -860,7 +860,7 @@ it('returns 404 when cancelling transaction from other company', function () {
 });
 
 it('returns 401 when not authenticated on cancel', function () {
-    $transaction = PurchaseTransaction::factory()->create([
+    $transaction = PosPurchaseTransaction::factory()->create([
         'supplier_id' => $this->supplier->id,
         'created_by'  => $this->user->id,
         'company_id'  => $this->company->id,
@@ -942,8 +942,8 @@ it('cancel creates ADJUST_OUT stock mutation for each item', function () {
 });
 
 it('returns 422 when cancelling non-PAID transaction', function () {
-    $transaction = PurchaseTransaction::factory()->create([
-        'transaction_status' => TransactionStatus::PENDING,
+    $transaction = PosPurchaseTransaction::factory()->create([
+        'transaction_status' => PosTransactionStatus::PENDING,
         'supplier_id'        => $this->supplier->id,
         'created_by'         => $this->user->id,
         'company_id'         => $this->company->id,

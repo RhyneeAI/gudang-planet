@@ -2,14 +2,14 @@
 
 namespace Database\Seeders;
 
-use App\Enums\PaymentType;
+use App\Enums\PosPaymentType;
 use App\Enums\Role;
-use App\Models\Category;
+use App\Models\PosCategory;
 use App\Models\Company;
-use App\Models\Customer;
-use App\Models\CustomerType;
-use App\Models\Product;
-use App\Models\Unit;
+use App\Models\PosCustomer;
+use App\Models\PosCustomerType;
+use App\Models\PosProduct;
+use App\Models\PosUnit;
 use App\Models\User;
 use Database\Seeders\Concerns\SeedsSalesTransactions;
 use Illuminate\Database\Seeder;
@@ -55,22 +55,22 @@ class SalesRevenueReportSeeder extends Seeder
             ]
         );
 
-        $category = Category::firstOrCreate(
+        $category = PosCategory::firstOrCreate(
             ['name' => 'Kebutuhan Rumah', 'company_id' => $company->id],
             ['uuid' => (string) Str::uuid(), 'created_by' => $owner->id]
         );
 
-        $unit = Unit::firstOrCreate(
+        $unit = PosUnit::firstOrCreate(
             ['name' => 'Pcs', 'company_id' => $company->id],
             ['uuid' => (string) Str::uuid(), 'created_by' => $owner->id]
         );
 
-        $customerType = CustomerType::firstOrCreate(
+        $customerType = PosCustomerType::firstOrCreate(
             ['type' => 'Regular', 'company_id' => $company->id],
             ['uuid' => (string) Str::uuid(), 'discount' => 0, 'created_by' => $owner->id]
         );
 
-        $budi = Customer::firstOrCreate(
+        $budi = PosCustomer::firstOrCreate(
             ['name' => 'Budi', 'company_id' => $company->id],
             ['uuid' => (string) Str::uuid(), 'customer_type_id' => $customerType->id, 'created_by' => $owner->id]
         );
@@ -80,7 +80,7 @@ class SalesRevenueReportSeeder extends Seeder
             ['name' => 'Teh Botol Sosro', 'code' => 'TSJ-002', 'base' => 4000, 'sell' => 6000, 'stock' => 300],
             ['name' => 'Sabun Lifebuoy', 'code' => 'TSJ-003', 'base' => 3000, 'sell' => 5000, 'stock' => 200],
         ])->mapWithKeys(function (array $data) use ($company, $owner, $category, $unit) {
-            $product = Product::updateOrCreate(
+            $product = PosProduct::updateOrCreate(
                 ['code' => $data['code'], 'company_id' => $company->id],
                 [
                     'uuid' => (string) Str::uuid(),
@@ -102,7 +102,7 @@ class SalesRevenueReportSeeder extends Seeder
             [
                 'date' => '2026-01-05',
                 'customer_id' => $budi->id,
-                'payment' => PaymentType::CASH,
+                'payment' => PosPaymentType::CASH,
                 'discount' => 0,
                 'created_by' => $kasir->id,
                 'items' => [
@@ -113,7 +113,7 @@ class SalesRevenueReportSeeder extends Seeder
             [
                 'date' => '2026-02-14',
                 'customer_id' => null,
-                'payment' => PaymentType::TRANSFER,
+                'payment' => PosPaymentType::TRANSFER,
                 'discount' => 5000,
                 'created_by' => $kasir->id,
                 'items' => [
@@ -124,7 +124,7 @@ class SalesRevenueReportSeeder extends Seeder
             [
                 'date' => '2026-03-07',
                 'customer_id' => $budi->id,
-                'payment' => PaymentType::QRIS,
+                'payment' => PosPaymentType::QRIS,
                 'discount' => 0,
                 'created_by' => $kasir->id,
                 'items' => [

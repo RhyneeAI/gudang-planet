@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\CustomerType;
+use App\Models\PosCustomerType;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -16,7 +16,7 @@ class CustomerTypeSeeder extends Seeder
         ];
 
         foreach ($types as $type) {
-            CustomerType::firstOrCreate(
+            PosCustomerType::firstOrCreate(
                 ['type' => $type['type'], 'company_id' => 1],
                 [
                     'uuid' => (string) Str::uuid(),

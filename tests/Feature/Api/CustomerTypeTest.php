@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\Company;
-use App\Models\Customer;
-use App\Models\CustomerType;
+use App\Models\PosCustomer;
+use App\Models\PosCustomerType;
 use App\Models\User;
 
 beforeEach(function () {
@@ -17,7 +17,7 @@ beforeEach(function () {
 // =============================
 
 it('can get customer type list', function () {
-    CustomerType::factory(5)->create([
+    PosCustomerType::factory(5)->create([
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);
@@ -39,11 +39,11 @@ it('only returns customer types belonging to the same company', function () {
     $otherCompany = Company::factory()->create();
     $otherUser    = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
 
-    CustomerType::factory(3)->create([
+    PosCustomerType::factory(3)->create([
         'company_id' => $otherCompany->id,
         'created_by' => $otherUser->id,
     ]);
-    CustomerType::factory(2)->create([
+    PosCustomerType::factory(2)->create([
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);
@@ -56,7 +56,7 @@ it('only returns customer types belonging to the same company', function () {
 });
 
 it('can paginate customer types with custom per_page', function () {
-    CustomerType::factory(20)->create([
+    PosCustomerType::factory(20)->create([
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);
@@ -69,12 +69,12 @@ it('can paginate customer types with custom per_page', function () {
 });
 
 it('can search customer types by type name', function () {
-    $vipCustomerType = CustomerType::factory()->create([
+    $vipCustomerType = PosCustomerType::factory()->create([
         'type'       => 'VIP',
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);
-    CustomerType::factory()->create([
+    PosCustomerType::factory()->create([
         'type'       => 'Regular',
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
@@ -131,7 +131,7 @@ it('returns 422 when type exceeds 255 characters', function () {
 });
 
 it('returns 422 when type is duplicate within same company', function () {
-    CustomerType::factory()->create([
+    PosCustomerType::factory()->create([
         'type'       => 'VIP',
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
@@ -146,7 +146,7 @@ it('allows same type name in different companies', function () {
     $otherCompany = Company::factory()->create();
     $otherUser    = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
 
-    CustomerType::factory()->create([
+    PosCustomerType::factory()->create([
         'type'       => 'VIP',
         'company_id' => $otherCompany->id,
         'created_by' => $otherUser->id,
@@ -159,7 +159,7 @@ it('allows same type name in different companies', function () {
 
 it('allows same type name if other company deleted', function () {
     // Buat customer type dengan company sendiri, lalu soft delete
-    $customerType = CustomerType::factory()->create([
+    $customerType = PosCustomerType::factory()->create([
         'type'       => 'VIP',
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
@@ -176,7 +176,7 @@ it('allows same type name if other company deleted', function () {
 
 it('prevents duplicate type name if still exists (not deleted)', function () {
     // Buat customer type aktif
-    CustomerType::factory()->create([
+    PosCustomerType::factory()->create([
         'type'       => 'VIP',
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
@@ -216,7 +216,7 @@ it('returns 401 when not authenticated on store', function () {
 // =============================
 
 it('can get customer type detail', function () {
-    $customerType = CustomerType::factory()->create([
+    $customerType = PosCustomerType::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);
@@ -237,7 +237,7 @@ it('returns 404 when customer type not found on show', function () {
 it('returns 404 when accessing customer type from other company', function () {
     $otherCompany = Company::factory()->create();
     $otherUser    = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
-    $customerType = CustomerType::factory()->create([
+    $customerType = PosCustomerType::factory()->create([
         'company_id' => $otherCompany->id,
         'created_by' => $otherUser->id,
     ]);
@@ -252,7 +252,7 @@ it('returns 404 when accessing customer type from other company', function () {
 // =============================
 
 it('can update a customer type', function () {
-    $customerType = CustomerType::factory()->create([
+    $customerType = PosCustomerType::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);
@@ -268,7 +268,7 @@ it('can update a customer type', function () {
 });
 
 it('can partial update (PATCH) without sending all fields', function () {
-    $customerType = CustomerType::factory()->create([
+    $customerType = PosCustomerType::factory()->create([
         'type'       => 'Original',
         'discount'   => 5,
         'company_id' => $this->company->id,
@@ -283,13 +283,13 @@ it('can partial update (PATCH) without sending all fields', function () {
 });
 
 it('returns 422 when updating with duplicate type', function () {
-    CustomerType::factory()->create([
+    PosCustomerType::factory()->create([
         'type'       => 'VIP',
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);
 
-    $customerType = CustomerType::factory()->create([
+    $customerType = PosCustomerType::factory()->create([
         'type'       => 'Regular',
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
@@ -303,7 +303,7 @@ it('returns 422 when updating with duplicate type', function () {
 it('returns 404 when updating customer type from other company', function () {
     $otherCompany = Company::factory()->create();
     $otherUser    = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
-    $customerType = CustomerType::factory()->create([
+    $customerType = PosCustomerType::factory()->create([
         'company_id' => $otherCompany->id,
         'created_by' => $otherUser->id,
     ]);
@@ -324,7 +324,7 @@ it('returns 404 when updating non-existent customer type', function () {
 // =============================
 
 it('can delete a customer type', function () {
-    $customerType = CustomerType::factory()->create([
+    $customerType = PosCustomerType::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);
@@ -334,16 +334,16 @@ it('can delete a customer type', function () {
         ->assertStatus(200)
         ->assertJsonPath('success', true);
 
-    expect(CustomerType::withTrashed()->find($customerType->id)->deleted_at)->not->toBeNull();
+    expect(PosCustomerType::withTrashed()->find($customerType->id)->deleted_at)->not->toBeNull();
 });
 
 it('returns 422 when deleting customer type that has customers', function () {
-    $customerType = CustomerType::factory()->create([
+    $customerType = PosCustomerType::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);
 
-    Customer::factory()->create([
+    PosCustomer::factory()->create([
         'customer_type_id' => $customerType->id,
         'created_by'       => $this->user->id,
         'company_id'       => $this->company->id,
@@ -358,7 +358,7 @@ it('returns 422 when deleting customer type that has customers', function () {
 it('returns 404 when deleting customer type from other company', function () {
     $otherCompany = Company::factory()->create();
     $otherUser    = User::factory()->owner()->create(['company_id' => $otherCompany->id]);
-    $customerType = CustomerType::factory()->create([
+    $customerType = PosCustomerType::factory()->create([
         'company_id' => $otherCompany->id,
         'created_by' => $otherUser->id,
     ]);
@@ -375,7 +375,7 @@ it('returns 404 when deleting non-existent customer type', function () {
 });
 
 it('returns 401 when not authenticated on delete', function () {
-    $customerType = CustomerType::factory()->create([
+    $customerType = PosCustomerType::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->user->id,
     ]);

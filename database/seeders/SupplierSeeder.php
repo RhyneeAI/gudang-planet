@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Supplier;
+use App\Models\PosSupplier;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -16,7 +16,7 @@ class SupplierSeeder extends Seeder
         ];
 
         foreach ($suppliers as $supplier) {
-            Supplier::firstOrCreate(
+            PosSupplier::firstOrCreate(
                 ['name' => $supplier['name'], 'company_id' => 1],
                 [
                     'uuid' => (string) Str::uuid(),

@@ -2,8 +2,8 @@
 
 use App\Models\Company;
 use App\Models\User;
-use App\Models\Product;
-use App\Models\SalesTransaction;
+use App\Models\PosProduct;
+use App\Models\PosSalesTransaction;
 use App\Enums\Role;
 
 beforeEach(function () {
@@ -326,7 +326,7 @@ it('returns 422 when deleting marketing that has products', function () {
         'company_id' => $this->company->id,
     ]);
 
-    $product = Product::factory()->create([
+    $product = PosProduct::factory()->create([
         'company_id' => $this->company->id,
     ]);
     
@@ -347,7 +347,7 @@ it('returns 422 when deleting marketing that has transactions', function () {
         'company_id' => $this->company->id,
     ]);
 
-    SalesTransaction::factory()->create([
+    PosSalesTransaction::factory()->create([
         'created_by' => $marketing->id,
         'company_id'  => $this->company->id,
     ]);

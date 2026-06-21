@@ -2,15 +2,15 @@
 
 namespace Database\Seeders;
 
-use App\Enums\PaymentType;
+use App\Enums\PosPaymentType;
 use App\Enums\Role;
-use App\Models\Category;
+use App\Models\PosCategory;
 use App\Models\Company;
-use App\Models\Customer;
-use App\Models\CustomerType;
-use App\Models\MarketingProduct;
-use App\Models\Product;
-use App\Models\Unit;
+use App\Models\PosCustomer;
+use App\Models\PosCustomerType;
+use App\Models\PosMarketingProduct;
+use App\Models\PosProduct;
+use App\Models\PosUnit;
 use App\Models\User;
 use Database\Seeders\Concerns\SeedsSalesTransactions;
 use Illuminate\Database\Seeder;
@@ -68,22 +68,22 @@ class MarketingCommissionReportSeeder extends Seeder
             ]
         );
 
-        $category = Category::firstOrCreate(
+        $category = PosCategory::firstOrCreate(
             ['name' => 'Produk Umum', 'company_id' => $company->id],
             ['uuid' => (string) Str::uuid(), 'created_by' => $owner->id]
         );
 
-        $unit = Unit::firstOrCreate(
+        $unit = PosUnit::firstOrCreate(
             ['name' => 'Pcs', 'company_id' => $company->id],
             ['uuid' => (string) Str::uuid(), 'created_by' => $owner->id]
         );
 
-        $customerType = CustomerType::firstOrCreate(
+        $customerType = PosCustomerType::firstOrCreate(
             ['type' => 'Regular', 'company_id' => $company->id],
             ['uuid' => (string) Str::uuid(), 'discount' => 0, 'created_by' => $owner->id]
         );
 
-        $andi = Customer::firstOrCreate(
+        $andi = PosCustomer::firstOrCreate(
             ['name' => 'Andi', 'company_id' => $company->id],
             ['uuid' => (string) Str::uuid(), 'customer_type_id' => $customerType->id, 'created_by' => $owner->id]
         );
@@ -93,7 +93,7 @@ class MarketingCommissionReportSeeder extends Seeder
             ['name' => 'Shampoo Clear', 'code' => 'TMJ-002', 'base' => 12000, 'sell' => 18000, 'marketing' => 15000, 'stock' => 80],
             ['name' => 'Rinso', 'code' => 'TMJ-003', 'base' => 10000, 'sell' => 14000, 'marketing' => 12000, 'stock' => 60],
         ])->mapWithKeys(function (array $data) use ($company, $owner, $category, $unit) {
-            $product = Product::updateOrCreate(
+            $product = PosProduct::updateOrCreate(
                 ['code' => $data['code'], 'company_id' => $company->id],
                 [
                     'uuid' => (string) Str::uuid(),
@@ -114,7 +114,7 @@ class MarketingCommissionReportSeeder extends Seeder
 
         foreach ([$abdillah, $ahmad] as $marketing) {
             foreach ($products as $product) {
-                MarketingProduct::firstOrCreate(
+                PosMarketingProduct::firstOrCreate(
                     [
                         'product_id' => $product->id,
                         'marketing_id' => $marketing->id,
@@ -129,7 +129,7 @@ class MarketingCommissionReportSeeder extends Seeder
             [
                 'date' => '2026-01-15',
                 'customer_id' => $andi->id,
-                'payment' => PaymentType::CASH,
+                'payment' => PosPaymentType::CASH,
                 'discount' => 0,
                 'created_by' => $abdillah->id,
                 'items' => [
@@ -140,7 +140,7 @@ class MarketingCommissionReportSeeder extends Seeder
             [
                 'date' => '2026-02-10',
                 'customer_id' => null,
-                'payment' => PaymentType::TRANSFER,
+                'payment' => PosPaymentType::TRANSFER,
                 'discount' => 2000,
                 'created_by' => $abdillah->id,
                 'items' => [
@@ -150,7 +150,7 @@ class MarketingCommissionReportSeeder extends Seeder
             [
                 'date' => '2026-01-08',
                 'customer_id' => $andi->id,
-                'payment' => PaymentType::CASH,
+                'payment' => PosPaymentType::CASH,
                 'discount' => 0,
                 'created_by' => $ahmad->id,
                 'items' => [
@@ -160,7 +160,7 @@ class MarketingCommissionReportSeeder extends Seeder
             [
                 'date' => '2026-03-22',
                 'customer_id' => null,
-                'payment' => PaymentType::QRIS,
+                'payment' => PosPaymentType::QRIS,
                 'discount' => 0,
                 'created_by' => $ahmad->id,
                 'items' => [

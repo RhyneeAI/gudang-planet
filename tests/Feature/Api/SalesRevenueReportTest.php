@@ -1,16 +1,16 @@
 <?php
 
-use App\Enums\PaymentType;
+use App\Enums\PosPaymentType;
 use App\Enums\Role;
-use App\Enums\TransactionStatus;
-use App\Models\Category;
+use App\Enums\PosTransactionStatus;
+use App\Models\PosCategory;
 use App\Models\Company;
-use App\Models\Customer;
-use App\Models\CustomerType;
-use App\Models\Product;
-use App\Models\SalesDetail;
-use App\Models\SalesTransaction;
-use App\Models\Unit;
+use App\Models\PosCustomer;
+use App\Models\PosCustomerType;
+use App\Models\PosProduct;
+use App\Models\PosSalesDetail;
+use App\Models\PosSalesTransaction;
+use App\Models\PosUnit;
 use App\Models\User;
 use Illuminate\Support\Str;
 
@@ -21,26 +21,26 @@ beforeEach(function () {
         'role'       => Role::MARKETING,
         'company_id' => $this->company->id,
     ]);
-    $this->customerType = CustomerType::factory()->create([
+    $this->customerType = PosCustomerType::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->owner->id,
     ]);
-    $this->customer     = Customer::factory()->create([
+    $this->customer     = PosCustomer::factory()->create([
         'customer_type_id' => $this->customerType->id,
         'created_by'       => $this->owner->id,
         'company_id'       => $this->company->id,
     ]);
-    $this->category     = Category::factory()->create([
+    $this->category     = PosCategory::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->owner->id,
     ]);
-    $this->unit         = Unit::factory()->create([
+    $this->unit         = PosUnit::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->owner->id,
     ]);
 
     // Product A: base price 3000, sales price 5000
-    $this->productA = Product::factory()->create([
+    $this->productA = PosProduct::factory()->create([
         'code'        => 'TEST-A',
         'base_price'  => 3000,
         'sales_price' => 5000,
@@ -52,7 +52,7 @@ beforeEach(function () {
     ]);
 
     // Product B: base price 10000, sales price 15000
-    $this->productB = Product::factory()->create([
+    $this->productB = PosProduct::factory()->create([
         'code'        => 'TEST-B',
         'base_price'  => 10000,
         'sales_price' => 15000,
@@ -65,24 +65,24 @@ beforeEach(function () {
 });
 
 // Helper buat transaksi + detail
-function makeSalesRevTrx(array $data): SalesTransaction
+function makeSalesRevTrx(array $data): PosSalesTransaction
 {
-    $trx = SalesTransaction::create([
+    $trx = PosSalesTransaction::create([
         'ulid'               => Str::ulid(),
         'transaction_code'   => 'SO-REV-' . Str::random(6),
         'transaction_date'   => $data['date'],
         'discount'           => $data['discount'] ?? 0,
         'total'              => $data['total'],
         'paid'               => $data['total'],
-        'payment_type'       => PaymentType::CASH,
-        'transaction_status' => $data['status'] ?? TransactionStatus::PAID,
+        'payment_type'       => PosPaymentType::CASH,
+        'transaction_status' => $data['status'] ?? PosTransactionStatus::PAID,
         'customer_id'        => $data['customer_id'] ?? null,
         'created_by'         => $data['created_by'],
         'company_id'         => $data['company_id'],
     ]);
 
     foreach ($data['items'] as $item) {
-        SalesDetail::create([
+        PosSalesDetail::create([
             'ulid'            => Str::ulid(),
             'sale_id'         => $trx->id,
             'product_id'      => $item['product_id'],
@@ -297,7 +297,7 @@ it('includes pending transactions', function () {
     makeSalesRevTrx([
         'date'       => '2026-03-01',
         'total'      => 15000,
-        'status'     => TransactionStatus::PAID,
+        'status'     => PosTransactionStatus::PAID,
         'created_by' => $this->cashier->id,
         'company_id' => $this->company->id,
         'items'      => [
@@ -308,7 +308,7 @@ it('includes pending transactions', function () {
     makeSalesRevTrx([
         'date'       => '2026-03-05',
         'total'      => 25000,
-        'status'     => TransactionStatus::PROCESS,
+        'status'     => PosTransactionStatus::PROCESS,
         'created_by' => $this->cashier->id,
         'company_id' => $this->company->id,
         'items'      => [
@@ -332,7 +332,7 @@ it('excludes cancelled transactions', function () {
     makeSalesRevTrx([
         'date'       => '2026-03-01',
         'total'      => 15000,
-        'status'     => TransactionStatus::PAID,
+        'status'     => PosTransactionStatus::PAID,
         'created_by' => $this->cashier->id,
         'company_id' => $this->company->id,
         'items'      => [
@@ -343,7 +343,7 @@ it('excludes cancelled transactions', function () {
     makeSalesRevTrx([
         'date'       => '2026-03-05',
         'total'      => 25000,
-        'status'     => TransactionStatus::CANCEL,
+        'status'     => PosTransactionStatus::CANCEL,
         'created_by' => $this->cashier->id,
         'company_id' => $this->company->id,
         'items'      => [
@@ -377,7 +377,7 @@ it('only includes transactions from same company', function () {
         ],
     ]);
 
-    $otherProduct = Product::factory()->create([
+    $otherProduct = PosProduct::factory()->create([
         'company_id' => $otherCompany->id,
         'created_by' => $otherUser->id,
         'base_price' => 5000,

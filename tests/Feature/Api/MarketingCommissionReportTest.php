@@ -1,17 +1,17 @@
 <?php
 
-use App\Enums\PaymentType;
+use App\Enums\PosPaymentType;
 use App\Enums\Role;
-use App\Enums\TransactionStatus;
-use App\Models\Category;
+use App\Enums\PosTransactionStatus;
+use App\Models\PosCategory;
 use App\Models\Company;
-use App\Models\Customer;
-use App\Models\CustomerType;
-use App\Models\MarketingProduct;
-use App\Models\Product;
-use App\Models\SalesDetail;
-use App\Models\SalesTransaction;
-use App\Models\Unit;
+use App\Models\PosCustomer;
+use App\Models\PosCustomerType;
+use App\Models\PosMarketingProduct;
+use App\Models\PosProduct;
+use App\Models\PosSalesDetail;
+use App\Models\PosSalesTransaction;
+use App\Models\PosUnit;
 use App\Models\User;
 use Illuminate\Support\Str;
 
@@ -20,26 +20,26 @@ beforeEach(function () {
     $this->owner        = User::factory()->owner()->create(['company_id' => $this->company->id]);
     $this->marketing    = User::factory()->marketing()->create(['company_id' => $this->company->id]);
     $this->marketing2   = User::factory()->marketing()->create(['company_id' => $this->company->id]);
-    $this->customerType = CustomerType::factory()->create([
+    $this->customerType = PosCustomerType::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->owner->id,
     ]);
-    $this->customer = Customer::factory()->create([
+    $this->customer = PosCustomer::factory()->create([
         'customer_type_id' => $this->customerType->id,
         'created_by'       => $this->owner->id,
         'company_id'       => $this->company->id,
     ]);
-    $this->category = Category::factory()->create([
+    $this->category = PosCategory::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->owner->id,
     ]);
-    $this->unit = Unit::factory()->create([
+    $this->unit = PosUnit::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->owner->id,
     ]);
 
     // Product A: base 5000
-    $this->productA = Product::factory()->create([
+    $this->productA = PosProduct::factory()->create([
         'base_price'  => 5000,
         'sales_price' => 8000,
         'marketing_price' => 7000,
@@ -51,7 +51,7 @@ beforeEach(function () {
     ]);
 
     // Product B: base 12000
-    $this->productB = Product::factory()->create([
+    $this->productB = PosProduct::factory()->create([
         'base_price'  => 12000,
         'sales_price' => 18000,
         'marketing_price' => 15000,
@@ -64,14 +64,14 @@ beforeEach(function () {
 
     // marketing_price A = 6500 → komisi/unit = 1500
     // marketing_price B = 15000 → komisi/unit = 3000
-    // MarketingProduct::factory()->create([
+    // PosMarketingProduct::factory()->create([
     //     'product_id'      => $this->productA->id,
     //     'marketing_id'    => $this->marketing->id,
     //     'marketing_price' => 6500,
     //     'company_id'      => $this->company->id,
     // ]);
 
-    // MarketingProduct::factory()->create([
+    // PosMarketingProduct::factory()->create([
     //     'product_id'      => $this->productB->id,
     //     'marketing_id'    => $this->marketing->id,
     //     'marketing_price' => 15000,
@@ -80,24 +80,24 @@ beforeEach(function () {
 });
 
 // Helper buat transaksi + detail
-function makeSalesTrx(array $data): SalesTransaction
+function makeSalesTrx(array $data): PosSalesTransaction
 {
-    $trx = SalesTransaction::create([
+    $trx = PosSalesTransaction::create([
         'ulid'               => Str::ulid(),
         'transaction_code'   => 'SO-TEST-' . Str::random(6),
         'transaction_date'   => $data['date'],
         'discount'           => $data['discount'] ?? 0,
         'total'              => $data['total'],
         'paid'               => $data['total'],
-        'payment_type'       => $data['payment_type'] ?? PaymentType::CASH,
-        'transaction_status' => $data['status'] ?? TransactionStatus::PAID,
+        'payment_type'       => $data['payment_type'] ?? PosPaymentType::CASH,
+        'transaction_status' => $data['status'] ?? PosTransactionStatus::PAID,
         'customer_id'        => $data['customer_id'] ?? null,
         'created_by'         => $data['created_by'], // ← marketing yang buat transaksi
         'company_id'         => $data['company_id'],
     ]);
 
     foreach ($data['items'] as $item) {
-        SalesDetail::create([
+        PosSalesDetail::create([
             'ulid'       => Str::ulid(),
             'sale_id'    => $trx->id,
             'product_id' => $item['product_id'],
@@ -272,7 +272,7 @@ it('accumulates commission correctly across multiple transactions', function () 
 // =============================
 
 it('calculates commission all for each marketing', function () {
-    MarketingProduct::factory()->create([
+    PosMarketingProduct::factory()->create([
         'product_id'      => $this->productA->id,
         'marketing_id'    => $this->marketing2->id,
         'marketing_price' => 7000, 
@@ -349,7 +349,7 @@ it('only includes transactions within date range', function () {
 });
 
 it('filters by specific marketing_uuid', function () {
-    MarketingProduct::factory()->create([
+    PosMarketingProduct::factory()->create([
         'product_id'      => $this->productA->id,
         'marketing_id'    => $this->marketing2->id,
         'marketing_price' => 7000,
@@ -414,7 +414,7 @@ it('excludes cancelled transactions from commission', function () {
         'date'        => '2026-03-01',
         'discount'    => 0,
         'total'       => 9000,
-        'status'      => TransactionStatus::PAID,
+        'status'      => PosTransactionStatus::PAID,
         'created_by'  => $this->marketing->id,
         'customer_id' => $this->customer->id,
         'company_id'  => $this->company->id,
@@ -428,7 +428,7 @@ it('excludes cancelled transactions from commission', function () {
         'date'        => '2026-03-10',
         'discount'    => 0,
         'total'       => 9000,
-        'status'      => TransactionStatus::CANCEL,
+        'status'      => PosTransactionStatus::CANCEL,
         'created_by'  => $this->marketing->id,
         'customer_id' => $this->customer->id,
         'company_id'  => $this->company->id,
@@ -455,7 +455,7 @@ it('returns zero when no transactions in range', function () {
 });
 
 // it('skips commission for product not in marketing_products', function () {
-//     $productC = Product::factory()->create([
+//     $productC = PosProduct::factory()->create([
 //         'base_price'  => 8000,
 //         'sales_price' => 12000,
 //         'stock'       => 100,
@@ -692,7 +692,7 @@ it('commission is zero when discount exceeds gross commission (with item discoun
 // =============================
 
 it('calculates commission correctly for multiple marketing with discounts', function () {
-    MarketingProduct::factory()->create([
+    PosMarketingProduct::factory()->create([
         'product_id'      => $this->productA->id,
         'marketing_id'    => $this->marketing2->id,
         'marketing_price' => 7000, 

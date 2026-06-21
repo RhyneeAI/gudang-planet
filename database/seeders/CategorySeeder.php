@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Category;
+use App\Models\PosCategory;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -11,7 +11,7 @@ class CategorySeeder extends Seeder
     public function run(): void
     {
         foreach (['Makanan', 'Minuman'] as $name) {
-            Category::firstOrCreate(
+            PosCategory::firstOrCreate(
                 ['name' => $name, 'company_id' => 1],
                 [
                     'uuid' => (string) Str::uuid(),
