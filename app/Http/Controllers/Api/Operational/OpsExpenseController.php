@@ -122,7 +122,7 @@ class OpsExpenseController extends Controller
     {
         $companyId = $request->user()->company_id;
         $expenseType = OpsExpenseType::from($request->expense_type);
-        $proofFiles = $this->storeProofFilesFromRequest($request);
+        $proofFiles = $this->storeProofFilesFromRequest($request, 'expense');
 
         if ($expenseType === OpsExpenseType::INTERNAL) {
             $expense = OpsExpense::create([
@@ -237,7 +237,7 @@ class OpsExpenseController extends Controller
                 'amount' => $request->amount,
                 'date' => $request->date,
                 'payment_method' => $request->payment_method,
-                'proof_files' => $this->storeProofFilesFromRequest($request),
+                'proof_files' => $this->storeProofFilesFromRequest($request, 'expense'),
                 'note' => $request->note,
                 'expense_type' => OpsExpenseType::INTERNAL,
                 'mandor_id' => $user->id,
@@ -297,7 +297,7 @@ class OpsExpenseController extends Controller
             'note' => $request->note,
         ];
 
-        if ($proofFiles = $this->replaceProofFilesOnUpdate($request, $opsExpense)) {
+        if ($proofFiles = $this->replaceProofFilesOnUpdate($request, $opsExpense, 'expense')) {
             $updateData['proof_files'] = $proofFiles;
         }
 
@@ -337,7 +337,7 @@ class OpsExpenseController extends Controller
             'note' => $request->note,
         ];
 
-        if ($proofFiles = $this->replaceProofFilesOnUpdate($request, $opsExpense)) {
+        if ($proofFiles = $this->replaceProofFilesOnUpdate($request, $opsExpense, 'expense')) {
             $updateData['proof_files'] = $proofFiles;
         }
 
@@ -428,7 +428,7 @@ class OpsExpenseController extends Controller
                 'note' => $request->note,
             ];
 
-            if ($proofFiles = $this->replaceProofFilesOnUpdate($request, $opsExpense)) {
+            if ($proofFiles = $this->replaceProofFilesOnUpdate($request, $opsExpense, 'expense')) {
                 $updateData['proof_files'] = $proofFiles;
             }
 

@@ -8,9 +8,9 @@ use Illuminate\Http\Request;
 
 trait HandlesOperationalProofFiles
 {
-    protected function storeProofFilesFromRequest(Request $request): array
+    protected function storeProofFilesFromRequest(Request $request, string $type = 'income'): array
     {
-        return $this->fileService->storeProofs($this->proofUploadsFromRequest($request));
+        return $this->fileService->storeProofs($this->proofUploadsFromRequest($request), $type);
     }
 
     protected function proofUploadsFromRequest(Request $request): array
@@ -33,7 +33,7 @@ trait HandlesOperationalProofFiles
         return $request->hasFile('proof_files') || $request->hasFile('proof_file');
     }
 
-    protected function replaceProofFilesOnUpdate(Request $request, OpsIncome|OpsExpense $record): ?array
+    protected function replaceProofFilesOnUpdate(Request $request, OpsIncome|OpsExpense $record, string $type = 'income'): ?array
     {
         $uploads = $this->proofUploadsFromRequest($request);
 
@@ -43,7 +43,7 @@ trait HandlesOperationalProofFiles
 
         $this->fileService->deleteProofs($record->proof_files ?? []);
 
-        return $this->fileService->storeProofs($uploads);
+        return $this->fileService->storeProofs($uploads, $type);
     }
 
     protected function deleteRecordProofs(OpsIncome|OpsExpense $record): void

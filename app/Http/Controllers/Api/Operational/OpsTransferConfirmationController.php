@@ -116,7 +116,7 @@ class OpsTransferConfirmationController extends Controller
             $opsTransferConfirmation->update([
                 'status' => OpsTransferConfirmationStatus::CONFIRMED,
                 'confirmed_amount' => $confirmedAmount,
-                'mandor_proof_file' => $this->fileService->storeProof($request->file('mandor_proof_file')),
+                'mandor_proof_file' => $this->fileService->storeProof($request->file('mandor_proof_file'), 'transfer'),
                 'confirmed_at' => now(),
                 'note' => $request->note,
                 'confirmed_by' => $user->id,
