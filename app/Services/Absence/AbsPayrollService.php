@@ -4,6 +4,7 @@ namespace App\Services\Absence;
 
 use App\Enums\AbsPayrollStatus;
 use App\Models\AbsAttendance;
+use App\Models\AbsBonus;
 use App\Models\AbsDeduction;
 use App\Models\AbsEmployeeProfile;
 use App\Models\AbsPayrollPeriod;
@@ -82,16 +83,18 @@ class AbsPayrollService
 
         $gross = round((float) $period->daily_rate * $totalDays, 2);
         $deduction = (float) $period->deductions()->sum('amount');
-        $net = round($gross - $deduction, 2);
+        $bonus = (float) $period->bonuses()->sum('amount');
+        $net = round($gross + $bonus - $deduction, 2);
 
         $period->update([
             'total_days' => $totalDays,
             'gross_salary' => $gross,
             'total_deduction' => $deduction,
+            'total_bonus' => $bonus,
             'net_salary' => $net,
         ]);
 
-        return $period->fresh(['deductions', 'user.absEmployeeProfile.subCompany', 'user.absEmployeeProfile.shift']);
+        return $period->fresh(['deductions', 'bonuses', 'user.absEmployeeProfile.subCompany', 'user.absEmployeeProfile.shift']);
     }
 
     public function addDeduction(
@@ -142,6 +145,52 @@ class AbsPayrollService
         $this->recalculate($period);
     }
 
+    public function addBonus(
+        AbsPayrollPeriod $period,
+        User $admin,
+        string $reason,
+        float $amount,
+    ): AbsBonus {
+        if ($period->isFinal()) {
+            throw new \RuntimeException(__('absence.payroll.already_final'));
+        }
+
+        $bonus = AbsBonus::create([
+            'abs_payroll_period_id' => $period->id,
+            'user_id' => $period->user_id,
+            'reason' => $reason,
+            'amount' => $amount,
+            'created_by' => $admin->id,
+            'company_id' => $period->company_id,
+        ]);
+
+        return $bonus;
+    }
+
+    public function updateBonus(AbsBonus $bonus, array $data): AbsBonus
+    {
+        if ($bonus->payrollPeriod->isFinal()) {
+            throw new \RuntimeException(__('absence.payroll.already_final'));
+        }
+
+        $bonus->update($data);
+
+        $this->recalculate($bonus->payrollPeriod);
+
+        return $bonus->fresh();
+    }
+
+    public function deleteBonus(AbsBonus $bonus): void
+    {
+        if ($bonus->payrollPeriod->isFinal()) {
+            throw new \RuntimeException(__('absence.payroll.already_final'));
+        }
+
+        $period = $bonus->payrollPeriod;
+        $bonus->delete();
+        $this->recalculate($period);
+    }
+
     public function finalize(AbsPayrollPeriod $period): AbsPayrollPeriod
     {
         if ($period->isFinal()) {
@@ -151,14 +200,14 @@ class AbsPayrollService
         $period = $this->recalculate($period);
         $period->update(['status' => AbsPayrollStatus::FINAL]);
 
-        return $period->fresh(['deductions', 'user']);
+        return $period->fresh(['deductions', 'bonuses', 'user']);
     }
 
     public function unlock(AbsPayrollPeriod $period): AbsPayrollPeriod
     {
         $period->update(['status' => AbsPayrollStatus::DRAFT]);
 
-        return $period->fresh(['deductions', 'user']);
+        return $period->fresh(['deductions', 'bonuses', 'user']);
     }
 
     public function generateSlipPdf(AbsPayrollPeriod $period)
@@ -168,6 +217,7 @@ class AbsPayrollService
             'user.absEmployeeProfile.shift',
             'user.absEmployeeProfile.jabatan',
             'deductions',
+            'bonuses',
         ]);
 
         $attendances = AbsAttendance::where('user_id', $period->user_id)
@@ -198,10 +248,16 @@ class AbsPayrollService
             'total_deduction' => (float) $period->total_deduction,
             'net_salary' => (float) $period->net_salary,
             'status' => $period->status->value,
+            'total_bonus' => (float) $period->total_bonus,
             'deductions' => $period->deductions->map(fn($d) => [
                 'ulid' => (string) $d->ulid,
                 'reason' => $d->reason,
                 'amount' => (float) $d->amount,
+            ])->values(),
+            'bonuses' => $period->bonuses->map(fn($b) => [
+                'ulid' => (string) $b->ulid,
+                'reason' => $b->reason,
+                'amount' => (float) $b->amount,
             ])->values(),
         ];
     }

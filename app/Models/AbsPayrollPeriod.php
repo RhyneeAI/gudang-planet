@@ -23,6 +23,7 @@ class AbsPayrollPeriod extends Model
         'total_days',
         'gross_salary',
         'total_deduction',
+        'total_bonus',
         'net_salary',
         'notes',
         'status',
@@ -34,6 +35,7 @@ class AbsPayrollPeriod extends Model
         'daily_rate' => 'decimal:2',
         'gross_salary' => 'decimal:2',
         'total_deduction' => 'decimal:2',
+        'total_bonus' => 'decimal:2',
         'net_salary' => 'decimal:2',
         'status' => AbsPayrollStatus::class,
         'generated_at' => 'datetime',
@@ -62,6 +64,11 @@ class AbsPayrollPeriod extends Model
     public function deductions()
     {
         return $this->hasMany(AbsDeduction::class, 'abs_payroll_period_id');
+    }
+
+    public function bonuses()
+    {
+        return $this->hasMany(AbsBonus::class, 'abs_payroll_period_id');
     }
 
     public function isFinal(): bool

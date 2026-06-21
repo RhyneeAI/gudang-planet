@@ -51,6 +51,9 @@ return [
         'deduction_stored' => 'Deduction added successfully.',
         'deduction_updated' => 'Deduction updated successfully.',
         'deduction_deleted' => 'Deduction deleted successfully.',
+        'bonus_stored' => 'Bonus added successfully.',
+        'bonus_updated' => 'Bonus updated successfully.',
+        'bonus_deleted' => 'Bonus deleted successfully.',
         'already_final' => 'Payroll is finalized and cannot be modified.',
         'profile_not_found' => 'Employee profile not found.',
         'jabatan_not_assigned' => 'Job position is not assigned to employee profile.',
@@ -66,6 +69,8 @@ return [
         'payroll_exported' => 'Payroll report exported successfully.',
         'deductions' => 'Deduction report retrieved successfully.',
         'deductions_exported' => 'Deduction report exported successfully.',
+        'bonuses' => 'Bonus report retrieved successfully.',
+        'bonuses_exported' => 'Bonus report exported successfully.',
         'employees' => 'Employees report retrieved successfully',
         'employees_exported' => 'Employees report exported successfully'
     ],

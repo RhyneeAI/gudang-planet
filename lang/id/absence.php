@@ -51,6 +51,9 @@ return [
         'deduction_stored' => 'Pemotongan gaji berhasil ditambahkan.',
         'deduction_updated' => 'Pemotongan gaji berhasil diperbarui.',
         'deduction_deleted' => 'Pemotongan gaji berhasil dihapus.',
+        'bonus_stored' => 'Bonus gaji berhasil ditambahkan.',
+        'bonus_updated' => 'Bonus gaji berhasil diperbarui.',
+        'bonus_deleted' => 'Bonus gaji berhasil dihapus.',
         'already_final' => 'Payroll sudah difinalisasi dan tidak dapat diubah.',
         'profile_not_found' => 'Profil karyawan tidak ditemukan.',
         'jabatan_not_assigned' => 'Jabatan belum ditetapkan pada profil karyawan.',
@@ -66,6 +69,8 @@ return [
         'payroll_exported' => 'Laporan payroll berhasil diekspor.',
         'deductions' => 'Laporan pemotongan gaji berhasil diambil.',
         'deductions_exported' => 'Laporan pemotongan gaji berhasil diekspor.',
+        'bonuses' => 'Laporan bonus gaji berhasil diambil.',
+        'bonuses_exported' => 'Laporan bonus gaji berhasil diekspor.',
         'employees' => 'Laporan karyawan berhasil diambil',
         'employees_exported' => 'Laporan karyawan berhasil diekspor'
     ],

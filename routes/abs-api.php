@@ -36,6 +36,7 @@ Route::prefix('v1/abs')->middleware(['throttle:api'])->group(function () {
             Route::get('/reports/attendance', [AbsReportController::class, 'attendance']);
             Route::get('/reports/payroll', [AbsReportController::class, 'payroll']);
             Route::get('/reports/deductions', [AbsReportController::class, 'deductions']);
+            Route::get('/reports/bonuses', [AbsReportController::class, 'bonuses']);
             Route::get('/reports/employees', [AbsReportController::class, 'employees']);
         });
 
@@ -49,6 +50,9 @@ Route::prefix('v1/abs')->middleware(['throttle:api'])->group(function () {
             Route::post('/payrolls/{absPayrollPeriod}/deductions', [AbsPayrollController::class, 'storeDeduction']);
             Route::put('/payrolls/{absPayrollPeriod}/deductions/{absDeduction}', [AbsPayrollController::class, 'updateDeduction']);
             Route::delete('/payrolls/{absPayrollPeriod}/deductions/{absDeduction}', [AbsPayrollController::class, 'destroyDeduction']);
+            Route::post('/payrolls/{absPayrollPeriod}/bonuses', [AbsPayrollController::class, 'storeBonus']);
+            Route::put('/payrolls/{absPayrollPeriod}/bonuses/{absBonus}', [AbsPayrollController::class, 'updateBonus']);
+            Route::delete('/payrolls/{absPayrollPeriod}/bonuses/{absBonus}', [AbsPayrollController::class, 'destroyBonus']);
             Route::put('/payrolls/{absPayrollPeriod}/finalize', [AbsPayrollController::class, 'finalize']);
             Route::put('/payrolls/{absPayrollPeriod}/unlock', [AbsPayrollController::class, 'unlock']);
         });
