@@ -25,10 +25,30 @@
             <tr><th>Total Hari Hadir</th><td>{{ $period->total_days }} hari</td></tr>
             <tr><th>Harga Per Hari</th><td>Rp {{ number_format((float) $period->daily_rate, 0, ',', '.') }}</td></tr>
             <tr><th>Gaji Kotor</th><td>Rp {{ number_format((float) $period->gross_salary, 0, ',', '.') }}</td></tr>
+            <tr><th>Total Bonus</th><td>Rp {{ number_format((float) $period->total_bonus, 0, ',', '.') }}</td></tr>
             <tr><th>Total Pemotongan</th><td>Rp {{ number_format((float) $period->total_deduction, 0, ',', '.') }}</td></tr>
             <tr><th><strong>Gaji Bersih</strong></th><td><strong>Rp {{ number_format((float) $period->net_salary, 0, ',', '.') }}</strong></td></tr>
         </table>
     </div>
+
+    @if($period->bonuses->isNotEmpty())
+    <div class="section">
+        <h3>Rincian Bonus</h3>
+        <table>
+            <thead>
+                <tr><th>Alasan</th><th class="right">Nominal</th></tr>
+            </thead>
+            <tbody>
+                @foreach($period->bonuses as $bonus)
+                <tr>
+                    <td>{{ $bonus->reason }}</td>
+                    <td class="right">Rp {{ number_format((float) $bonus->amount, 0, ',', '.') }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+    @endif
 
     @if($period->deductions->isNotEmpty())
     <div class="section">

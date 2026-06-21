@@ -4,6 +4,7 @@ namespace App\Services\Absence;
 
 use App\Exports\AbsReportExport;
 use App\Models\AbsAttendance;
+use App\Models\AbsBonus;
 use App\Models\AbsDeduction;
 use App\Models\AbsPayrollPeriod;
 use App\Models\User;
@@ -39,7 +40,7 @@ class AbsReportService
         $month = (int) $request->input('month', now(config('absence.timezone'))->month);
         $year = (int) $request->input('year', now(config('absence.timezone'))->year);
 
-        return AbsPayrollPeriod::with(['user', 'deductions'])
+        return AbsPayrollPeriod::with(['user', 'deductions', 'bonuses'])
             ->where('period_month', $month)
             ->where('period_year', $year)
             ->when(
@@ -89,6 +90,28 @@ class AbsReportService
                         );
                 });
             })
+            ->orderByDesc('created_at');
+    }
+
+    public function bonusesQuery(Request $request): Builder
+    {
+        return AbsBonus::with([
+            'user.absEmployeeProfile.subCompany',
+            'payrollPeriod',
+            'createdBy',
+        ])
+            ->when($request->date_from, fn($q, $date) => $q->whereDate('created_at', '>=', $date))
+            ->when($request->date_to, fn($q, $date) => $q->whereDate('created_at', '<=', $date))
+            ->when(
+                $request->sub_company_uuid,
+                fn($q, $uuid) =>
+                $q->whereHas('user.absEmployeeProfile.subCompany', fn($sc) => $sc->where('uuid', $uuid))
+            )
+            ->when(
+                $request->employee_uuid,
+                fn($q, $uuid) =>
+                $q->whereHas('user', fn($u) => $u->where('uuid', $uuid))
+            )
             ->orderByDesc('created_at');
     }
 
@@ -168,10 +191,31 @@ class AbsReportService
             (float) $record->daily_rate,
             (int) $record->total_days,
             (float) $record->gross_salary,
+            (float) $record->total_bonus,
             (float) $record->total_deduction,
             (float) $record->net_salary,
             $this->formatStatusLabel($record->status?->value),
         ]);
+    }
+
+    public function bonusesExportRows(Collection $records): Collection
+    {
+        return $records->map(function (AbsBonus $record, $index) {
+            $subCompany = $record->user?->absEmployeeProfile?->subCompany;
+
+            return [
+                $index + 1,
+                $record->created_at?->toDateString(),
+                $record->user?->name,
+                $subCompany?->name,
+                $record->payrollPeriod
+                    ? sprintf('%02d/%d', $record->payrollPeriod->period_month, $record->payrollPeriod->period_year)
+                    : '',
+                $record->reason,
+                (float) $record->amount,
+                $record->createdBy?->name,
+            ];
+        });
     }
 
     public function deductionsExportRows(Collection $records): Collection

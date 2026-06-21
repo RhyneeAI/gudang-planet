@@ -17,6 +17,7 @@ class AbsPayrollPeriodResource extends JsonResource
             'total_days' => (int) $this->total_days,
             'gross_salary' => (float) $this->gross_salary,
             'total_deduction' => (float) $this->total_deduction,
+            'total_bonus' => (float) $this->total_bonus,
             'net_salary' => (float) $this->net_salary,
             'status' => $this->status?->value,
             'notes' => $this->notes,
@@ -26,6 +27,7 @@ class AbsPayrollPeriodResource extends JsonResource
                 'name' => $this->user->name,
             ]),
             'deductions' => AbsDeductionResource::collection($this->whenLoaded('deductions')),
+            'bonuses' => AbsBonusResource::collection($this->whenLoaded('bonuses')),
         ];
     }
 }

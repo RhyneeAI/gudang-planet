@@ -39,7 +39,7 @@ class AbsEmployeePayrollController extends Controller
             'success' => true,
             'message' => __('absence.payroll.detail'),
             'data' => new AbsPayrollPeriodResource(
-                $absPayrollPeriod->load(['deductions', 'user'])
+                $absPayrollPeriod->load(['deductions', 'bonuses', 'user'])
             ),
         ]);
     }

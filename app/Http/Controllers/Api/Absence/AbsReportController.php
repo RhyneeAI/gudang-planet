@@ -8,6 +8,7 @@ use App\Http\Requests\Absence\AbsEmployeeReportRequest;
 use App\Http\Requests\Absence\AbsPayrollReportRequest;
 use App\Http\Resources\Absence\AbsAttendanceResource;
 use App\Http\Resources\Absence\AbsPayrollPeriodResource;
+use App\Http\Resources\Absence\AbsReportBonusResource;
 use App\Http\Resources\Absence\AbsReportDeductionResource;
 use App\Http\Resources\Operational\OpsEmployeeResource;
 use App\Services\Absence\AbsReportService;
@@ -56,7 +57,7 @@ class AbsReportController extends Controller
             $export = $this->reportService->storeXlsxExport(
                 $request,
                 'laporan-payroll-' . now()->format('YmdHis') . '.xlsx',
-                ['No', 'Periode', 'Karyawan', 'Tarif Harian', 'Total Hari', 'Gaji Kotor', 'Total Potongan', 'Gaji Bersih', 'Status'],
+                ['No', 'Periode', 'Karyawan', 'Tarif Harian', 'Total Hari', 'Gaji Kotor', 'Total Bonus', 'Total Potongan', 'Gaji Bersih', 'Status'],
                 $this->reportService->payrollExportRows($records),
             );
 
@@ -102,6 +103,35 @@ class AbsReportController extends Controller
             'success' => true,
             'message' => __('absence.reports.deductions'),
             'data' => AbsReportDeductionResource::collection($records),
+        ]);
+    }
+
+    public function bonuses(AbsAttendanceReportRequest $request)
+    {
+        $query = $this->reportService->bonusesQuery($request);
+
+        if ($this->reportService->isExportMode($request)) {
+            $records = $query->get();
+            $export = $this->reportService->storeXlsxExport(
+                $request,
+                'laporan-bonus-' . now()->format('YmdHis') . '.xlsx',
+                ['No', 'Tanggal', 'Karyawan', 'Cabang', 'Periode Payroll', 'Alasan', 'Nominal', 'Dibuat Oleh'],
+                $this->reportService->bonusesExportRows($records),
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => __('absence.reports.bonuses_exported'),
+                'data' => $export,
+            ]);
+        }
+
+        $records = $query->paginate($request->input('per_page', 50));
+
+        return response()->json([
+            'success' => true,
+            'message' => __('absence.reports.bonuses'),
+            'data' => AbsReportBonusResource::collection($records),
         ]);
     }
 
