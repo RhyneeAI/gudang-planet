@@ -1,0 +1,617 @@
+---
+name: gudang-planet
+description: Backend Laravel multi-modul (POS, Operasional, Absensi) untuk Gudang Planet. Gunakan skill ini saat mengembangkan fitur, refactor, atau debug di project ini — termasuk role/permission, pricing marketing MLM, modul operasional cabang (wallet, transfer, payment_method, batas waktu input/edit), dan absensi dengan geofencing + payroll.
+---
+
+# Gudang Planet — Project Skill (v1.3)
+
+## Ringkasan Project
+
+**Gudang Planet** adalah backend API Laravel 12 (PHP 8.3) untuk manajemen bisnis multi-modul dalam satu monorepo backend. Satu aplikasi backend melayani **3 modul aplikasi** yang dibedakan oleh prefix (tabel, model, controller, enum, views) dan folder terpisah untuk kode non-database.
+
+
+| Modul           | Status                  | Route prefix                       | Table prefix       | Namespace                                          |
+| --------------- | ----------------------- | ---------------------------------- | ------------------ | -------------------------------------------------- |
+| **POS**         | Aktif (sedang direvisi) | `/api/v1/`*                        | *(tanpa prefix)*   | `App\Http\Controllers\Api\`                        |
+| **Operasional** | Sudah diimplementasi    | `/api/v1/operational/`*            | `ops_`             | `App\Http\Controllers\Api\Operational\`            |
+| **Absensi**     | Belum ada (greenfield)  | `/api/v1/attendance/`* *(rencana)* | `att_` *(rencana)* | `App\Http\Controllers\Api\Attendance\` *(rencana)* |
+
+
+**Stack:** Laravel Sanctum (auth), Pest (testing), DomPDF + Maatwebsite Excel (laporan), Laravel Telescope (monitoring dev).
+
+---
+
+## Hierarki Role & Akses
+
+```php
+enum Role: string
+{
+    case SUPERADMIN = 'SUPERADMIN';
+    case OWNER = 'OWNER';
+    case ADMIN = 'ADMIN';
+    case MARKETING_LEADER = 'MARKETING_LEADER';
+    case MARKETING = 'MARKETING';
+    case KASIR = 'KASIR';
+    case MANDOR = 'MANDOR';
+    case KARYAWAN = 'KARYAWAN';
+}
+```
+
+### Garis bawahi: OWNER vs SUPERADMIN
+
+
+| Aspek                          | SUPERADMIN      | OWNER                                   |
+| ------------------------------ | --------------- | --------------------------------------- |
+| Akses data semua modul         | ✅ Full          | ✅ Read-only rekapitulasi                |
+| POS transaksi                  | ✅               | ❌ Read-only                             |
+| Operasional transaksi          | ✅               | ❌ Read-only                             |
+| Absensi transaksi              | ✅               | ❌ Read-only                             |
+| **Telescope / monitoring dev** | ✅ **Eksklusif** | ❌                                       |
+| **Monitoring data bisnis**     | ✅               | ✅ **Read-only** (tanpa akses Telescope) |
+
+
+> **Implementasi saat ini:** Middleware `role` di `CheckRole.php`. OWNER dan SUPERADMIN sering digabung di route group yang sama — perlu dipisah akses transaksi vs rekapitulasi untuk OWNER sesuai brief.
+
+### Pemetaan Role per Modul
+
+
+| Role             | POS                                       | Operasional                                  | Absensi                    |
+| ---------------- | ----------------------------------------- | -------------------------------------------- | -------------------------- |
+| SUPERADMIN       | Full + Telescope                          | Full                                         | Full                       |
+| OWNER            | **Read-only** rekapitulasi                | **Read-only** rekapitulasi                   | **Read-only** rekapitulasi |
+| ADMIN            | Master data (no transaksi POS)            | Pemasukan/pengeluaran pusat, audit mandor    | Konfigurasi, penggajian    |
+| MARKETING_LEADER | Diinput admin, dapat komisi MLM           | —                                            | Absen (jika pegawai)       |
+| MARKETING        | Diinput admin, dapat komisi MLM           | —                                            | Absen (jika pegawai)       |
+| KASIR            | **Satu-satunya role transaksi penjualan** | —                                            | Absen (jika pegawai)       |
+| MANDOR           | —                                         | Pemasukan/pengeluaran cabang, dompet digital | Absen (jika pegawai)       |
+| KARYAWAN         | —                                         | —                                            | Absen                      |
+
+
+**Absensi:** Berlaku untuk semua role **kecuali** OWNER dan SUPERADMIN.
+
+---
+
+## Arsitektur Multi-Tenancy
+
+- Setiap user terikat ke `company_id` (kantor pusat).
+- Global scope `CompanyScope` otomatis filter query berdasarkan `auth()->user()->company_id`.
+- `**Company`** = kantor pusat (milik OWNER).
+- `**SubCompany**` = cabang (**tabel terpisah**, FK `company_id` + `mandor_id`) — dipakai **Operasional & Absensi saja**.
+- Satu mandor bisa kelola banyak sub-company (max via `ops_configurations` key `max_sub_companies_per_mandor`, default **10**).
+
+### Scope Modul vs Company / SubCompany
+
+
+| Modul           | Nginduk ke                   | Catatan                                                                              |
+| --------------- | ---------------------------- | ------------------------------------------------------------------------------------ |
+| **POS**         | `**Company` saja**           | Tidak ada `sub_company_id`. Semua master data & transaksi POS scoped ke kantor pusat |
+| **Operasional** | `Company` + `**SubCompany`** | Admin = pusat; Mandor = cabang (sub-company)                                         |
+| **Absensi**     | `Company` + `**SubCompany`** | Pegawai pusat → Company; pegawai cabang → SubCompany                                 |
+
+
+> **POS tidak pernah nginduk ke SubCompany.** Jangan tambahkan FK `sub_company_id` pada model/tabel POS.
+
+### Identifikator Publik
+
+
+| Tipe                              | Trait     | Route binding key |
+| --------------------------------- | --------- | ----------------- |
+| Master data (product, user, dll.) | `HasUuid` | `{model:uuid}`    |
+| Transaksi (sales, purchase, dll.) | `HasUlid` | `{model:ulid}`    |
+
+
+### Response API Standar
+
+```json
+{ "success": true|false, "message": "...", "data": { ... } }
+```
+
+Gunakan `__('module.key')` untuk i18n (`lang/en/`, `lang/id/`).
+
+---
+
+## Modul 1: POS (Point of Sale)
+
+### Scope Tenancy
+
+**POS nginduk langsung ke `Company` (kantor pusat) — bukan SubCompany.**
+
+- Semua entitas POS (`products`, `sales_transactions`, `customers`, dll.) hanya punya `company_id`.
+- Tidak ada relasi ke sub-company / cabang.
+- User POS (KASIR, ADMIN, MARKETING, dll.) terikat ke `company_id` pusat.
+
+### Status Saat Ini
+
+Modul POS sudah berjalan dengan entitas: products, categories, units, suppliers, customers, stock mutations, purchase/sales transactions, installments, marketing products, dan laporan komisi.
+
+**File kunci:**
+
+- Routes: `routes/api.php`
+- Controllers: `app/Http/Controllers/Api/`
+- Models: `app/Models/` (Product, SalesTransaction, MarketingProduct, dll.)
+- Laporan: `app/Http/Controllers/Api/ReportController.php`
+
+### Perubahan Direncanakan (v1)
+
+#### 1. Pricing Marketing — 4 Level (Model MLM)
+
+**v1 (legacy):** Product punya 3 harga + fitur **edit harga per transaksi** (`sell_price` bebas di cart).
+
+**v2 (target):** Hapus edit harga per transaksi. Hanya **4 harga default** per product:
+
+
+| Level                  | Field             | Deskripsi                                               |
+| ---------------------- | ----------------- | ------------------------------------------------------- |
+| Harga Modal Perusahaan | `base_price`      | Biaya dasar perusahaan                                  |
+| Harga Marketing Leader | `leader_price`    | Floor price leader                                      |
+| Harga Marketing        | `marketing_price` | Floor price marketing bawah                             |
+| Harga Jual             | `sell_price`      | Harga jual default product *(bukan edit per line item)* |
+
+
+> Field `sales_price` lama digantikan/direstruktur menjadi `leader_price` + `sell_price` sesuai migrasi v2.
+
+**Alur keuntungan (MLM) — sudah dikonfirmasi:**
+
+
+| Penerima             | Rumus margin                     | Kapan dapat                                                                   |
+| -------------------- | -------------------------------- | ----------------------------------------------------------------------------- |
+| **Perusahaan**       | `leader_price − base_price`      | **Selalu** (termasuk saat leader yang terkait transaksi)                      |
+| **Marketing Leader** | `leader_price − marketing_price` | Saat leader terkait transaksi **atau** marketing bawah yang terkait transaksi |
+| **Marketing**        | `sell_price − marketing_price`   | Hanya saat **marketing bawah** (role MARKETING) yang terkait transaksi        |
+
+
+**Saat MARKETING_LEADER terkait transaksi:**
+
+- Perusahaan tetap dapat margin `leader_price − base_price`.
+- Leader dapat margin `leader_price − marketing_price`.
+- Marketing bawah **tidak** dapat bagian.
+
+#### 1b. Hierarki Marketing (tetap)
+
+Setiap user role **MARKETING** wajib punya `**leader_id`** (FK → user role MARKETING_LEADER). Hierarki fixed, bukan pilih leader per transaksi.
+
+```
+users
+├── role = MARKETING_LEADER  (leader_id = null)
+└── role = MARKETING         (leader_id → MARKETING_LEADER)
+```
+
+Saat transaksi penjualan, kasir **wajib pilih marketing** (MARKETING atau MARKETING_LEADER). Sistem resolve komisi dari role + `leader_id` terkait user tersebut.
+
+#### 2. Perubahan Actor Transaksi
+
+
+| Sebelum                                      | Sesudah (v2)                                                                |
+| -------------------------------------------- | --------------------------------------------------------------------------- |
+| Role MARKETING melakukan transaksi penjualan | Role **KASIR** (+ SUPERADMIN) melakukan transaksi                           |
+| Admin ikut transaksi                         | **ADMIN tidak bisa transaksi** (POS maupun operasional transaksi penjualan) |
+| Marketing self-service                       | Marketing & Marketing Leader **hanya diinput oleh Admin** (CRUD user)       |
+
+
+**Siapa boleh transaksi POS:**
+
+
+| Role                         | Transaksi                                         |
+| ---------------------------- | ------------------------------------------------- |
+| SUPERADMIN                   | ✅ Full                                            |
+| OWNER                        | ❌ Read-only (rekapitulasi saja)                   |
+| ADMIN                        | ❌ **Tidak bisa transaksi**                        |
+| KASIR                        | ✅ Penjualan (dan transaksi POS lain sesuai route) |
+| MARKETING / MARKETING_LEADER | ❌ Tidak transaksi                                 |
+
+
+**Alur penjualan v2:**
+
+1. Kasir login → buat transaksi penjualan.
+2. **Wajib pilih marketing** (user MARKETING atau MARKETING_LEADER).
+3. Harga diambil dari 4 default product — **tidak ada edit harga per line item**.
+4. Sistem hitung komisi dari hierarki `leader_id` + role marketing terpilih.
+5. Alur cart, payment, installment **tetap sama** — perubahan signifikan di actor (KASIR), pricing 4 level, dan hierarki MLM.
+
+#### 3. Perubahan Laporan
+
+Laporan perlu disesuaikan dengan model MLM 4 level:
+
+- `ReportController::marketingCommission` — perlu breakdown per level (perusahaan, leader, marketing).
+- `ReportController::salesRevenue` — mungkin perlu dimensi baru per marketing leader vs marketing.
+- View PDF: `resources/views/reports/`
+
+#### 4. Route & Middleware (rencana)
+
+```
+role:SUPERADMIN,OWNER,ADMIN     → master data CRUD, marketings CRUD (OWNER: read-only mutasi)
+role:SUPERADMIN,KASIR           → transaksi penjualan & pembelian (ADMIN excluded)
+role:SUPERADMIN,OWNER           → rekapitulasi/laporan (OWNER: GET/read-only saja)
+```
+
+**OWNER read-only:** Tidak ada endpoint mutasi (POST/PATCH/DELETE) untuk OWNER — hanya GET/rekapitulasi. Implement via middleware atau route group terpisah.
+
+> **Catatan implementasi:** Role `KASIR`, `MARKETING_LEADER` sudah ada di enum tapi **belum dipakai di route**. Perlu update middleware di `routes/api.php`.
+
+---
+
+## Modul 2: Operasional
+
+### Status: Sudah Diimplementasi
+
+Modul operasional mengelola keuangan cabang dengan sistem dompet digital mandor.
+
+**Konvensi kode:**
+
+- Prefix tabel: `ops_`
+- Prefix model: `Ops`* (OpsIncome, OpsExpense, OpsWallet, dll.)
+- Folder: `app/Http/Controllers/Api/Operational/`, `app/Services/Operational/`, `app/Http/Requests/Operational/`
+- Config: `config/operational.php`
+- Routes: `routes/operational-api.php` → `/api/v1/operational/*`
+
+### Entitas
+
+
+| Model                   | Tabel                      | Fungsi                                     |
+| ----------------------- | -------------------------- | ------------------------------------------ |
+| SubCompany            | sub_companies              | Cabang operasional (FK mandor_id)          |
+| OpsConfiguration        | ops_configurations         | Config per company (limit cabang, batas waktu input/edit) |
+| OpsIncome               | ops_incomes                | Pemasukan pusat (admin) / cabang (mandor) / pending transfer (admin→mandor) |
+| OpsExpense              | ops_expenses               | Pengeluaran pusat (admin INTERNAL) / transfer mandor (admin MANDOR) / cabang (mandor) |
+| OpsWallet               | ops_wallets                | Dompet digital mandor                      |
+| OpsWalletTransaction    | ops_wallet_transactions    | Ledger dompet                              |
+| OpsTransferConfirmation | ops_transfer_confirmations | Konfirmasi transfer admin → mandor         |
+| OpsNotification         | ops_notifications          | Notifikasi in-app                          |
+| OpsEditLog              | ops_edit_logs              | Audit trail edit                           |
+
+
+### Role & Alur (v2 — sudah diimplementasi)
+
+**Role:** ADMIN dan MANDOR (keduanya bisa write income/expense dengan logic berbeda). ADMIN punya otoritas audit mandor.
+
+Route tunggal per resource (`/incomes`, `/expenses`) — controller branch by role. Form Request: **`OpsIncomeRequest`** & **`OpsExpenseRequest`** (satu file per resource, store + update, kondisi role di dalamnya — pola sama `CategoryRequest`).
+
+#### Admin — Pemasukan (`POST /incomes`)
+
+- Pencatatan pemasukan **kantor pusat** (`source_type: INTERNAL`).
+- `mandor_uuid` & `sub_company_uuid` **opsional** (hanya atribusi, bukan transfer).
+- **Tidak** membuat `OpsTransferConfirmation`.
+
+#### Admin — Pengeluaran (`POST /expenses`)
+
+Dua cabang via `expense_type`:
+
+| `expense_type` | Perilaku |
+| -------------- | -------- |
+| `INTERNAL` | Pengeluaran pusat saja (tanpa mandor/sub_company) |
+| `MANDOR` | Transfer ke mandor → buat `OpsExpense` + linked `OpsIncome` (`source_type: MANDOR`) + `OpsTransferConfirmation` PENDING + notifikasi mandor |
+
+Field wajib saat `MANDOR`: `mandor_uuid`, `sub_company_uuid`. Link expense→income: kolom `transfer_income_id` di `ops_expenses`.
+
+#### Admin → Mandor: Transfer Dana
+
+```
+1. Admin POST expense expense_type=MANDOR ke mandor + sub_company
+2. Sistem buat income pending + transfer confirmation + notifikasi mandor
+3. Mandor confirm/reject via /transfer-confirmations/{uuid}/confirm|reject
+4. Confirm → kredit dompet digital mandor (mandor dapat sesuaikan `confirmed_amount` saat confirm)
+```
+
+> Transfer **bukan** lewat admin income — hanya lewat admin expense `MANDOR`.
+
+#### Mandor — Pemasukan (`POST /incomes`)
+
+- **Cabang sendiri:** `sub_company_uuid` wajib → `INTERNAL` + langsung kredit wallet.
+- **Dari admin:** `source_type: MANDOR` — read-only untuk mandor; dikonfirmasi via transfer confirmation.
+
+#### Mandor — Pengeluaran (`POST /expenses`)
+
+- Hanya pengeluaran **internal cabang** (`expense_type: INTERNAL`, auto-set).
+- Field wajib: `sub_company_uuid`, `name`, `amount`, `date`, `payment_method`, bukti (`proof_files[]` atau legacy `proof_file`).
+- Debit wallet; block jika saldo tidak cukup + notifikasi admin.
+
+#### Field transaksi income & expense (store + update)
+
+| Field | Keterangan |
+| ----- | ---------- |
+| `name`, `amount`, `date` | Wajib |
+| `payment_method` | Wajib — enum `TRANSFER` \| `CASH` (`App\Enums\OpsPaymentMethod`) |
+| `proof_files[]` | 1–3 gambar (jpg/jpeg/png/webp, max 10MB/file). Legacy `proof_file` (1 file) masih didukung |
+| `note` | Opsional |
+| `reason` | Opsional — disarankan saat update (audit log) |
+
+Response API: `proof_files` (array URL) + `proof_file` (URL pertama, backward compat) + `payment_method`.
+
+### Batas Waktu Input & Edit
+
+Dikelola via **`ops_configurations`** (per `company_id`) dengan fallback `config/operational.php`. Service: `OpsOperationalConfigService`.
+
+| Key config | Default | Arti |
+| ---------- | ------- | ---- |
+| `income_store_backdate_days` | 3 | Input pemasukan max **H-3** |
+| `income_edit_days_after_create` | 3 | Edit pemasukan sampai **H+3** setelah `created_at` |
+| `expense_store_backdate_days` | 1 | Input pengeluaran max **H-1** |
+| `expense_edit_days_after_create` | 1 | Edit pengeluaran sampai **H+1** setelah `created_at` |
+| `max_sub_companies_per_mandor` | 10 | Max cabang per mandor |
+
+Validasi di controller via trait `UsesOperationalTransactionWindow`:
+
+- **Store** — tanggal transaksi tidak boleh lebih lama dari batas backdate.
+- **Update** — cek batas edit (berdasarkan `created_at`) **dan** batas backdate tanggal baru.
+
+Env override (opsional): `OPS_INCOME_STORE_BACKDATE_DAYS`, `OPS_INCOME_EDIT_DAYS_AFTER_CREATE`, `OPS_EXPENSE_STORE_BACKDATE_DAYS`, `OPS_EXPENSE_EDIT_DAYS_AFTER_CREATE`, `OPS_MAX_SUB_COMPANIES_PER_MANDOR`.
+
+### Aturan Upload Bukti
+
+- Format: **jpg, jpeg, png, webp** (bukan PDF).
+- Max **10MB** per file.
+- **1–3 gambar** per transaksi (`proof_files[]`); legacy single `proof_file` tetap diterima.
+- Helper: trait `ValidatesOperationalProofFiles` (request), `HandlesOperationalProofFiles` + `MapsOperationalProofFiles` (controller/resource).
+- Kolom DB: `proof_files` (JSON array path).
+
+### Akses Mandor & Wallet
+
+- Trait `ScopesOperationalBySubCompany`: mandor dapat akses record jika `mandor_id` record = user **atau** mandor saat ini dari cabang terkait (penting setelah reassignment cabang).
+- `OpsWalletService::getOrCreateWallet()`: reuse wallet existing by `(sub_company_id, mandor_id)` — hindari duplikat wallet setelah cabang dipindah.
+
+### API Behavior
+
+- **GET show** (income, expense, transfer-confirmation, sub-company): UUID tidak ditemukan → `data: []` (bukan 404).
+- **Admin dashboard** (`GET /dashboard/admin`): response termasuk `sub_companies[]` (ringkasan income/expense per cabang). Drill-down read-only: `GET /incomes?sub_company_uuid=...` & `GET /expenses?sub_company_uuid=...`.
+- **Telescope login** (`/telescope-admin/login`): credential pakai **phone** + password (bukan username). Hanya SUPERADMIN.
+
+### Sub-Company (sudah diimplementasi)
+
+Model `SubCompany` (`sub_companies`) sudah ada dan dipakai modul operasional:
+
+- `Company` = kantor pusat (milik OWNER).
+- **`SubCompany`** = cabang (tabel terpisah, FK `company_id` + `mandor_id`).
+- Satu **MANDOR bisa kelola banyak cabang** (many sub-companies).
+- **Limit cabang per mandor:** `ops_configurations` key `max_sub_companies_per_mandor` (fallback `config/operational.php`, default **10**).
+- Validasi saat create/assign cabang: cek jumlah sub-company mandor ≤ limit.
+
+**Alur create cabang + mandor (satu endpoint):**
+
+`POST /api/v1/sub-companies`
+
+```json
+{
+  "mandor": {
+    "name": "...",
+    "phone": "...",
+    "email": "...",
+    "address": "..."
+  },
+  "sub_company": {
+    "name": "...",
+    "address": "..."
+  }
+}
+```
+
+- `sub_company.code` auto-generate (`{company_code}-{seq}`).
+- Response create: `message` berisi phone + password; `data.credentials` juga tersedia.
+- Role write: SUPERADMIN, OWNER, ADMIN. Role read: + MANDOR (milik sendiri).
+
+**Endpoint cabang:**
+
+| Route | Role | Keterangan |
+| ----- | ---- | ---------- |
+| `POST /api/v1/sub-companies` | ADMIN, OWNER, SUPERADMIN | Buat cabang + mandor |
+| `GET /api/v1/sub-companies` | ADMIN, OWNER, SUPERADMIN, MANDOR | List cabang (+ mandor lihat milik sendiri) |
+| `GET /api/v1/sub-companies/{uuid}` | ADMIN, OWNER, SUPERADMIN, MANDOR | Detail `{ sub_company, mandor }`; not found → `data: []` |
+| `PATCH /api/v1/sub-companies/{uuid}` | ADMIN, OWNER, SUPERADMIN | Update unified mandor + sub_company |
+| `DELETE /api/v1/sub-companies/{uuid}` | ADMIN, OWNER, SUPERADMIN | Soft delete cascade (income, expense, mandor jika tidak dipakai); block jika transfer pending |
+
+**Wallet mandor (`GET /operational/wallet`):**
+
+- 1 cabang → infer otomatis tanpa query param.
+- Multi cabang → wajib `?sub_company_uuid=...` (422 field `errors.sub_company_uuid`).
+- Belum punya cabang → 422 field `errors.sub_company_uuid`.
+
+**Login mandor:** response `user.sub_companies: [{ uuid, name, code }]`.
+
+**Username:** kolom DB tidak ada; login pakai **phone**. Field `username` di response mandor = slug dari nama (display only). Password awal auto-generate: `{namatanpasasi}{3digit}`.
+
+---
+
+## Modul 3: Absensi (Greenfield)
+
+Modul absensi **belum ada** di codebase. Ikuti pola operasional sebagai referensi implementasi.
+
+### Konvensi Rencana
+
+
+| Aspek                | Konvensi                                                       |
+| -------------------- | -------------------------------------------------------------- |
+| Route prefix         | `/api/v1/attendance/`*                                         |
+| Table prefix         | `att_`                                                         |
+| Model prefix         | `Att*`                                                         |
+| Namespace controller | `App\Http\Controllers\Api\Attendance\`                         |
+| Config               | `config/attendance.php`                                        |
+| Routes file          | `routes/attendance-api.php` (daftarkan di `bootstrap/app.php`) |
+
+
+### Entitas Rencana
+
+
+| Model (rencana) | Fungsi                                                                                                                 |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| AttSubCompany   | Cabang — **tabel terpisah** (mirip Company + lat, long, radius, toleransi keterlambatan). FK `mandor_id`, `company_id` |
+| AttPosition     | Jabatan (salary/hari, jadwal hari kerja, jam kerja from-to)                                                            |
+| AttWorkSchedule | Parent data jadwal harian (auto-generate by system)                                                                    |
+| AttAttendance   | Record absensi (foto, lokasi, jam masuk/keluar, status)                                                                |
+| AttPayroll      | Riwayat penggajian bulanan                                                                                             |
+| AttPayrollItem  | Detail slip gaji (bonus, potongan manual)                                                                              |
+
+
+### Perluas Company
+
+Tambahkan ke `companies` (kantor pusat):
+
+- `latitude`, `longitude`, `radius` (meter)
+- `late_tolerance` (menit keterlambatan)
+
+Sub-company punya field yang sama.
+
+### Alur Absensi
+
+```
+1. User login (role selain OWNER/SUPERADMIN)
+2. Sistem cek: pegawai kantor pusat (Company) atau cabang (SubCompany)?
+3. User pilih kategori: Izin | Sakit | Hadir (default, tidak perlu pilihan di BE)
+4. Validasi geofencing (status Hadir):
+   - Ambil lat/long + radius dari Company atau SubCompany user
+   - Cek apakah lokasi user dalam radius
+   - Di luar radius → **BLOCK** (tidak bisa absen, tanpa approval manual)
+5. Jika valid → absen dengan foto + keterangan (opsional)
+6. Simpan: lokasi user, jam masuk, jam keluar
+7. Jam masuk: **WAJIB**
+8. Jam keluar: **boleh kosong/ditolerir** jika lupa (khusus status Hadir)
+9. Cek jam kerja dari jabatan → jika belum memenuhi: PERINGATAN saja (tidak block), catat kekurangan jam
+10. Status approval: field ada, default APPROVED
+```
+
+### Konfigurasi Awal (Admin)
+
+1. Set lat, long, radius, toleransi keterlambatan di Company/SubCompany.
+2. Buat master **Jabatan** (AttPosition):
+  - Salary per hari
+  - Jadwal hari kerja (Senin–Jumat, dll.)
+  - Jam kerja (from–to, total jam)
+  - System auto-generate parent schedule per hari
+3. Saat create user: pilih **role** + **jabatan** (strict **1 user = 1 jabatan**) + assign ke Company atau SubCompany.
+4. **Seeder wajib:** buat `AttPositionSeeder` dengan jabatan default **"Karyawan"** (strict, dipakai sebagai fallback jabatan standar).
+
+### Sistem Penggajian
+
+**Trigger: manual oleh Admin** — payroll diproses **per bulan per karyawan**, hanya saat Admin meminta/menjalankan proses penggajian (tidak auto-generate draft).
+
+
+| Komponen             | Keterangan                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Gaji harian          | Hadir × salary/hari dari jabatan; kurang jam tetap dihitung                                                  |
+| Total keterlambatan  | Kumulatif dari setiap hari                                                                                   |
+| Total kekurangan jam | Kumulatif dari setiap hari                                                                                   |
+| Rekap kehadiran      | Jumlah hadir, sakit, izin                                                                                    |
+| Bonus & potongan     | **Seluruhnya input manual oleh Admin** saat proses penggajian — tidak ada potongan otomatis untuk izin/sakit |
+| Slip gaji            | Cetak PDF (DomPDF, ikuti pola `resources/views/reports/`)                                                    |
+| Riwayat              | Simpan snapshot bulanan per karyawan                                                                         |
+
+
+> **Izin/Sakit:** Tidak ada aturan potong gaji otomatis. Admin menentukan potongan (dan bonus) manual per payroll. Rekap jumlah izin/sakit tetap ditampilkan sebagai informasi.
+
+---
+
+## Konvensi Kode (Wajib Diikuti)
+
+### Struktur Folder per Modul Baru
+
+```
+app/
+├── Enums/Att*.php                    # Enum modul absensi
+├── Http/
+│   ├── Controllers/Api/Attendance/   # Att*Controller
+│   ├── Requests/Attendance/          # Form requests
+│   └── Resources/Attendance/         # API resources
+├── Models/Att*.php                   # Model dengan prefix Att
+├── Services/Attendance/              # Business logic
+config/attendance.php
+routes/attendance-api.php
+database/migrations/                  # att_* tables
+lang/en|id/attendance.php
+resources/views/reports/attendance/   # PDF templates
+tests/Feature/Api/Attendance/         # Pest tests
+```
+
+### Pola yang Sudah Ada (Operasional = Referensi)
+
+- Service layer untuk logic kompleks (`OpsWalletService`, `OpsOperationalConfigService`, `SubCompanyService`).
+- Audit log untuk edit (`OpsEditLog` pattern) — payload auditable termasuk `payment_method`.
+- Notifikasi in-app (`OpsNotification` pattern).
+- File upload via dedicated service (`OpsFileService` pattern) + multi-file trait.
+- Enum backed string dengan `values()` (`OpsPaymentMethod`, `OpsExpenseType`, dll.).
+- Form Request untuk validasi — satu request per resource dengan branch by role (`OpsIncomeRequest`, `OpsExpenseRequest`).
+- API Resource untuk response transformation.
+- Factory + Seeder untuk testing data (`OpsConfigurationSeeder` untuk default config company).
+
+### Database
+
+- snake_case plural untuk tabel.
+- FK: `{entity}_id`.
+- Soft deletes (`deleted_at`) pada tabel bisnis.
+- `created_by` FK ke users.
+- Morph map didefinisikan di `AppServiceProvider`.
+
+### Testing
+
+- Framework: Pest.
+- Lokasi: `tests/Feature/Api/`.
+- Operasional: `OperationalIncomeTest.php`, `OperationalExpenseTest.php`, `OperationalTransferConfirmationTest.php`, `SubCompanyTest.php`.
+- Rate limit API (non-testing): auth 120/min, guest write 30/min, guest read 80/min (`AppServiceProvider`).
+
+---
+
+## Checklist Saat Mengembangkan Fitur
+
+1. **Tentukan modul** — POS / Operasional / Absensi.
+2. **Cek role** — siapa boleh akses? OWNER hanya rekapitulasi?
+3. **Ikuti prefix** — tabel, model, enum, views sesuai modul.
+4. **CompanyScope** — pastikan model bisnis pakai global scope.
+5. **Route binding** — uuid untuk master, ulid untuk transaksi.
+6. **i18n** — tambah key di `lang/en/` dan `lang/id/`.
+7. **Test** — minimal happy path + authorization test.
+8. **Laporan** — jika perlu PDF/Excel, ikuti `ReportController` pattern.
+
+---
+
+## Keputusan Product (Sudah Dikonfirmasi)
+
+
+| Topik                 | Keputusan                                                                                     |
+| --------------------- | --------------------------------------------------------------------------------------------- |
+| Hierarki marketing    | Setiap MARKETING wajib `leader_id` → MARKETING_LEADER (fixed hierarchy)                       |
+| Margin perusahaan     | `leader_price − base_price` — selalu, termasuk saat leader terkait transaksi                  |
+| Margin leader         | `leader_price − marketing_price`                                                              |
+| Margin marketing      | `sell_price − marketing_price` — hanya saat role MARKETING terkait transaksi                  |
+| Pricing v2            | 4 harga default — **tanpa edit harga per transaksi**                                          |
+| Transaksi POS         | **ADMIN tidak bisa transaksi**; KASIR (+ SUPERADMIN) yang transaksi                           |
+| OWNER akses           | **Read-only** di semua modul (GET/rekapitulasi saja)                                          |
+| POS tenancy           | **Langsung ke `Company` saja** — tidak ke SubCompany                                          |
+| SubCompany            | Tabel terpisah; untuk **Operasional & Absensi**; mandor max cabang via `ops_configurations` |
+| Backdate operasional  | **Pemasukan H-3 / edit H+3**; **Pengeluaran H-1 / edit H+1** — configurable per company |
+| Payment method        | Wajib `TRANSFER` \| `CASH` di semua create/update income & expense |
+| Bukti transaksi       | Max **3 gambar** per transaksi (jpg/jpeg/png/webp) |
+| Transfer admin→mandor | Admin input **pengeluaran** → mandor **approve/reject**; `confirmed_amount` dapat disesuaikan mandor |
+| Payroll               | **Manual per bulan** saat Admin memproses — tidak auto-generate draft                         |
+| Geofencing absensi    | Di luar radius → **block** langsung                                                           |
+| Jam absensi (Hadir)   | Masuk **wajib**; keluar **boleh ditolerir** jika lupa                                         |
+| Potongan izin/sakit   | Tidak otomatis; bonus & potongan **manual Admin** saat payroll                                |
+| Jabatan               | Strict **1 user = 1 jabatan**; seeder default **"Karyawan"**                                  |
+
+
+---
+
+## Referensi File Penting
+
+
+| Area                  | Path                                                           |
+| --------------------- | -------------------------------------------------------------- |
+| Role enum             | `app/Enums/Role.php`                                           |
+| Payment method enum   | `app/Enums/OpsPaymentMethod.php`                               |
+| Auth middleware       | `app/Http/Middleware/CheckRole.php`                            |
+| Route registration    | `bootstrap/app.php`                                            |
+| POS routes            | `routes/api.php`                                               |
+| Operational routes    | `routes/operational-api.php`                                   |
+| Company + scope       | `app/Models/Company.php`, `app/Models/Scopes/CompanyScope.php` |
+| Marketing commission  | `app/Http/Controllers/Api/ReportController.php`                |
+| SubCompany            | `app/Models/SubCompany.php`, `app/Services/SubCompanyService.php` |
+| SubCompany controller | `app/Http/Controllers/Api/SubCompanyController.php`            |
+| Ops config service    | `app/Services/Operational/OpsOperationalConfigService.php`     |
+| Ops config model      | `app/Models/OpsConfiguration.php`                              |
+| Ops mandor + cabang   | `app/Http/Controllers/Api/Operational/OpsMandorController.php` |
+| Ops Form Requests     | `app/Http/Requests/Operational/OpsIncomeRequest.php`, `OpsExpenseRequest.php` |
+| Ops proof helpers     | `ValidatesOperationalProofFiles`, `HandlesOperationalProofFiles`, `MapsOperationalProofFiles` |
+| Ops date window trait | `app/Http/Controllers/Api/Operational/UsesOperationalTransactionWindow.php` |
+| Ops mandor scope      | `app/Http/Controllers/Api/Operational/ScopesOperationalBySubCompany.php` |
+| Ops config            | `config/operational.php`                                       |
+| Ops config seeder     | `database/seeders/OpsConfigurationSeeder.php`                  |
+| Postman collection    | `docs/postman/operational-api.postman_collection.json`         |
+| Flowchart operasional | `public/flowchart_operasional.pdf`                             |
+
+
