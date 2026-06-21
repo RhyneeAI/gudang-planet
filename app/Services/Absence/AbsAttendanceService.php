@@ -9,6 +9,7 @@ use App\Models\AbsShift;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 
 class AbsAttendanceService
 {
@@ -57,7 +58,7 @@ class AbsAttendanceService
             'check_in_photo' => $this->fileService->storePhoto($photo, 'check-in'),
             'check_in_lat' => $latitude,
             'check_in_lng' => $longitude,
-            'status' => $isLate ? AbsAttendanceStatus::TERLAMBAT : AbsAttendanceStatus::HADIR,
+            'status' => $isLate ? AbsAttendanceStatus::LATE : AbsAttendanceStatus::PRESENT,
             'late_reason' => $isLate ? $lateReason : null,
             'company_id' => $user->company_id,
         ]);
@@ -92,15 +93,15 @@ class AbsAttendanceService
         }
 
         $wasLate = in_array($attendance->status, [
-            AbsAttendanceStatus::TERLAMBAT,
-            AbsAttendanceStatus::TERLAMBAT_PULANG_AWAL,
+            AbsAttendanceStatus::LATE,
+            AbsAttendanceStatus::LATE_AND_EARLY_OUT,
         ], true);
 
         $status = match (true) {
-            $wasLate && $isEarly => AbsAttendanceStatus::TERLAMBAT_PULANG_AWAL,
-            $wasLate => AbsAttendanceStatus::TERLAMBAT,
-            $isEarly => AbsAttendanceStatus::PULANG_AWAL,
-            default => AbsAttendanceStatus::HADIR,
+            $wasLate && $isEarly => AbsAttendanceStatus::LATE_AND_EARLY_OUT,
+            $wasLate => AbsAttendanceStatus::LATE,
+            $isEarly => AbsAttendanceStatus::EARLY_OUT,
+            default => AbsAttendanceStatus::PRESENT,
         };
 
         $attendance->update([
@@ -153,18 +154,37 @@ class AbsAttendanceService
         }
     }
 
+    protected function getShiftRange(AbsShift $shift, Carbon $time): array
+    {
+        $start = Carbon::parse(
+            $time->toDateString() . ' ' . $shift->start_time,
+            $time->timezone
+        );
+
+        $end = Carbon::parse(
+            $time->toDateString() . ' ' . $shift->end_time,
+            $time->timezone
+        );
+
+        if ($end->lt($start)) {
+            $end->addDay();
+        }
+
+        return [$start, $end];
+    }
+
     protected function isLate(AbsShift $shift, Carbon $time): bool
     {
-        $start = Carbon::parse($shift->start_time)->setDateFrom($time);
+        [$start, $end] = $this->getShiftRange($shift, $time);
 
-        return $time->greaterThan($start);
+        return $time->gt($start);
     }
 
     protected function isEarlyLeave(AbsShift $shift, Carbon $time): bool
     {
-        $end = Carbon::parse($shift->end_time)->setDateFrom($time);
+        [$start, $end] = $this->getShiftRange($shift, $time);
 
-        return $time->lessThan($end);
+        return $time->lt($end);
     }
 
     protected function now(): Carbon

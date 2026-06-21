@@ -4,11 +4,11 @@ namespace App\Enums;
 
 enum AbsAttendanceStatus: string
 {
-    case HADIR = 'hadir';
-    case TERLAMBAT = 'terlambat';
-    case PULANG_AWAL = 'pulang_awal';
-    case TERLAMBAT_PULANG_AWAL = 'terlambat_pulang_awal';
-    case ABSEN = 'absen';
+    case PRESENT = 'hadir';
+    case LATE = 'terlambat';
+    case EARLY_OUT = 'pulang_awal';
+    case LATE_AND_EARLY_OUT = 'terlambat_pulang_awal';
+    case ABSENT = 'absen';
 
     public static function values(): array
     {
@@ -18,10 +18,10 @@ enum AbsAttendanceStatus: string
     public static function countedForPayroll(): array
     {
         return [
-            self::HADIR->value,
-            self::TERLAMBAT->value,
-            self::PULANG_AWAL->value,
-            self::TERLAMBAT_PULANG_AWAL->value,
+            self::PRESENT->value,
+            self::LATE->value,
+            self::EARLY_OUT->value,
+            self::LATE_AND_EARLY_OUT->value,
         ];
     }
 
