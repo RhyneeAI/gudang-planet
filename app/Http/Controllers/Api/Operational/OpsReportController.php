@@ -94,7 +94,6 @@ class OpsReportController extends Controller
 
         $mandors = User::where('company_id', $companyId)
             ->where('role', Role::MANDOR)
-            ->where('is_active', true)
             ->orderBy('name')
             ->when($mandorUuid, fn($q) => $q->where('uuid', $mandorUuid))
             ->get();
@@ -112,7 +111,12 @@ class OpsReportController extends Controller
             $internalSaldoAkhirIncome  = OpsIncome::whereNull('mandor_id')->whereDate('date', '<=', $endDate)->sum('amount');
             $internalSaldoAkhirExpense = OpsExpense::whereNull('mandor_id')->whereDate('date', '<=', $endDate)->sum('amount');
 
-            if ($internalIncomes->isNotEmpty() || $internalExpenses->isNotEmpty()) {
+            $hasInternalData = $internalIncomes->isNotEmpty()
+                || $internalExpenses->isNotEmpty()
+                || $internalSaldoAwalIncome > 0
+                || $internalSaldoAwalExpense > 0;
+
+            if ($hasInternalData) {
                 $totalInternalIncome  = (float) $internalIncomes->sum('amount');
                 $totalInternalExpense = (float) $internalExpenses->sum('amount');
 
@@ -148,7 +152,12 @@ class OpsReportController extends Controller
                     'code' => $sc->code,
                 ]);
 
-            if ($incomes->isNotEmpty() || $expenses->isNotEmpty()) {
+            $hasMandorData = $incomes->isNotEmpty()
+                || $expenses->isNotEmpty()
+                || $mandorSaldoAwalIncome > 0
+                || $mandorSaldoAwalExpense > 0;
+
+            if ($hasMandorData) {
                 $totalIncome  = (float) $incomes->sum('amount');
                 $totalExpense = (float) $expenses->sum('amount');
 
