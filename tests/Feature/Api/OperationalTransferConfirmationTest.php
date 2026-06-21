@@ -71,7 +71,7 @@ it('allows mandor to confirm transfer assigned to their branch', function () {
     $this->actingAs($this->mandor)
         ->post('/api/v1/operational/transfer-confirmations/' . $confirmation->uuid . '/confirm', [
             'confirmed_amount' => 250000,
-            'mandor_proof_file' => UploadedFile::fake()->create('mandor-proof.jpg', 100, 'image/jpeg'),
+            'mandor_proof_files' => [UploadedFile::fake()->create('mandor-proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json'])
         ->assertOk()
         ->assertJsonPath('success', true)
@@ -85,7 +85,7 @@ it('allows mandor to confirm transfer with adjustable received amount', function
     $this->actingAs($this->mandor)
         ->post('/api/v1/operational/transfer-confirmations/' . $confirmation->uuid . '/confirm', [
             'confirmed_amount' => 235000,
-            'mandor_proof_file' => UploadedFile::fake()->create('mandor-proof.jpg', 100, 'image/jpeg'),
+            'mandor_proof_files' => [UploadedFile::fake()->create('mandor-proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json'])
         ->assertOk()
         ->assertJsonPath('data.status', 'CONFIRMED')
@@ -101,7 +101,7 @@ it('forbids another mandor from confirming transfer', function () {
     $this->actingAs($this->otherMandor)
         ->post('/api/v1/operational/transfer-confirmations/' . $confirmation->uuid . '/confirm', [
             'confirmed_amount' => 250000,
-            'mandor_proof_file' => UploadedFile::fake()->create('mandor-proof.jpg', 100, 'image/jpeg'),
+            'mandor_proof_files' => [UploadedFile::fake()->create('mandor-proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json'])
         ->assertForbidden()
         ->assertJsonPath('message', __('operational.confirmations.not_accessible'));
@@ -115,7 +115,7 @@ it('allows current branch mandor to confirm after sub company reassignment', fun
     $this->actingAs($this->otherMandor)
         ->post('/api/v1/operational/transfer-confirmations/' . $confirmation->uuid . '/confirm', [
             'confirmed_amount' => 250000,
-            'mandor_proof_file' => UploadedFile::fake()->create('mandor-proof.jpg', 100, 'image/jpeg'),
+            'mandor_proof_files' => [UploadedFile::fake()->create('mandor-proof.jpg', 100, 'image/jpeg')],
         ], ['Accept' => 'application/json'])
         ->assertOk()
         ->assertJsonPath('data.status', 'CONFIRMED');
