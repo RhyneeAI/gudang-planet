@@ -110,6 +110,7 @@ it('filters attendance by status', function () {
         'abs_shift_id' => $this->shift->id,
         'company_id' => $this->company->id,
         'status' => 'terlambat',
+        'date' => now()->subDay(),
     ]);
 
     $this->actingAs($this->admin)
@@ -126,7 +127,7 @@ it('attendances scoped by company', function () {
         'abs_shift_id' => $this->shift->id,
         'company_id' => $this->company->id,
     ]);
-    AbsAttendance::factory()->create(['company_id' => $otherCompany->id]);
+    AbsAttendance::factory()->create(['company_id' => $otherCompany->id, 'date' => now()->subDay()]);
 
     $this->actingAs($this->admin)
         ->getJson('/api/v1/abs/attendances')
