@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Operational;
 
+use App\Enums\OpsExpenseType;
 use App\Enums\Role;
 use App\Exports\OpsIncomeExpenseExport;
 use App\Helpers\FileHelper;
@@ -81,7 +82,7 @@ class OpsReportController extends Controller
         if ($mandorUuid) {
             $mandorId = User::where('uuid', $mandorUuid)->where('company_id', $companyId)->value('id');
             $incomeQuery->where('mandor_id', $mandorId);
-            $expenseQuery->where('mandor_id', $mandorId);
+            $expenseQuery->where('mandor_id', $mandorId)->where('expense_type', '!=', OpsExpenseType::MANDOR);
         }
 
         $saldoAwalIncome  = (clone $incomeQuery)->whereDate('date', '<', $startDate)->sum('amount');
@@ -139,10 +140,14 @@ class OpsReportController extends Controller
             $expenses = $this->mandorExpenses($mandor->id, $startDate, $endDate);
 
             $mandorSaldoAwalIncome  = OpsIncome::where('mandor_id', $mandor->id)->whereDate('date', '<', $startDate)->sum('amount');
-            $mandorSaldoAwalExpense = OpsExpense::where('mandor_id', $mandor->id)->whereDate('date', '<', $startDate)->sum('amount');
+            $mandorSaldoAwalExpense = OpsExpense::where('mandor_id', $mandor->id)
+                ->where('expense_type', '!=', OpsExpenseType::MANDOR)
+                ->whereDate('date', '<', $startDate)->sum('amount');
 
             $mandorSaldoAkhirIncome  = OpsIncome::where('mandor_id', $mandor->id)->whereDate('date', '<=', $endDate)->sum('amount');
-            $mandorSaldoAkhirExpense = OpsExpense::where('mandor_id', $mandor->id)->whereDate('date', '<=', $endDate)->sum('amount');
+            $mandorSaldoAkhirExpense = OpsExpense::where('mandor_id', $mandor->id)
+                ->where('expense_type', '!=', OpsExpenseType::MANDOR)
+                ->whereDate('date', '<=', $endDate)->sum('amount');
 
             $mandorSubCompanies = $mandor->subCompanies()
                 ->get(['uuid', 'name', 'code'])
@@ -217,6 +222,7 @@ class OpsReportController extends Controller
     protected function mandorExpenses(int $mandorId, Carbon $startDate, Carbon $endDate): Collection
     {
         return OpsExpense::where('mandor_id', $mandorId)
+            ->where('expense_type', '!=', OpsExpenseType::MANDOR)
             ->whereDate('date', '>=', $startDate)
             ->whereDate('date', '<=', $endDate)
             ->orderBy('date')
