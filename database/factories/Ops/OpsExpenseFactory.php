@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\Ops;
 
 use App\Models\Company;
 use App\Models\User;
@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 class OpsExpenseFactory extends Factory
 {
+    protected $model = \App\Models\OpsExpense::class;
     public function definition(): array
     {
         return [

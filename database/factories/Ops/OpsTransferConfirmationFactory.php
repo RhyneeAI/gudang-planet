@@ -1,12 +1,13 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\Ops;
 
 use App\Models\Company;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class OpsTransferConfirmationFactory extends Factory
 {
+    protected $model = \App\Models\OpsTransferConfirmation::class;
     public function definition(): array
     {
         return [

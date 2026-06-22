@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use Database\Factories\Pos\PosProductFactory;
 
 use App\Models\Scopes\CompanyScope;
 use App\Traits\HasUuid;
@@ -12,6 +13,7 @@ class PosProduct extends Model
 {
     use HasFactory, SoftDeletes, HasUuid;
 
+    protected static $factory = PosProductFactory::class;
     protected $table = 'products';
 
     protected $fillable = [

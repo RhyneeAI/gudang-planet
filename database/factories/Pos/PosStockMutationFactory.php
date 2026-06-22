@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\Pos;
 
 use App\Enums\PosStockMutationType;
 use App\Models\Company;

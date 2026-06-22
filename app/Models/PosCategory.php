@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use Database\Factories\Pos\PosCategoryFactory;
 
 use App\Models\Scopes\CompanyScope;
 use App\Traits\HasUuid;
@@ -12,6 +13,7 @@ class PosCategory extends Model
 {
     use HasFactory, SoftDeletes, HasUuid;
 
+    protected static $factory = PosCategoryFactory::class;
     protected $table = 'categories';
 
     protected static function booted(): void

@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use Database\Factories\Pos\PosPurchaseTransactionFactory;
 
 use App\Enums\PosPaymentType;
 use App\Enums\PosTransactionStatus;
@@ -14,6 +15,7 @@ class PosPurchaseTransaction extends Model
 {
     use HasFactory, SoftDeletes, HasUlid;
 
+    protected static $factory = PosPurchaseTransactionFactory::class;
     protected $table = 'purchase_transactions';
 
     protected $fillable = [

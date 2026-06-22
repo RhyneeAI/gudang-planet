@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\Abs;
 
 use App\Models\AbsPayrollPeriod;
 use App\Models\Company;
@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 class AbsDeductionFactory extends Factory
 {
+    protected $model = \App\Models\AbsDeduction::class;
     public function definition(): array
     {
         return [

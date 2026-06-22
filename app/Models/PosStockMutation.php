@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use Database\Factories\Pos\PosStockMutationFactory;
 
 use App\Enums\PosStockMutationType;
 use App\Models\Scopes\CompanyScope;
@@ -12,6 +13,7 @@ class PosStockMutation extends Model
 {
     use HasFactory, HasUlid;
 
+    protected static $factory = PosStockMutationFactory::class;
     protected $table = 'stock_mutations';
 
     protected $fillable = [

@@ -1,29 +1,31 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\Pos;
 
 use App\Enums\PosPaymentType;
 use App\Enums\PosTransactionStatus;
 use App\Models\Company;
-use App\Models\PosSupplier;
+use App\Models\PosCustomer;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Str;
 
-class PosPurchaseTransactionFactory extends Factory
+class PosSalesTransactionFactory extends Factory
 {
-    protected $model = \App\Models\PosPurchaseTransaction::class;
+    protected $model = \App\Models\PosSalesTransaction::class;
 
     public function definition(): array
     {
         return [
-            'transaction_code'   => 'PO-' . fake()->unique()->numerify('####'),
-            'transaction_date'   => fake()->dateTime(),
-            'discount'           => fake()->randomFloat(2, 0, 10000),
-            'total'              => fake()->randomFloat(2, 10000, 100000),
-            'paid'               => fake()->randomFloat(2, 0, 100000),
-            'payment_type'       => fake()->randomElement([PosPaymentType::CASH->value, PosPaymentType::TRANSFER->value, PosPaymentType::QRIS->value]),
-            'transaction_status' => fake()->randomElement(PosTransactionStatus::cases())->value,
-            'supplier_id'        => PosSupplier::factory(),
+            'ulid'               => Str::ulid(),
+            'transaction_code'   => fake()->unique()->bothify('SO-####'),
+            'transaction_date'   => fake()->dateTimeThisYear(),
+            'discount'           => 0,
+            'total'              => fake()->randomFloat(2, 10000, 1000000),
+            'paid'               => 0,
+            'payment_type'       => PosPaymentType::CASH,
+            'transaction_status' => PosTransactionStatus::UNPAID,
+            'customer_id'        => PosCustomer::factory(),
             'created_by'         => User::factory(),
             'company_id'         => Company::factory(),
         ];

@@ -1,12 +1,13 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\Abs;
 
 use App\Models\Company;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class AbsJabatanFactory extends Factory
 {
+    protected $model = \App\Models\AbsJabatan::class;
     public function definition(): array
     {
         return [

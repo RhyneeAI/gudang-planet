@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use Database\Factories\Pos\PosMarketingProductFactory;
 
 use App\Enums\Role;
 use App\Models\Scopes\CompanyScope;
@@ -13,6 +14,7 @@ class PosMarketingProduct extends Model
 {
     use HasFactory, SoftDeletes, HasUuid;
 
+    protected static $factory = PosMarketingProductFactory::class;
     protected $table = 'marketing_products';
 
     protected $fillable = [

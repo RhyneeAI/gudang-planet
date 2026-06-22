@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use Database\Factories\Pos\PosCustomerFactory;
 
 use App\Models\Scopes\CompanyScope;
 use App\Traits\HasUuid;
@@ -12,6 +13,7 @@ class PosCustomer extends Model
 {
     use HasFactory, SoftDeletes, HasUuid;
 
+    protected static $factory = PosCustomerFactory::class;
     protected $table = 'customers';
 
     protected static function booted(): void

@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\Abs;
 
 use App\Models\Company;
 use App\Models\User;
@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 class AbsAttendanceFactory extends Factory
 {
+    protected $model = \App\Models\AbsAttendance::class;
     public function definition(): array
     {
         $date = fake()->dateTimeBetween('-1 month', 'now');

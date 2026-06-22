@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\Abs;
 
 use App\Models\User;
 use App\Models\Company;
@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 class AbsEmployeeProfileFactory extends Factory
 {
+    protected $model = \App\Models\AbsEmployeeProfile::class;
     public function definition(): array
     {
         return [

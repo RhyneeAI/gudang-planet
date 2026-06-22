@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\Abs;
 
 use App\Models\User;
 use App\Models\Company;
@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 class AbsPayrollPeriodFactory extends Factory
 {
+    protected $model = \App\Models\AbsPayrollPeriod::class;
     public function definition(): array
     {
         $now = Carbon::now();

@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use Database\Factories\Pos\PosUnitFactory;
 
 use App\Models\Scopes\CompanyScope;
 use App\Traits\HasUuid;
@@ -12,6 +13,7 @@ class PosUnit extends Model
 {
     use HasFactory, SoftDeletes, HasUuid;
 
+    protected static $factory = PosUnitFactory::class;
     protected $table = 'units';
 
     protected $fillable = [

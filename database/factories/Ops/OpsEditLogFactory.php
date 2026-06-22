@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\Ops;
 
 use App\Models\Company;
 use App\Models\OpsIncome;
@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 class OpsEditLogFactory extends Factory
 {
+    protected $model = \App\Models\OpsEditLog::class;
     public function definition(): array
     {
         $loggable = OpsIncome::factory()->create();

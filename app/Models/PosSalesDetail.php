@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use Database\Factories\Pos\PosSalesDetailFactory;
 
 use App\Models\Scopes\CompanyScope;
 use App\Traits\HasUlid;
@@ -12,6 +13,7 @@ class PosSalesDetail extends Model
 {
     use HasFactory, SoftDeletes, HasUlid;
 
+    protected static $factory = PosSalesDetailFactory::class;
     protected $table = 'sales_details';
 
     protected $fillable = [
