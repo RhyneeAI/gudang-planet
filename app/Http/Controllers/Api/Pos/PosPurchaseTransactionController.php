@@ -53,7 +53,7 @@ class PosPurchaseTransactionController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('purchase_transactions.list'),
+            'message' => __('pos.purchase_transactions.list'),
             'data'    => PosPurchaseTransactionResource::collection($transactions),
         ]);
     }
@@ -70,7 +70,7 @@ class PosPurchaseTransactionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => __('purchase_transactions.stored'),
+                'message' => __('pos.purchase_transactions.stored'),
                 'data'    => new PosPurchaseTransactionResource($transaction),
             ], 201);
 
@@ -88,7 +88,7 @@ class PosPurchaseTransactionController extends Controller
     {
         return response()->json([
             'success' => true,
-            'message' => __('purchase_transactions.detail'),
+            'message' => __('pos.purchase_transactions.detail'),
             'data'    => new PosPurchaseTransactionResource(
                 $purchaseTransaction->load(['supplier', 'createdBy', 'details', 'details.product'])
             ),
@@ -102,7 +102,7 @@ class PosPurchaseTransactionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => __('purchase_transactions.cancelled'),
+                'message' => __('pos.purchase_transactions.cancelled'),
                 'data'    => new PosPurchaseTransactionResource($transaction),
             ]);
 

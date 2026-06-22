@@ -36,12 +36,12 @@ class PosCustomerTypeRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'type.required'    => __('customer_types.validation.type_required'),
-            'type.unique'      => __('customer_types.validation.type_unique'),
-            'type.max'         => __('customer_types.validation.type_max'),
-            'discount.numeric' => __('customer_types.validation.discount_numeric'),
-            'discount.min'     => __('customer_types.validation.discount_min'),
-            'discount.max'     => __('customer_types.validation.discount_max'),
+            'type.required'    => __('pos.customer_types.validation.type_required'),
+            'type.unique'      => __('pos.customer_types.validation.type_unique'),
+            'type.max'         => __('pos.customer_types.validation.type_max'),
+            'discount.numeric' => __('pos.customer_types.validation.discount_numeric'),
+            'discount.min'     => __('pos.customer_types.validation.discount_min'),
+            'discount.max'     => __('pos.customer_types.validation.discount_max'),
         ];
     }
 }

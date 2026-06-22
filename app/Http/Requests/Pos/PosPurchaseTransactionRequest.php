@@ -32,7 +32,7 @@ class PosPurchaseTransactionRequest extends FormRequest
                         ->exists();
                     
                     if (!$supplierExists) {
-                        $fail(__('purchase_transactions.validation.supplier_uuid_not_found'));
+                        $fail(__('pos.purchase_transactions.validation.supplier_uuid_not_found'));
                     }
                 }
             ],
@@ -63,14 +63,14 @@ class PosPurchaseTransactionRequest extends FormRequest
                 if ($discount > $total) {
                     $validator->errors()->add(
                         'discount',
-                        __('purchase_transactions.validation.discount_greater_than_total')
+                        __('pos.purchase_transactions.validation.discount_greater_than_total')
                     );
                 }
 
                 if ($paid < $total) {
                     $validator->errors()->add(
                         'paid',
-                        __('purchase_transactions.validation.paid_lower_than_total')
+                        __('pos.purchase_transactions.validation.paid_lower_than_total')
                     );
                 }
             }
@@ -80,22 +80,22 @@ class PosPurchaseTransactionRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'supplier_uuid.required'          => __('purchase_transactions.validation.supplier_uuid_required'),
-            'supplier_uuid.uuid'              => __('purchase_transactions.validation.supplier_uuid_not_valid'),
-            'supplier_uuid.exists'            => __('purchase_transactions.validation.supplier_uuid_not_found'),
-            'transaction_date.required'       => __('purchase_transactions.validation.transaction_date_required'),
-            'transaction_date.date'           => __('purchase_transactions.validation.transaction_date_invalid'),
-            'payment_type.required'           => __('purchase_transactions.validation.payment_type_required'),
-            'payment_type.enum'               => __('purchase_transactions.validation.payment_type_invalid'),
-            'items.required'                  => __('purchase_transactions.validation.items_required'),
-            'items.min'                       => __('purchase_transactions.validation.items_min'),
-            'items.*.product_uuid.uuid'       => __('purchase_transactions.validation.item_product_uuid'),
-            'items.*.product_uuid.required'   => __('purchase_transactions.validation.item_product_required'),
-            'items.*.product_uuid.exists'     => __('purchase_transactions.validation.item_product_not_found'),
-            'items.*.quantity.required'       => __('purchase_transactions.validation.item_quantity_required'),
-            'items.*.quantity.min'            => __('purchase_transactions.validation.item_quantity_min'),
-            'items.*.buy_price.required'      => __('purchase_transactions.validation.item_buy_price_required'),
-            'items.*.buy_price.min'           => __('purchase_transactions.validation.item_buy_price_min'),
+            'supplier_uuid.required'          => __('pos.purchase_transactions.validation.supplier_uuid_required'),
+            'supplier_uuid.uuid'              => __('pos.purchase_transactions.validation.supplier_uuid_not_valid'),
+            'supplier_uuid.exists'            => __('pos.purchase_transactions.validation.supplier_uuid_not_found'),
+            'transaction_date.required'       => __('pos.purchase_transactions.validation.transaction_date_required'),
+            'transaction_date.date'           => __('pos.purchase_transactions.validation.transaction_date_invalid'),
+            'payment_type.required'           => __('pos.purchase_transactions.validation.payment_type_required'),
+            'payment_type.enum'               => __('pos.purchase_transactions.validation.payment_type_invalid'),
+            'items.required'                  => __('pos.purchase_transactions.validation.items_required'),
+            'items.min'                       => __('pos.purchase_transactions.validation.items_min'),
+            'items.*.product_uuid.uuid'       => __('pos.purchase_transactions.validation.item_product_uuid'),
+            'items.*.product_uuid.required'   => __('pos.purchase_transactions.validation.item_product_required'),
+            'items.*.product_uuid.exists'     => __('pos.purchase_transactions.validation.item_product_not_found'),
+            'items.*.quantity.required'       => __('pos.purchase_transactions.validation.item_quantity_required'),
+            'items.*.quantity.min'            => __('pos.purchase_transactions.validation.item_quantity_min'),
+            'items.*.buy_price.required'      => __('pos.purchase_transactions.validation.item_buy_price_required'),
+            'items.*.buy_price.min'           => __('pos.purchase_transactions.validation.item_buy_price_min'),
         ];
     }
 

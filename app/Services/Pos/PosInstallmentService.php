@@ -17,7 +17,7 @@ class PosInstallmentService
     {
         if ($plan->status === PosInstallmentStatus::COMPLETED) {
             throw ValidationException::withMessages([
-                'installment' => [__('installments.already_completed')],
+                'installment' => [__('pos.installments.already_completed')],
             ]);
         }
 
@@ -26,13 +26,13 @@ class PosInstallmentService
 
         if ($isOverdue && $paidAmount < $remaining) {
             throw ValidationException::withMessages([
-                'paid_amount' => [__('installments.must_pay_full', ['remaining' => $remaining])],
+                'paid_amount' => [__('pos.installments.must_pay_full', ['remaining' => $remaining])],
             ]);
         }
 
         if ($paidAmount > $remaining) {
             throw ValidationException::withMessages([
-                'paid_amount' => [__('installments.overpaid', ['remaining' => $remaining])],
+                'paid_amount' => [__('pos.installments.overpaid', ['remaining' => $remaining])],
             ]);
         }
 
@@ -77,7 +77,7 @@ class PosInstallmentService
     {
         if ($plan->status === PosInstallmentStatus::COMPLETED) {
             throw ValidationException::withMessages([
-                'installment' => [__('installments.already_completed')],
+                'installment' => [__('pos.installments.already_completed')],
             ]);
         }
 
@@ -85,7 +85,7 @@ class PosInstallmentService
 
         if ($paidAmount > $remaining) {
             throw ValidationException::withMessages([
-                'paid_amount' => [__('installments.overpaid', ['remaining' => $remaining])],
+                'paid_amount' => [__('pos.installments.overpaid', ['remaining' => $remaining])],
             ]);
         }
 

@@ -41,7 +41,7 @@ class PosMarketingProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('marketing_product.list'),
+            'message' => __('pos.marketing_product.list'),
             'data'    => PosMarketingProductResource::collection($marketingProducts),
         ]);
     }
@@ -60,7 +60,7 @@ class PosMarketingProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('marketing_product.stored'),
+            'message' => __('pos.marketing_product.stored'),
             'data'    => new PosMarketingProductResource($marketingProduct->load('product')),
         ], 201);
     }
@@ -71,7 +71,7 @@ class PosMarketingProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('marketing_product.detail'),
+            'message' => __('pos.marketing_product.detail'),
             'data'    => new PosMarketingProductResource($marketingProduct->load('product')),
         ]);
     }
@@ -86,7 +86,7 @@ class PosMarketingProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('marketing_product.updated'),
+            'message' => __('pos.marketing_product.updated'),
             'data'    => new PosMarketingProductResource($marketingProduct->load('product')),
         ]);
     }
@@ -97,7 +97,7 @@ class PosMarketingProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('marketing_product.deleted'),
+            'message' => __('pos.marketing_product.deleted'),
         ]);
     }
 }

@@ -65,13 +65,13 @@ class PosPurchaseService
     {
         if ($transaction->transaction_status === PosTransactionStatus::CANCEL) {
             throw ValidationException::withMessages([
-                'transaction' => [__('purchase_transactions.already_cancelled')],
+                'transaction' => [__('pos.purchase_transactions.already_cancelled')],
             ]);
         }
 
         if ($transaction->transaction_status !== PosTransactionStatus::PAID) {
             throw ValidationException::withMessages([
-                'transaction' => [__('purchase_transactions.cannot_cancel')],
+                'transaction' => [__('pos.purchase_transactions.cannot_cancel')],
             ]);
         }
 
@@ -114,7 +114,7 @@ class PosPurchaseService
 
         if ($products->count() !== $productUuids->unique()->count()) {
             throw ValidationException::withMessages([
-                'items' => [__('purchase_transactions.validation.item_product_not_found')],
+                'items' => [__('pos.purchase_transactions.validation.item_product_not_found')],
             ]);
         }
 

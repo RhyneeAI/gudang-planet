@@ -28,7 +28,7 @@ class PosCustomerTypeController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('customer_types.list'),
+            'message' => __('pos.customer_types.list'),
             'data'    => PosCustomerTypeResource::collection($customerTypes),
         ]);
     }
@@ -44,7 +44,7 @@ class PosCustomerTypeController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('customer_types.stored'),
+            'message' => __('pos.customer_types.stored'),
             'data'    => new PosCustomerTypeResource($customerType),
         ], 201);
     }
@@ -53,7 +53,7 @@ class PosCustomerTypeController extends Controller
     {
         return response()->json([
             'success' => true,
-            'message' => __('customer_types.detail'),
+            'message' => __('pos.customer_types.detail'),
             'data'    => new PosCustomerTypeResource($customerType),
         ]);
     }
@@ -64,7 +64,7 @@ class PosCustomerTypeController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('customer_types.updated'),
+            'message' => __('pos.customer_types.updated'),
             'data'    => new PosCustomerTypeResource($customerType),
         ]);
     }
@@ -74,7 +74,7 @@ class PosCustomerTypeController extends Controller
         if ($customerType->customers()->exists()) {
             return response()->json([
                 'success' => false,
-                'message' => __('customer_types.has_customers'),
+                'message' => __('pos.customer_types.has_customers'),
                 'code'    => 422,
             ], 422);
         }
@@ -83,7 +83,7 @@ class PosCustomerTypeController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('customer_types.deleted'),
+            'message' => __('pos.customer_types.deleted'),
         ]);
     }
 }

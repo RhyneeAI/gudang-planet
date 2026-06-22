@@ -71,13 +71,13 @@ class PosSalesService
     {
         if ($transaction->transaction_status === PosTransactionStatus::CANCEL) {
             throw ValidationException::withMessages([
-                'transaction' => [__('sales_transactions.already_cancelled')],
+                'transaction' => [__('pos.sales_transactions.already_cancelled')],
             ]);
         }
 
         if ($transaction->transaction_status !== PosTransactionStatus::PAID) {
             throw ValidationException::withMessages([
-                'transaction' => [__('sales_transactions.cannot_cancel')],
+                'transaction' => [__('pos.sales_transactions.cannot_cancel')],
             ]);
         }
 
@@ -120,7 +120,7 @@ class PosSalesService
 
         if ($products->count() !== $productUuids->unique()->count()) {
             throw ValidationException::withMessages([
-                'items' => [__('sales_transactions.validation.item_product_not_found')],
+                'items' => [__('pos.sales_transactions.validation.item_product_not_found')],
             ]);
         }
 
@@ -133,7 +133,7 @@ class PosSalesService
             $product = $products->get($item['product_uuid']);
             if ((int) $product->stock < (int) $item['quantity']) {
                 throw ValidationException::withMessages([
-                    'items' => [__('sales_transactions.validation.insufficient_stock', [
+                    'items' => [__('pos.sales_transactions.validation.insufficient_stock', [
                         'product' => $product->name,
                         'stock'   => $product->stock,
                     ])],

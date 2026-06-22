@@ -62,7 +62,7 @@ class PosStockMutationController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('stock_mutations.product_list'),
+            'message' => __('pos.stock_mutations.product_list'),
             'data' => PosStockMutationResource::collection($products),
             'meta' => [
                 'current_page' => $products->currentPage(),
@@ -126,7 +126,7 @@ class PosStockMutationController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('stock_mutations.stored'),
+            'message' => __('pos.stock_mutations.stored'),
             'data' => new PosStockMutationResource($stockMutation),
         ], 201);
     }
@@ -166,7 +166,7 @@ class PosStockMutationController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('stock_mutations.list'),
+            'message' => __('pos.stock_mutations.list'),
             'data' => [
                 'product' => new PosStockMutationResource($product),
                 'mutations' => new PosStockMutationResource($stockMutations),

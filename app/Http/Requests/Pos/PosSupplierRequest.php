@@ -36,10 +36,10 @@ class PosSupplierRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => __('suppliers.validation.name_required'),
-            'name.unique'   => __('suppliers.validation.name_unique'),
-            'phone.regex'   => __('suppliers.validation.phone_numeric'),
-            'phone.max'     => __('suppliers.validation.phone_max'),
+            'name.required' => __('pos.suppliers.validation.name_required'),
+            'name.unique'   => __('pos.suppliers.validation.name_unique'),
+            'phone.regex'   => __('pos.suppliers.validation.phone_numeric'),
+            'phone.max'     => __('pos.suppliers.validation.phone_max'),
         ];
     }
 }

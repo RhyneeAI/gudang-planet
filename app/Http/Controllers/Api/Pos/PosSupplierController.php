@@ -30,7 +30,7 @@ class PosSupplierController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('suppliers.list'),
+            'message' => __('pos.suppliers.list'),
             'data' => PosSupplierResource::collection($suppliers),
         ]);
     }
@@ -49,7 +49,7 @@ class PosSupplierController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('suppliers.stored'),
+            'message' => __('pos.suppliers.stored'),
             'data'    => new PosSupplierResource($supplier),
         ], 201);
     }
@@ -60,7 +60,7 @@ class PosSupplierController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('suppliers.detail'),
+            'message' => __('pos.suppliers.detail'),
             'data'    => new PosSupplierResource($supplier),
         ]);
     }
@@ -77,7 +77,7 @@ class PosSupplierController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('suppliers.updated'),
+            'message' => __('pos.suppliers.updated'),
             'data'    => new PosSupplierResource($supplier),
         ]);
     }
@@ -87,7 +87,7 @@ class PosSupplierController extends Controller
         if ($supplier->purchaseTransactions()->exists()) {
             return response()->json([
                 'success' => false,
-                'message' => __('suppliers.has_purchases'),
+                'message' => __('pos.suppliers.has_purchases'),
                 'code'    => 422,
             ], 422);
         }
@@ -96,7 +96,7 @@ class PosSupplierController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('suppliers.deleted'),
+            'message' => __('pos.suppliers.deleted'),
         ]);
     }
 }

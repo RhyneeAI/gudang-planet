@@ -38,7 +38,7 @@ class PosPurchaseInstallmentController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('installments.list'),
+            'message' => __('pos.installments.list'),
             'data'    => PosPurchaseInstallmentPlanResource::collection($plans),
         ]);
     }
@@ -47,7 +47,7 @@ class PosPurchaseInstallmentController extends Controller
     {
         return response()->json([
             'success' => true,
-            'message' => __('installments.detail'),
+            'message' => __('pos.installments.detail'),
             'data'    => new PosPurchaseInstallmentPlanResource(
                 $purchaseInstallmentPlan->load(['supplier', 'purchaseTransaction', 'payments'])
             ),
@@ -69,8 +69,8 @@ class PosPurchaseInstallmentController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => $isCompleted
-                    ? __('installments.completed')
-                    : __('installments.payment_recorded'),
+                    ? __('pos.installments.completed')
+                    : __('pos.installments.payment_recorded'),
                 'data'    => new PosPurchaseInstallmentPlanResource($plan),
             ]);
 

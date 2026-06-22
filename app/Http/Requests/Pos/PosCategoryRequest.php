@@ -33,7 +33,7 @@ class PosCategoryRequest extends FormRequest
                         ->exists();
                     
                     if ($exists) {
-                        $fail(__('categories.validation.name_unique'));
+                        $fail(__('pos.categories.validation.name_unique'));
                     }
                 },
             ],
@@ -43,9 +43,9 @@ class PosCategoryRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => __('categories.validation.name_required'),
-            'name.string'   => __('categories.validation.name_string'),
-            'name.max'      => __('categories.validation.name_max', ['max' => 255]),
+            'name.required' => __('pos.categories.validation.name_required'),
+            'name.string'   => __('pos.categories.validation.name_string'),
+            'name.max'      => __('pos.categories.validation.name_max', ['max' => 255]),
         ];
     }
 }

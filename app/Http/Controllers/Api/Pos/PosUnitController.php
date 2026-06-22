@@ -30,7 +30,7 @@ class PosUnitController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('units.list'),
+            'message' => __('pos.units.list'),
             'data' => PosUnitResource::collection($units),
         ]);
     }
@@ -47,7 +47,7 @@ class PosUnitController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('units.stored'),
+            'message' => __('pos.units.stored'),
             'data'    => new PosUnitResource($unit),
         ], 201);
     }
@@ -58,7 +58,7 @@ class PosUnitController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('units.detail'),
+            'message' => __('pos.units.detail'),
             'data'    => new PosUnitResource($unit),
         ]);
     }
@@ -73,7 +73,7 @@ class PosUnitController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('units.updated'),
+            'message' => __('pos.units.updated'),
             'data'    => new PosUnitResource($unit),
         ]);
     }
@@ -83,7 +83,7 @@ class PosUnitController extends Controller
         if ($unit->products()->exists()) {
             return response()->json([
                 'success' => false,
-                'message' => __('units.has_products'),
+                'message' => __('pos.units.has_products'),
                 'code'    => 422,
             ], 422);
         }
@@ -92,7 +92,7 @@ class PosUnitController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('units.deleted'),
+            'message' => __('pos.units.deleted'),
         ]);
     }
 }

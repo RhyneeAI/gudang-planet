@@ -29,10 +29,10 @@ class PosUnitRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => __('units.validation.name_required'),
-            'name.string'   => __('units.validation.name_string'),
-            'name.max'      => __('units.validation.name_max', ['max' => 255]),
-            'name.unique'   => __('units.validation.name_unique'),
+            'name.required' => __('pos.units.validation.name_required'),
+            'name.string'   => __('pos.units.validation.name_string'),
+            'name.max'      => __('pos.units.validation.name_max', ['max' => 255]),
+            'name.unique'   => __('pos.units.validation.name_unique'),
         ];
     }
 }

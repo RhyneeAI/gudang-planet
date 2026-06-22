@@ -69,7 +69,7 @@ class PosProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('products.list'),
+            'message' => __('pos.products.list'),
             'data' => PosProductResource::collection($products),
         ]);
     }
@@ -116,7 +116,7 @@ class PosProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('products.stored'),
+            'message' => __('pos.products.stored'),
             'data'    => new PosProductResource($product->load(['category', 'unit', 'createdBy'])),
         ], 201);
     }
@@ -125,7 +125,7 @@ class PosProductController extends Controller
     {
         return response()->json([
             'success' => true,
-            'message' => __('products.detail'),
+            'message' => __('pos.products.detail'),
             'data' => new PosProductResource($product->load(['category', 'unit', 'createdBy'])),
         ]);
     }
@@ -158,7 +158,7 @@ class PosProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('products.updated'),
+            'message' => __('pos.products.updated'),
             'data' => new PosProductResource($product->load(['category', 'unit', 'createdBy'])),
         ]);
     }
@@ -172,7 +172,7 @@ class PosProductController extends Controller
         if ($hasSalesDetails || $hasPurchaseDetails || $hasMarketingProducts) {
             return response()->json([
                 'success' => false,
-                'message' => __('products.has_relations'),
+                'message' => __('pos.products.has_relations'),
                 'code' => 422,
             ], 422);
         }
@@ -181,7 +181,7 @@ class PosProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('products.deleted'),
+            'message' => __('pos.products.deleted'),
         ]);
     }
 }

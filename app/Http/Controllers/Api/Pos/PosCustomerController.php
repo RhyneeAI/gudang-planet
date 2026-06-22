@@ -32,7 +32,7 @@ class PosCustomerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('customers.list'),
+            'message' => __('pos.customers.list'),
             'data'    => PosCustomerResource::collection($customers),
         ]);
     }
@@ -55,7 +55,7 @@ class PosCustomerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('customers.stored'),
+            'message' => __('pos.customers.stored'),
             'data'    => new PosCustomerResource($customer),
         ], 201);
     }
@@ -66,7 +66,7 @@ class PosCustomerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('customers.detail'),
+            'message' => __('pos.customers.detail'),
             'data'    => new PosCustomerResource($customer),
         ]);
     }
@@ -86,7 +86,7 @@ class PosCustomerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('customers.updated'),
+            'message' => __('pos.customers.updated'),
             'data'    => new PosCustomerResource($customer),
         ]);
     }
@@ -96,7 +96,7 @@ class PosCustomerController extends Controller
         if ($customer->salesTransactions()->exists()) {
             return response()->json([
                 'success' => false,
-                'message' => __('customers.has_transactions'),
+                'message' => __('pos.customers.has_transactions'),
                 'code'    => 422,
             ], 422);
         }
@@ -105,7 +105,7 @@ class PosCustomerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('customers.deleted'),
+            'message' => __('pos.customers.deleted'),
         ]);
     }
 }

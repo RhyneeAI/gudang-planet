@@ -38,7 +38,7 @@ class ReportController extends Controller
             if (!$marketingId) {
                 return response()->json([
                     'success' => false,
-                    'message' => __('reports.validation.marketingCommission.marketing_not_found'),
+                    'message' => __('pos.reports.validation.marketingCommission.marketing_not_found'),
                     'code'    => 404,
                 ], 404);
             }
@@ -179,7 +179,7 @@ class ReportController extends Controller
             if (!$marketingId) {
                 return response()->json([
                     'success' => false,
-                    'message' => __('reports.validation.marketingCommission.marketing_not_found'),
+                    'message' => __('pos.reports.validation.marketingCommission.marketing_not_found'),
                     'code'    => 404,
                 ], 404);
             }

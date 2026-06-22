@@ -22,7 +22,7 @@ class PosCategoryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('categories.list'),
+            'message' => __('pos.categories.list'),
             'data' => PosCategoryResource::collection($categories),
         ]);
     }
@@ -39,7 +39,7 @@ class PosCategoryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('categories.stored'),
+            'message' => __('pos.categories.stored'),
             'data' => new PosCategoryResource($category),
         ], 201);
     }
@@ -50,7 +50,7 @@ class PosCategoryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('categories.detail'),
+            'message' => __('pos.categories.detail'),
             'data' => new PosCategoryResource($category),
         ]);
     }
@@ -65,7 +65,7 @@ class PosCategoryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('categories.updated'),
+            'message' => __('pos.categories.updated'),
             'data' => new PosCategoryResource($category),
         ]);
     }
@@ -75,7 +75,7 @@ class PosCategoryController extends Controller
         if ($category->products()->exists()) {
             return response()->json([
                 'success' => false,
-                'message' => __('categories.has_products'),
+                'message' => __('pos.categories.has_products'),
                 'code' => 422,
             ], 422);
         }
@@ -84,7 +84,7 @@ class PosCategoryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('categories.deleted'),
+            'message' => __('pos.categories.deleted'),
         ]);
     }
 }

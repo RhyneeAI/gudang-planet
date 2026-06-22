@@ -36,7 +36,7 @@ class PosMarketingController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('marketings.list'),
+            'message' => __('pos.marketings.list'),
             'data'    => UserResource::collection($marketings),
         ]);
     }
@@ -66,7 +66,7 @@ class PosMarketingController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('marketings.stored'),
+            'message' => __('pos.marketings.stored'),
             'data'    => new UserResource($marketing),
             'credentials' => [
                 'phone'    => $phone, // ← username → phone
@@ -92,7 +92,7 @@ class PosMarketingController extends Controller
     {
         return response()->json([
             'success' => true,
-            'message' => __('marketings.detail'),
+            'message' => __('pos.marketings.detail'),
             'data'    => new UserResource($marketing),
         ]);
     }
@@ -115,7 +115,7 @@ class PosMarketingController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('marketings.updated'),
+            'message' => __('pos.marketings.updated'),
             'data'    => new UserResource($marketing),
         ]);
     }
@@ -128,7 +128,7 @@ class PosMarketingController extends Controller
         if ($hasProducts || $hasTransactions) {
             return response()->json([
                 'success' => false,
-                'message' => __('marketings.has_relations'),
+                'message' => __('pos.marketings.has_relations'),
                 'code'    => 422,
             ], 422);
         }
@@ -137,7 +137,7 @@ class PosMarketingController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('marketings.deleted'),
+            'message' => __('pos.marketings.deleted'),
         ]);
     }
 }

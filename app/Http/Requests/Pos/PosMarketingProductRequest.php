@@ -70,7 +70,7 @@ class PosMarketingProductRequest extends FormRequest
                 if ($query->exists()) {
                     $validator->errors()->add(
                         'product_uuid',
-                        __('marketing_product.validation.product_already_assigned')
+                        __('pos.marketing_product.validation.product_already_assigned')
                     );
                 }
             }
@@ -97,13 +97,13 @@ class PosMarketingProductRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'product_uuid.required'    => __('marketing_product.validation.product_required'),
-            'product_uuid.exists'      => __('marketing_product.validation.product_not_found'),
-            'marketing_uuid.required'  => __('marketing_product.validation.marketing_required'),
-            'marketing_uuid.exists'    => __('marketing_product.validation.marketing_not_found'),
-            'marketing_price.required' => __('marketing_product.validation.price_required'),
-            'marketing_price.numeric'  => __('marketing_product.validation.price_numeric'),
-            'marketing_price.min'      => __('marketing_product.validation.price_min'),
+            'product_uuid.required'    => __('pos.marketing_product.validation.product_required'),
+            'product_uuid.exists'      => __('pos.marketing_product.validation.product_not_found'),
+            'marketing_uuid.required'  => __('pos.marketing_product.validation.marketing_required'),
+            'marketing_uuid.exists'    => __('pos.marketing_product.validation.marketing_not_found'),
+            'marketing_price.required' => __('pos.marketing_product.validation.price_required'),
+            'marketing_price.numeric'  => __('pos.marketing_product.validation.price_numeric'),
+            'marketing_price.min'      => __('pos.marketing_product.validation.price_min'),
         ];
     }
 }

@@ -38,7 +38,7 @@ class PosHomeController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('home.dashboard'),
+            'message' => __('pos.home.dashboard'),
             'data'    => [
                 'period'                   => $period,
                 'total_products'           => (int) $totalProducts,

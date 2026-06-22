@@ -57,7 +57,7 @@ class PosSalesTransactionRequest extends FormRequest
                         ->exists();
                     
                     if (!$customerExists) {
-                        $fail(__('sales_transactions.validation.customer_not_found'));
+                        $fail(__('pos.sales_transactions.validation.customer_not_found'));
                     }
                 }
             ],
@@ -86,14 +86,14 @@ class PosSalesTransactionRequest extends FormRequest
                 if ($discount > $total) {
                     $validator->errors()->add(
                         'discount',
-                        __('sales_transactions.validation.discount_greater_than_total')
+                        __('pos.sales_transactions.validation.discount_greater_than_total')
                     );
                 }
 
                 if ($paid < $total) {
                     $validator->errors()->add(
                         'paid',
-                        __('sales_transactions.validation.paid_lower_than_total')
+                        __('pos.sales_transactions.validation.paid_lower_than_total')
                     );
                 }
             }
@@ -111,29 +111,29 @@ class PosSalesTransactionRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'transaction_code.required'             => __('sales_transactions.validation.transaction_code_required'),
-            'transaction_code.unique'               => __('sales_transactions.validation.transaction_code_unique'),
-            'transaction_date.required'             => __('sales_transactions.validation.transaction_date_required'),
-            'transaction_date.date'                 => __('sales_transactions.validation.transaction_date_invalid'),
-            'customer_id.exists'                    => __('sales_transactions.validation.customer_id_not_found'),
-            'payment_type.required'                 => __('sales_transactions.validation.payment_type_required'),
-            'payment_type.enum'                     => __('sales_transactions.validation.payment_type_invalid'),
-            'transaction_status.enum'               => __('sales_transactions.validation.transaction_status_invalid'),
-            'customer_uuid.uuid'                    => __('sales_transactions.validation.customer_uuid_invalid'),
-            'customer_uuid.exists'                  => __('sales_transactions.validation.customer_not_found'),
-            'additional_cost.numeric'               => __('sales_transactions.validation.additional_cost_numeric'),
-            'additional_cost.min'                   => __('sales_transactions.validation.additional_cost_min'),
-            'total.required'                        => __('sales_transactions.validation.total_required'),
-            'paid.required'                         => __('sales_transactions.validation.paid_required'),
-            'items.required'                        => __('sales_transactions.validation.items_required'),
-            'items.min'                             => __('sales_transactions.validation.items_min'),
-            'items.*.product_uuid.required'         => __('sales_transactions.validation.item_product_required'),
-            'items.*.product_uuid.exists'           => __('sales_transactions.validation.item_product_not_found'),
-            'items.*.quantity.required'             => __('sales_transactions.validation.item_quantity_required'),
-            'items.*.quantity.min'                  => __('sales_transactions.validation.item_quantity_min'),
-            'items.*.sell_price.required'           => __('sales_transactions.validation.item_sell_price_required'),
-            'items.*.sell_price.min'                => __('sales_transactions.validation.item_sell_price_min'),
-            'items.*.marketing_price.required'      => __('sales_transactions.validation.item_marketing_price_required'),
+            'transaction_code.required'             => __('pos.sales_transactions.validation.transaction_code_required'),
+            'transaction_code.unique'               => __('pos.sales_transactions.validation.transaction_code_unique'),
+            'transaction_date.required'             => __('pos.sales_transactions.validation.transaction_date_required'),
+            'transaction_date.date'                 => __('pos.sales_transactions.validation.transaction_date_invalid'),
+            'customer_id.exists'                    => __('pos.sales_transactions.validation.customer_id_not_found'),
+            'payment_type.required'                 => __('pos.sales_transactions.validation.payment_type_required'),
+            'payment_type.enum'                     => __('pos.sales_transactions.validation.payment_type_invalid'),
+            'transaction_status.enum'               => __('pos.sales_transactions.validation.transaction_status_invalid'),
+            'customer_uuid.uuid'                    => __('pos.sales_transactions.validation.customer_uuid_invalid'),
+            'customer_uuid.exists'                  => __('pos.sales_transactions.validation.customer_not_found'),
+            'additional_cost.numeric'               => __('pos.sales_transactions.validation.additional_cost_numeric'),
+            'additional_cost.min'                   => __('pos.sales_transactions.validation.additional_cost_min'),
+            'total.required'                        => __('pos.sales_transactions.validation.total_required'),
+            'paid.required'                         => __('pos.sales_transactions.validation.paid_required'),
+            'items.required'                        => __('pos.sales_transactions.validation.items_required'),
+            'items.min'                             => __('pos.sales_transactions.validation.items_min'),
+            'items.*.product_uuid.required'         => __('pos.sales_transactions.validation.item_product_required'),
+            'items.*.product_uuid.exists'           => __('pos.sales_transactions.validation.item_product_not_found'),
+            'items.*.quantity.required'             => __('pos.sales_transactions.validation.item_quantity_required'),
+            'items.*.quantity.min'                  => __('pos.sales_transactions.validation.item_quantity_min'),
+            'items.*.sell_price.required'           => __('pos.sales_transactions.validation.item_sell_price_required'),
+            'items.*.sell_price.min'                => __('pos.sales_transactions.validation.item_sell_price_min'),
+            'items.*.marketing_price.required'      => __('pos.sales_transactions.validation.item_marketing_price_required'),
         ];
     }
 }

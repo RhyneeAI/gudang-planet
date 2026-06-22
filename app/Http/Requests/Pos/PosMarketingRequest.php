@@ -60,13 +60,13 @@ class PosMarketingRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => __('marketings.validation.name_required'),
-            'name.max'      => __('marketings.validation.name_max'),
-            'phone.required' => __('marketings.validation.phone_required'),
-            'phone.unique'  => __('marketings.validation.phone_unique'),
-            'phone.max'     => __('marketings.validation.phone_max'),
-            'email.email'   => __('marketings.validation.email_invalid'),
-            'email.unique'  => __('marketings.validation.email_unique'),
+            'name.required' => __('pos.marketings.validation.name_required'),
+            'name.max'      => __('pos.marketings.validation.name_max'),
+            'phone.required' => __('pos.marketings.validation.phone_required'),
+            'phone.unique'  => __('pos.marketings.validation.phone_unique'),
+            'phone.max'     => __('pos.marketings.validation.phone_max'),
+            'email.email'   => __('pos.marketings.validation.email_invalid'),
+            'email.unique'  => __('pos.marketings.validation.email_unique'),
         ];
     }
 }

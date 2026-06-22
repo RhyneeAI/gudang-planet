@@ -19,9 +19,9 @@ class PosInstallmentPaymentRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'paid_amount.required' => __('installments.validation.paid_amount_required'),
-            'paid_amount.numeric'  => __('installments.validation.paid_amount_numeric'),
-            'paid_amount.min'      => __('installments.validation.paid_amount_min'),
+            'paid_amount.required' => __('pos.installments.validation.paid_amount_required'),
+            'paid_amount.numeric'  => __('pos.installments.validation.paid_amount_numeric'),
+            'paid_amount.min'      => __('pos.installments.validation.paid_amount_min'),
         ];
     }
 }

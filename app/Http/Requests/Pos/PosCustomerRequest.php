@@ -42,7 +42,7 @@ class PosCustomerRequest extends FormRequest
                         ->exists();
 
                     if (!$customerTypeExists) {
-                        $fail(__('customers.validation.customer_type_not_found'));
+                        $fail(__('pos.customers.validation.customer_type_not_found'));
                     }
                 }
             ],
@@ -61,10 +61,10 @@ class PosCustomerRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required'              => __('customers.validation.name_required'),
-            'name.unique'                => __('customers.validation.name_unique'),
-            'phone.max'                  => __('customers.validation.phone_max'),
-            'customer_type_uuid.uuid'    => __('customers.validation.customer_type_uuid_invalid'),
+            'name.required'              => __('pos.customers.validation.name_required'),
+            'name.unique'                => __('pos.customers.validation.name_unique'),
+            'phone.max'                  => __('pos.customers.validation.phone_max'),
+            'customer_type_uuid.uuid'    => __('pos.customers.validation.customer_type_uuid_invalid'),
         ];
     }
 }
