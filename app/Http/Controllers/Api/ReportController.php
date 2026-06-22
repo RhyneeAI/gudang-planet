@@ -7,8 +7,8 @@ use App\Enums\PosPaymentType;
 use App\Enums\PosTransactionStatus;
 use App\Helpers\FileHelper;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Pos\MarketingCommissionRequest;
-use App\Http\Requests\Pos\SalesRevenueRequest;
+use App\Http\Requests\Pos\PosMarketingCommissionRequest;
+use App\Http\Requests\Pos\PosSalesRevenueRequest;
 use App\Models\PosSalesDetail;
 use App\Models\PosSalesTransaction;
 use App\Models\User;
@@ -23,7 +23,7 @@ class ReportController extends Controller
         protected ExportService $exportService,
     ) {}
 
-    public function marketingCommission(MarketingCommissionRequest $request)
+    public function marketingCommission(PosMarketingCommissionRequest $request)
     {
         $companyId   = $request->user()->company_id;
 
@@ -164,7 +164,7 @@ class ReportController extends Controller
         ]);
     }
 
-    public function salesRevenue(SalesRevenueRequest $request)
+    public function salesRevenue(PosSalesRevenueRequest $request)
     {
         $companyId = $request->user()->company_id;
 
