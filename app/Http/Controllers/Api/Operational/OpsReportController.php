@@ -107,10 +107,18 @@ class OpsReportController extends Controller
             $internalExpenses = $this->internalExpenses($startDate, $endDate);
 
             $internalSaldoAwalIncome  = OpsIncome::whereNull('mandor_id')->whereDate('date', '<', $startDate)->sum('amount');
-            $internalSaldoAwalExpense = OpsExpense::whereNull('mandor_id')->whereDate('date', '<', $startDate)->sum('amount');
+            $internalSaldoAwalExpense = OpsExpense::where(function ($q) {
+                    $q->whereNull('mandor_id')
+                      ->orWhere('expense_type', OpsExpenseType::MANDOR);
+                })
+                ->whereDate('date', '<', $startDate)->sum('amount');
 
             $internalSaldoAkhirIncome  = OpsIncome::whereNull('mandor_id')->whereDate('date', '<=', $endDate)->sum('amount');
-            $internalSaldoAkhirExpense = OpsExpense::whereNull('mandor_id')->whereDate('date', '<=', $endDate)->sum('amount');
+            $internalSaldoAkhirExpense = OpsExpense::where(function ($q) {
+                    $q->whereNull('mandor_id')
+                      ->orWhere('expense_type', OpsExpenseType::MANDOR);
+                })
+                ->whereDate('date', '<=', $endDate)->sum('amount');
 
             $hasInternalData = $internalIncomes->isNotEmpty()
                 || $internalExpenses->isNotEmpty()
@@ -260,7 +268,10 @@ class OpsReportController extends Controller
 
     protected function internalExpenses(Carbon $startDate, Carbon $endDate): Collection
     {
-        return OpsExpense::whereNull('mandor_id')
+        return OpsExpense::where(function ($q) {
+                $q->whereNull('mandor_id')
+                  ->orWhere('expense_type', OpsExpenseType::MANDOR);
+            })
             ->whereDate('date', '>=', $startDate)
             ->whereDate('date', '<=', $endDate)
             ->orderBy('date')
