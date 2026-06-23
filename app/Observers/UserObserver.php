@@ -20,7 +20,9 @@ class UserObserver
             $this->subCompanyService->createDefaultForMandor($user);
         }
 
-        $this->employeeProfileService->syncForUser($user);
+        if ($user->role !== Role::SUPERADMIN) {
+            $this->employeeProfileService->syncForUser($user);
+        }
     }
 
     public function updated(User $user): void
