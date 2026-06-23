@@ -8,7 +8,7 @@ enum Role: string
     case OWNER = 'OWNER';
     case ADMIN = 'ADMIN';
     case HRD = 'HRD';
-    case MANAJER_GUDANG = 'MANAJER_GUDANG';
+    case MANAGER_GUDANG = 'MANAGER_GUDANG';
     case MARKETING_LEAD = 'MARKETING_LEAD';
     case MARKETING = 'MARKETING';
     case MARKETING_TETAP = 'MARKETING_TETAP';
@@ -28,7 +28,7 @@ enum Role: string
             self::OWNER => 'OWNER',
             self::ADMIN => 'ADMIN',
             self::HRD => 'HRD',
-            self::MANAJER_GUDANG => 'MANAJER_GUDANG',
+            self::MANAGER_GUDANG => 'MANAGER_GUDANG',
             self::MARKETING_LEAD => 'MARKETING_LEAD',
             self::MARKETING => 'MARKETING',
             self::MARKETING_TETAP => 'MARKETING_TETAP',

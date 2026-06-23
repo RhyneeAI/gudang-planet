@@ -64,7 +64,7 @@ class UserFactory extends Factory
 
     public function manajerGudang(): static
     {
-        return $this->state(['role' => Role::MANAJER_GUDANG]);
+        return $this->state(['role' => Role::MANAGER_GUDANG]);
     }
 
     public function marketingLead(): static
