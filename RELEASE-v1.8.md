@@ -1,5 +1,10 @@
 # v1.8 — New Roles, Production Seeder & Security
 
+## v1.8.1
+- Fix spelling: `MANAJER_GUDANG` → `MANAGER_GUDANG` in Role enum and UserFactory
+
+---
+
 ## Changes
 
 ### Roles
