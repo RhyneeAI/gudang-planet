@@ -3,7 +3,7 @@ name: gudang-planet
 description: Backend Laravel multi-modul (POS, Operasional, Absensi) untuk Gudang Planet. Gunakan skill ini saat mengembangkan fitur, refactor, atau debug di project ini — termasuk role/permission, pricing marketing MLM, modul operasional cabang (wallet, transfer, payment_method, batas waktu input/edit), dan absensi dengan geofencing + payroll.
 ---
 
-# Gudang Planet — Project Skill (v1.7)
+# Gudang Planet — Project Skill (v1.9)
 
 ## Ringkasan Project
 
@@ -64,7 +64,7 @@ enum Role: string
 | OWNER            | **Read-only** rekapitulasi                | **Read-only** rekapitulasi                   | **Read-only** rekapitulasi |
 | ADMIN            | Master data (no transaksi POS)            | Pemasukan/pengeluaran pusat, audit mandor    | Konfigurasi, penggajian    |
 | HRD              | —                                         | Input karyawan, lihat lembur & kasbon        | **Full** (lembur, kasbon, payroll lihat) |
-| MANAJER_GUDANG   | Produk, kategori, stok, laporan           | —                                            | —                          |
+| MANAGER_GUDANG   | Produk, kategori, stok, laporan           | —                                            | —                          |
 | MARKETING_LEAD   | Transaksi + laporan commission            | —                                            | —                          |
 | MARKETING        | Transaksi + laporan commission (sendiri)  | —                                            | —                          |
 | MARKETING_TETAP  | Transaksi (no commission report)          | —                                            | —                          |
@@ -124,7 +124,7 @@ Gunakan `__('module.key')` untuk i18n (`lang/en/`, `lang/id/`).
 
 - Semua entitas POS (`products`, `sales_transactions`, dll.) hanya punya `company_id`.
 - Tidak ada relasi ke sub-company / cabang.
-- User POS (KASIR, MANAJER_GUDANG, MARKETING, dll.) terikat ke `company_id` pusat.
+- User POS (KASIR, MANAGER_GUDANG, MARKETING, dll.) terikat ke `company_id` pusat.
 
 ### Status Saat Ini (v2 — mulai v1.7)
 
@@ -162,7 +162,7 @@ Gunakan `__('module.key')` untuk i18n (`lang/en/`, `lang/id/`).
 
 #### 4. Retur Penjualan (`pos_returns`)
 
-- KASIR input → MANAJER_GUDANG proses; stok otomatis dikembalikan
+- KASIR input → MANAGER_GUDANG proses; stok otomatis dikembalikan
 
 #### 5. Module Config (disabled modules)
 
@@ -188,7 +188,7 @@ Gunakan `__('module.key')` untuk i18n (`lang/en/`, `lang/id/`).
 | Role                         | Transaksi | Produk | Stok | Laporan Marketing |
 | ---------------------------- | --------- | ------ | ---- | ----------------- |
 | SUPERADMIN                   | ✅ Full    | ✅      | ✅    | ✅                 |
-| MANAJER_GUDANG               | ❌         | ✅ CRUD | ✅    | ❌                 |
+| MANAGER_GUDANG               | ❌         | ✅ CRUD | ✅    | ❌                 |
 | KASIR                        | ✅         | ❌      | ❌    | ❌                 |
 | MARKETING_LEAD               | ✅         | ❌      | ❌    | ✅                 |
 | MARKETING                    | ✅         | ❌      | ❌    | ✅ (diri sendiri)  |
@@ -630,7 +630,7 @@ Middleware `CheckModule` digunakan di route group untuk return 410 jika module d
 | Ops mandor scope      | `app/Http/Controllers/Api/Operational/ScopesOperationalBySubCompany.php` |
 | Ops config            | `config/operational.php`                                       |
 | Ops config seeder     | `database/seeders/OpsConfigurationSeeder.php`                  |
-| Ops production seeder | `database/seeders/OpsProductionSeeder.php`                     |
+| Production seeder     | `database/seeders/Test/ProductionSeeder.php`                     |
 | Absensi routes        | `routes/absensi-api.php`                                       |
 | Absensi controllers   | `app/Http/Controllers/Api/Absensi/`                            |
 | Absensi models        | `app/Models/Abs`* (AbsAttendance, AbsEmployeePayroll, dll.)     |
@@ -641,6 +641,8 @@ Middleware `CheckModule` digunakan di route group untuk return 410 jika module d
 | Postman collection    | `docs/postman/operational-api.postman_collection.json`         |
 | Flowchart operasional | `public/flowchart_operasional.pdf`                             |
 | Release notes v1.6    | `RELEASE-v1.6.md`                                              |
-| Deliverables v1.7     | `docs/release/v1.7-ABS.md`, `v1.7-OPS.md`, `v1.7-POS.md`      |
+| Release notes v1.8    | `RELEASE-v1.8.md`                                              |
+| Deliverables v1.9     | `docs/release/v1.9-ABS.md`, `v1.9-OPS.md`, `v1.9-POS.md`      |
+| Nullable company_id   | `database/migrations/2026_06_23_085116_make_company_id_nullable_on_users_table.php` |
 
 
