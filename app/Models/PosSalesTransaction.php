@@ -58,6 +58,11 @@ class PosSalesTransaction extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function marketing()
+    {
+        return $this->belongsTo(User::class, 'marketing_id');
+    }
+
     public function customer()
     {
         return $this->belongsTo(PosCustomer::class, 'customer_id');

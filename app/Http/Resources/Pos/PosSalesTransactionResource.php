@@ -28,19 +28,26 @@ class PosSalesTransactionResource extends JsonResource
             'created_by'         => $this->whenLoaded('createdBy', fn() => [
                 'name' => $this->createdBy->name,
             ]),
+            'marketing'          => $this->whenLoaded('marketing', fn() =>
+                $this->marketing ? [
+                    'uuid' => $this->marketing->uuid,
+                    'name' => $this->marketing->name,
+                ] : null
+            ),
             'items'              => $this->whenLoaded('details', fn() =>
                 $this->details->map(fn($detail) => [
-                    // 'ulid'       => (string) $detail->ulid,
                     'product'    => [
-                        // 'uuid' => $detail->product->uuid,
                         'name' => $detail->product->name,
                         'code' => $detail->product->code,
                     ],
-                    'quantity'   => (int) $detail->quantity,
-                    'marketing_price' => (float) $detail->marketing_price,
-                    'sell_price' => (float) $detail->sell_price,
-                    'discount'   => (float) $detail->discount,
-                    'subtotal'   => (float) $detail->subtotal,
+                    'quantity'          => (int) $detail->quantity,
+                    'marketing_price'   => (float) $detail->marketing_price,
+                    'sell_price'        => (float) $detail->sell_price,
+                    'company_profit'    => (float) $detail->company_profit,
+                    'lead_profit'       => (float) $detail->lead_profit,
+                    'marketing_profit'  => (float) $detail->marketing_profit,
+                    'discount'          => (float) $detail->discount,
+                    'subtotal'          => (float) $detail->subtotal,
                 ])
             ),
             'created_at'         => $this->created_at?->toISOString(),
