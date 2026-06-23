@@ -1,5 +1,10 @@
 # v1.8 — New Roles, Production Seeder & Security
 
+## v1.8.2
+- Fix: `company_id` nullable on `users` table untuk Superadmin (tidak terikat company)
+- Fix: Skip `AbsEmployeeProfile::syncForUser()` untuk Superadmin di `UserObserver`
+- New migration: `2026_06_23_085116_make_company_id_nullable_on_users_table.php`
+
 ## v1.8.1
 - Fix spelling: `MANAJER_GUDANG` → `MANAGER_GUDANG` in Role enum and UserFactory
 
