@@ -64,7 +64,7 @@ beforeEach(function () {
     ]);
 });
 
-// Helper buat transaksi + detail
+// Helper buat transaksi + detail dengan stored profit fields
 function makeSalesRevTrx(array $data): PosSalesTransaction
 {
     $trx = PosSalesTransaction::create([
@@ -78,17 +78,21 @@ function makeSalesRevTrx(array $data): PosSalesTransaction
         'transaction_status' => $data['status'] ?? PosTransactionStatus::PAID,
         'customer_id'        => $data['customer_id'] ?? null,
         'created_by'         => $data['created_by'],
+        'marketing_id'       => $data['marketing_id'] ?? $data['created_by'],
         'company_id'         => $data['company_id'],
     ]);
 
     foreach ($data['items'] as $item) {
+        $product = PosProduct::find($item['product_id']);
+
         PosSalesDetail::create([
             'ulid'            => Str::ulid(),
             'sale_id'         => $trx->id,
             'product_id'      => $item['product_id'],
             'quantity'        => $item['qty'],
             'sell_price'      => $item['price'],
-            'marketing_price' => $item['marketing_price'] ?? null,
+            'marketing_price' => $item['marketing_price'] ?? 0,
+            'company_profit'  => ((float) $product->leader_price - (float) $product->base_price) * (int) $item['qty'],
             'discount'        => $item['discount'] ?? 0,
             'subtotal'        => $item['qty'] * $item['price'],
             'company_id'      => $data['company_id'],
@@ -198,14 +202,13 @@ it('calculates profit correctly for owner transactions', function () {
         ],
     ]);
 
-    // Profit = (10000 - 3000)*2 + (30000 - 10000)*1 = 14000 + 20000 = 34000
+    // company_profit A: (5000-3000)*2 = 4000, B: (15000-10000)*1 = 5000
     $response = $this->actingAs($this->owner)
         ->getJson('/api/v1/reports/sales-revenue?date_from=2026-01-01&date_to=2026-12-31');
 
     $response->assertStatus(200);
     expect($response->json('data.grand_total.total_revenue'))->toEqual(50000);
-    // Jika controller sudah implement profit di response, tambahkan assertion:
-    // expect($response->json('data.grand_total.total_profit'))->toEqual(34000);
+    expect($response->json('data.grand_total.total_profit'))->toEqual(9000);
 });
 
 it('calculates profit correctly for marketing transactions', function () {
@@ -221,13 +224,13 @@ it('calculates profit correctly for marketing transactions', function () {
         ],
     ]);
 
-    // Profit = (8000 - 3000)*2 + (25000 - 10000)*1 = 10000 + 15000 = 25000
+    // company_profit A: (5000-3000)*2 = 4000, B: (15000-10000)*1 = 5000
     $response = $this->actingAs($this->owner)
         ->getJson('/api/v1/reports/sales-revenue?date_from=2026-01-01&date_to=2026-12-31');
 
     $response->assertStatus(200);
     expect($response->json('data.grand_total.total_revenue'))->toEqual(50000);
-    // expect($response->json('data.grand_total.total_profit'))->toEqual(25000);
+    expect($response->json('data.grand_total.total_profit'))->toEqual(9000);
 });
 
 it('uses marketing_price from sales_details not from product for historical accuracy', function () {
@@ -251,9 +254,8 @@ it('uses marketing_price from sales_details not from product for historical accu
 
     $response->assertStatus(200);
     expect($response->json('data.grand_total.total_revenue'))->toEqual(50000);
-    // profit tetap 25000 (menggunakan marketing_price dari SalesDetail = 8000 & 25000)
-    // BUKAN 99999 dari product
-    // expect($response->json('data.grand_total.total_profit'))->toEqual(25000);
+    // company_profit dari stored field, tidak terpengaruh perubahan master data
+    expect($response->json('data.grand_total.total_profit'))->toEqual(9000);
 });
 
 // =============================
@@ -439,7 +441,7 @@ it('returns correct response structure', function () {
             'message',
             'data' => [
                 'period'      => ['from', 'to'],
-                'grand_total' => ['total_qty', 'total_revenue'],
+                'grand_total' => ['total_qty', 'total_revenue', 'total_profit'],
                 'download_url',
             ],
         ]);
@@ -520,11 +522,10 @@ it('returns 422 when marketing_uuid does not exist', function () {
         ->assertJsonStructure(['errors' => ['marketing_uuid']]);
 });
 
-it('returns 422 when marketing_uuid is not a marketing user (e.g., owner)', function () {
+it('returns 404 when marketing_uuid is not a marketing user (e.g., owner)', function () {
     $this->actingAs($this->owner)
         ->getJson('/api/v1/reports/sales-revenue?date_from=2026-01-01&date_to=2026-12-31&marketing_uuid=' . $this->owner->uuid)
-        ->assertStatus(422)
-        ->assertJsonStructure(['errors' => ['marketing_uuid']]);
+        ->assertStatus(404);
 });
 
 it('returns 422 when marketing belongs to different company', function () {

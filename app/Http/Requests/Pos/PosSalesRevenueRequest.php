@@ -23,7 +23,6 @@ class PosSalesRevenueRequest extends FormRequest
                 'string',
                 'uuid',
                 Rule::exists('users', 'uuid')
-                    ->where('role', Role::MARKETING)
                     ->where('company_id', $this->user()->company_id),
             ],
         ];

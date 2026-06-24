@@ -16,11 +16,15 @@ use App\Models\User;
 use Illuminate\Support\Str;
 
 beforeEach(function () {
-    $this->company      = Company::factory()->create();
-    $this->owner        = User::factory()->owner()->create(['company_id' => $this->company->id]);
-    $this->marketing    = User::factory()->marketing()->create(['company_id' => $this->company->id]);
-    $this->marketing2   = User::factory()->marketing()->create(['company_id' => $this->company->id]);
-    $this->customerType = PosCustomerType::factory()->create([
+    $this->company         = Company::factory()->create();
+    $this->owner           = User::factory()->owner()->create(['company_id' => $this->company->id]);
+    $this->marketing       = User::factory()->marketing()->create(['company_id' => $this->company->id]);
+    $this->marketing2      = User::factory()->marketing()->create(['company_id' => $this->company->id]);
+    $this->marketingLead   = User::factory()->create([
+        'role'       => Role::MARKETING_LEAD,
+        'company_id' => $this->company->id,
+    ]);
+    $this->customerType    = PosCustomerType::factory()->create([
         'company_id' => $this->company->id,
         'created_by' => $this->owner->id,
     ]);
@@ -38,7 +42,7 @@ beforeEach(function () {
         'created_by' => $this->owner->id,
     ]);
 
-    // Product A: base 5000
+    // Product A: base 5000, leader 8000
     $this->productA = PosProduct::factory()->create([
         'base_price'  => 5000,
         'leader_price' => 8000,
@@ -50,7 +54,7 @@ beforeEach(function () {
         'company_id'  => $this->company->id,
     ]);
 
-    // Product B: base 12000
+    // Product B: base 12000, leader 18000
     $this->productB = PosProduct::factory()->create([
         'base_price'  => 12000,
         'leader_price' => 18000,
@@ -61,27 +65,14 @@ beforeEach(function () {
         'created_by'  => $this->owner->id,
         'company_id'  => $this->company->id,
     ]);
-
-    // marketing_price A = 6500 → komisi/unit = 1500
-    // marketing_price B = 15000 → komisi/unit = 3000
-    // PosMarketingProduct::factory()->create([
-    //     'product_id'      => $this->productA->id,
-    //     'marketing_id'    => $this->marketing->id,
-    //     'marketing_price' => 6500,
-    //     'company_id'      => $this->company->id,
-    // ]);
-
-    // PosMarketingProduct::factory()->create([
-    //     'product_id'      => $this->productB->id,
-    //     'marketing_id'    => $this->marketing->id,
-    //     'marketing_price' => 15000,
-    //     'company_id'      => $this->company->id,
-    // ]);
 });
 
-// Helper buat transaksi + detail
+// Helper buat transaksi + detail dengan stored profit fields
+// marketing_role default: MARKETING
 function makeSalesTrx(array $data): PosSalesTransaction
 {
+    $role = $data['marketing_role'] ?? Role::MARKETING;
+
     $trx = PosSalesTransaction::create([
         'ulid'               => Str::ulid(),
         'transaction_code'   => 'SO-TEST-' . Str::random(6),
@@ -92,21 +83,40 @@ function makeSalesTrx(array $data): PosSalesTransaction
         'payment_type'       => $data['payment_type'] ?? PosPaymentType::CASH,
         'transaction_status' => $data['status'] ?? PosTransactionStatus::PAID,
         'customer_id'        => $data['customer_id'] ?? null,
-        'created_by'         => $data['created_by'], // ← marketing yang buat transaksi
+        'created_by'         => $data['created_by'],
+        'marketing_id'       => $data['marketing_id'] ?? $data['created_by'],
         'company_id'         => $data['company_id'],
     ]);
 
     foreach ($data['items'] as $item) {
+        $product = PosProduct::find($item['product_id']);
+        $basePrice       = (float) $product->base_price;
+        $leaderPrice     = (float) $product->leader_price;
+        $sellPrice       = (float) $item['price'];
+        $marketingPrice  = (float) ($item['marketing_price'] ?? 0);
+        $quantity        = (int) $item['qty'];
+
+        if ($role === Role::MARKETING_LEAD) {
+            $leadProfit      = ($sellPrice - $leaderPrice) * $quantity;
+            $marketingProfit = 0;
+        } else {
+            $leadProfit      = ($marketingPrice - $leaderPrice) * $quantity;
+            $marketingProfit = ($sellPrice - $marketingPrice) * $quantity;
+        }
+
         PosSalesDetail::create([
-            'ulid'       => Str::ulid(),
-            'sale_id'    => $trx->id,
-            'product_id' => $item['product_id'],
-            'quantity'   => $item['qty'],
-            'sell_price' => $item['price'],
-            'marketing_price' => $item['marketing_price'],
-            'discount'   => $item['discount'] ?? 0,
-            'subtotal'   => $item['qty'] * $item['price'],
-            'company_id' => $data['company_id'],
+            'ulid'             => Str::ulid(),
+            'sale_id'          => $trx->id,
+            'product_id'       => $item['product_id'],
+            'quantity'         => $quantity,
+            'sell_price'       => $sellPrice,
+            'marketing_price'  => $marketingPrice,
+            'company_profit'   => ($leaderPrice - $basePrice) * $quantity,
+            'lead_profit'      => $leadProfit,
+            'marketing_profit' => $marketingProfit,
+            'discount'         => $item['discount'] ?? 0,
+            'subtotal'         => $quantity * $sellPrice,
+            'company_id'       => $data['company_id'],
         ]);
     }
 
@@ -191,7 +201,7 @@ it('calculates commission correctly without discount', function () {
 // KALKULASI KOMISI — DENGAN DISKON
 // =============================
 
-it('calculates commission correctly with discount (fully charged to marketing)', function () {
+it('calculates commission correctly with discount (store-level discount does not reduce marketing profit)', function () {
     makeSalesTrx([
         'date'        => '2026-03-01',
         'discount'    => 2000,
@@ -208,7 +218,8 @@ it('calculates commission correctly with discount (fully charged to marketing)',
         ->getJson('/api/v1/reports/marketing-commission?date_from=2026-01-01&date_to=2026-12-31');
 
     $response->assertStatus(200);
-    expect($response->json('data.grand_total.total_commission'))->toEqual(2000);
+    // marketing_profit = (9000 - 7000) * 2 = 4000 (tidak dipotong store discount)
+    expect($response->json('data.grand_total.total_commission'))->toEqual(4000);
 });
 
 it('commission is never negative even if discount exceeds gross commission', function () {
@@ -228,7 +239,8 @@ it('commission is never negative even if discount exceeds gross commission', fun
         ->getJson('/api/v1/reports/marketing-commission?date_from=2026-01-01&date_to=2026-12-31');
 
     $response->assertStatus(200);
-    expect($response->json('data.grand_total.total_commission'))->toEqual(0);
+    // marketing_profit = (6500 - 5000) * 1 = 1500 (store discount tidak mengurangi)
+    expect($response->json('data.grand_total.total_commission'))->toEqual(1500);
 });
 
 // =============================
@@ -246,7 +258,7 @@ it('accumulates commission correctly across multiple transactions', function () 
         'items'       => [
             ['product_id' => $this->productA->id, 'qty' => 2, 'price' => 9000, 'marketing_price' => 7000],
         ],
-    ]); // Commission : 2k
+    ]); // marketing_profit = (9000-7000)*2 = 4000
 
     makeSalesTrx([
         'date'        => '2026-03-01',
@@ -258,13 +270,13 @@ it('accumulates commission correctly across multiple transactions', function () 
         'items'       => [
             ['product_id' => $this->productB->id, 'qty' => 1, 'price' => 20000, 'marketing_price' => 15000],
         ],
-    ]); // Commission : 5k
+    ]); // marketing_profit = (20000-15000)*1 = 5000
 
     $response = $this->actingAs($this->owner)
         ->getJson('/api/v1/reports/marketing-commission?date_from=2026-01-01&date_to=2026-12-31');
 
     $response->assertStatus(200);
-    expect($response->json('data.grand_total.total_commission'))->toEqual(7000);
+    expect($response->json('data.grand_total.total_commission'))->toEqual(9000);
 });
 
 // =============================
@@ -534,12 +546,12 @@ it('calculates commission correctly with item-level discount only', function () 
         ],
     ]);
 
-    // (10000 - 2000 - 7000) × 2 = (8000 - 7000) × 2 = 1000 × 2 = 2000
+    // marketing_profit = (10000 - 7000) × 2 = 6000 (item discount tidak mengurangi)
     $response = $this->actingAs($this->owner)
         ->getJson('/api/v1/reports/marketing-commission?date_from=2026-01-01&date_to=2026-12-31');
 
     $response->assertStatus(200);
-    expect($response->json('data.grand_total.total_commission'))->toEqual(2000);
+    expect($response->json('data.grand_total.total_commission'))->toEqual(6000);
 });
 
 // =============================
@@ -549,7 +561,7 @@ it('calculates commission correctly with item-level discount only', function () 
 it('calculates commission correctly with both transaction discount and item discount', function () {
     makeSalesTrx([
         'date'        => '2026-03-01',
-        'discount'    => 3000,      // transaction discount
+        'discount'    => 3000,
         'total'       => 17000,
         'created_by'  => $this->marketing->id,
         'customer_id' => $this->customer->id,
@@ -560,20 +572,18 @@ it('calculates commission correctly with both transaction discount and item disc
                 'qty' => 2, 
                 'price' => 10000, 
                 'marketing_price' => 7000,
-                'discount' => 1000   // item discount per unit? atau total? sesuaikan
+                'discount' => 1000
             ],
         ],
     ]);
 
-    // Jika item discount total 1000 (bukan per unit):
-    // Gross commission = (10000 - 1000 - 7000) × 2 = (9000 - 7000) × 2 = 2000 × 2 = 4000
-    // Net commission = max(0, 4000 - 3000) = 1000
+    // marketing_profit = (10000 - 7000) × 2 = 6000 (discount tidak mengurangi profit fields)
     
     $response = $this->actingAs($this->owner)
         ->getJson('/api/v1/reports/marketing-commission?date_from=2026-01-01&date_to=2026-12-31');
 
     $response->assertStatus(200);
-    expect($response->json('data.grand_total.total_commission'))->toEqual(1000);
+    expect($response->json('data.grand_total.total_commission'))->toEqual(6000);
 });
 
 // =============================
@@ -643,22 +653,22 @@ it('calculates commission correctly with multiple items having different discoun
         ],
     ]);
 
-    // Item A: (10000 - 0 - 7000) × 1 = 3000
-    // Item B: (20000 - 2000 - 15000) × 1 = 3000
-    // Total commission = 6000
+    // marketing_profit A: (10000 - 7000) × 1 = 3000
+    // marketing_profit B: (20000 - 15000) × 1 = 5000
+    // Total commission = 8000
     
     $response = $this->actingAs($this->owner)
         ->getJson('/api/v1/reports/marketing-commission?date_from=2026-01-01&date_to=2026-12-31');
 
     $response->assertStatus(200);
-    expect($response->json('data.grand_total.total_commission'))->toEqual(6000);
+    expect($response->json('data.grand_total.total_commission'))->toEqual(8000);
 });
 
 // =============================
 // KALKULASI KOMISI — DISCOUNT MELEBIHI GROSS COMMISSION
 // =============================
 
-it('commission is zero when discount exceeds gross commission (with item discount)', function () {
+it('commission is never negative even with large discounts (item-level discount does not affect marketing_profit)', function () {
     makeSalesTrx([
         'date'        => '2026-03-01',
         'discount'    => 5000,
@@ -677,14 +687,13 @@ it('commission is zero when discount exceeds gross commission (with item discoun
         ],
     ]);
 
-    // Gross commission = (10000 - 2000 - 7000) = 1000
-    // Net commission = max(0, 1000 - 5000) = 0
+    // marketing_profit = (10000 - 7000) × 1 = 3000 (tidak dipotong discount)
     
     $response = $this->actingAs($this->owner)
         ->getJson('/api/v1/reports/marketing-commission?date_from=2026-01-01&date_to=2026-12-31');
 
     $response->assertStatus(200);
-    expect($response->json('data.grand_total.total_commission'))->toEqual(0);
+    expect($response->json('data.grand_total.total_commission'))->toEqual(3000);
 });
 
 // =============================
@@ -710,7 +719,7 @@ it('calculates commission correctly for multiple marketing with discounts', func
         'items'       => [
             ['product_id' => $this->productA->id, 'qty' => 2, 'price' => 9000, 'marketing_price' => 7000],
         ],
-    ]); // Gross = 4000, Net = 3000
+    ]); // marketing_profit = (9000-7000)*2 = 4000
 
     // Marketing 2 tanpa discount
     makeSalesTrx([
@@ -723,11 +732,74 @@ it('calculates commission correctly for multiple marketing with discounts', func
         'items'       => [
             ['product_id' => $this->productA->id, 'qty' => 3, 'price' => 9000, 'marketing_price' => 7000],
         ],
-    ]); // Gross = 6000, Net = 6000
+    ]); // marketing_profit = (9000-7000)*3 = 6000
 
     $response = $this->actingAs($this->owner)
         ->getJson('/api/v1/reports/marketing-commission?date_from=2026-01-01&date_to=2026-12-31');
 
     $response->assertStatus(200);
-    expect($response->json('data.grand_total.total_commission'))->toEqual(9000); // 3000 + 6000
+    expect($response->json('data.grand_total.total_commission'))->toEqual(10000); // 4000 + 6000
+});
+
+// =============================
+// KALKULASI KOMISI — MARKETING_LEAD
+// =============================
+
+it('calculates commission using lead_profit for MARKETING_LEAD role', function () {
+    // MARKETING_LEAD: lead_profit = (sell_price - leader_price) * qty
+    // Product A: leader=8000, sell=12000 → lead_profit = (12000-8000)*2 = 8000
+    makeSalesTrx([
+        'date'            => '2026-03-01',
+        'discount'        => 0,
+        'total'           => 24000,
+        'created_by'      => $this->marketingLead->id,
+        'marketing_id'    => $this->marketingLead->id,
+        'marketing_role'  => Role::MARKETING_LEAD,
+        'customer_id'     => $this->customer->id,
+        'company_id'      => $this->company->id,
+        'items'           => [
+            ['product_id' => $this->productA->id, 'qty' => 2, 'price' => 12000, 'marketing_price' => 0],
+        ],
+    ]);
+
+    $response = $this->actingAs($this->owner)
+        ->getJson('/api/v1/reports/marketing-commission?date_from=2026-01-01&date_to=2026-12-31');
+
+    $response->assertStatus(200);
+    expect($response->json('data.grand_total.total_commission'))->toEqual(8000);
+});
+
+it('includes both MARKETING and MARKETING_LEAD in the report', function () {
+    // MARKETING: marketing_profit = (9000-7000)*3 = 6000
+    makeSalesTrx([
+        'date'        => '2026-03-01',
+        'discount'    => 0,
+        'total'       => 27000,
+        'created_by'  => $this->marketing->id,
+        'company_id'  => $this->company->id,
+        'items'       => [
+            ['product_id' => $this->productA->id, 'qty' => 3, 'price' => 9000, 'marketing_price' => 7000],
+        ],
+    ]);
+
+    // MARKETING_LEAD: lead_profit = (12000-8000)*1 = 4000
+    makeSalesTrx([
+        'date'            => '2026-03-05',
+        'discount'        => 0,
+        'total'           => 12000,
+        'created_by'      => $this->marketingLead->id,
+        'marketing_id'    => $this->marketingLead->id,
+        'marketing_role'  => Role::MARKETING_LEAD,
+        'customer_id'     => $this->customer->id,
+        'company_id'      => $this->company->id,
+        'items'           => [
+            ['product_id' => $this->productA->id, 'qty' => 1, 'price' => 12000, 'marketing_price' => 0],
+        ],
+    ]);
+
+    $response = $this->actingAs($this->owner)
+        ->getJson('/api/v1/reports/marketing-commission?date_from=2026-01-01&date_to=2026-12-31');
+
+    $response->assertStatus(200);
+    expect($response->json('data.grand_total.total_commission'))->toEqual(10000); // 6000 + 4000
 });
