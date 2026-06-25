@@ -60,7 +60,6 @@ return [
         'payment_recorded'  => 'Pembayaran cicilan berhasil dicatat.',
         'completed'         => 'Cicilan telah lunas.',
         'already_completed' => 'Cicilan ini sudah lunas.',
-        'must_pay_full'     => 'Tenor sudah habis. Wajib melunasi sisa sebesar Rp :remaining.',
         'overpaid'          => 'Jumlah bayar melebihi sisa cicilan sebesar Rp :remaining.',
         'validation'        => [
             'paid_amount_required' => 'Jumlah bayar wajib diisi.',
