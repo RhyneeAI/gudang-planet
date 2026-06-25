@@ -62,7 +62,7 @@ beforeEach(function () {
             'customer_id'          => $this->customer->id,
             'total_amount'         => $total,
             'paid_amount'          => 0,
-            'tenor'                => $tenor,
+            'down_payment'         => 0,
             'start_date'           => now()->toDateString(),
             'status'               => PosInstallmentStatus::ACTIVE,
             'company_id'           => $this->company->id,
@@ -193,32 +193,32 @@ it('returns 404 when plan not found', function () {
 // PAY
 // =============================
 
-it('can record installment payment', function () {
-    $plan = ($this->makePlan)(300000, 3);
+it('can pay full remaining', function () {
+    $plan = ($this->makePlan)(300000);
 
     $this->actingAs($this->owner)
         ->postJson("/api/v1/sales-installments/{$plan->ulid}/pay", [
-            'paid_amount' => 100000,
+            'paid_amount' => 300000,
         ])
         ->assertStatus(200)
         ->assertJsonPath('success', true);
 
-    expect($plan->fresh()->paid_amount)->toEqual(100000);
-    expect($plan->fresh()->status)->toEqual(PosInstallmentStatus::ACTIVE);
+    expect($plan->fresh()->paid_amount)->toEqual(300000);
+    expect($plan->fresh()->status)->toEqual(PosInstallmentStatus::COMPLETED);
 });
 
-it('installment_number increments on each payment', function () {
-    $plan = ($this->makePlan)(300000, 3);
+it('rejects partial payment (must pay full remaining)', function () {
+    $plan = ($this->makePlan)(300000);
 
     $this->actingAs($this->owner)
-        ->postJson("/api/v1/sales-installments/{$plan->ulid}/pay", ['paid_amount' => 50000]);
+        ->postJson("/api/v1/sales-installments/{$plan->ulid}/pay", ['paid_amount' => 50000])
+        ->assertStatus(422)
+        ->assertJsonPath('success', false);
 
     $this->actingAs($this->owner)
-        ->postJson("/api/v1/sales-installments/{$plan->ulid}/pay", ['paid_amount' => 50000]);
-
-    $payments = $plan->fresh()->payments;
-    expect($payments[0]->installment_number)->toBe(1);
-    expect($payments[1]->installment_number)->toBe(2);
+        ->postJson("/api/v1/sales-installments/{$plan->ulid}/pay", ['paid_amount' => 300000])
+        ->assertStatus(200)
+        ->assertJsonPath('success', true);
 });
 
 it('status becomes COMPLETED when fully paid', function () {
@@ -244,17 +244,13 @@ it('sales transaction status becomes PAID when installment completed', function 
     expect($trx->fresh()->paid)->toEqual(300000.0);
 });
 
-it('can pay in multiple small installments', function () {
-    $plan = ($this->makePlan)(300000, 3);
+it('rejects partial payment when paying remaining balance', function () {
+    $plan = ($this->makePlan)(300000);
 
-    // Bayar 30x @10000
-    for ($i = 0; $i < 30; $i++) {
-        $this->actingAs($this->owner)
-            ->postJson("/api/v1/sales-installments/{$plan->ulid}/pay", ['paid_amount' => 10000]);
-    }
-
-    expect($plan->fresh()->status)->toEqual(PosInstallmentStatus::COMPLETED);
-    expect($plan->fresh()->payments()->count())->toBe(30);
+    $this->actingAs($this->owner)
+        ->postJson("/api/v1/sales-installments/{$plan->ulid}/pay", ['paid_amount' => 10000])
+        ->assertStatus(422)
+        ->assertJsonPath('success', false);
 });
 
 it('returns 422 when payment exceeds remaining', function () {
@@ -276,8 +272,8 @@ it('returns 422 when paying already completed installment', function () {
         ->assertJsonPath('success', false);
 });
 
-it('must pay full remaining when overdue', function () {
-    // Buat plan yang sudah overdue (tenor habis)
+it('must pay full remaining balance', function () {
+    // Plan with partial balance still unpaid
     $plan = PosSalesInstallmentPlan::create([
         'ulid'                 => Str::ulid(),
         'sales_transaction_id' => PosSalesTransaction::factory()->create([
@@ -289,14 +285,14 @@ it('must pay full remaining when overdue', function () {
         ])->id,
         'customer_id'  => $this->customer->id,
         'total_amount' => 300000,
-        'paid_amount'  => 100000,
-        'tenor'        => 3,
-        'start_date'   => now()->subMonths(4)->toDateString(), // ← sudah lewat 4 bulan, tenor 3
-        'status'       => PosInstallmentStatus::OVERDUE,
+        'paid_amount'  => 0,
+        'down_payment' => 0,
+        'start_date'   => now()->toDateString(),
+        'status'       => PosInstallmentStatus::ACTIVE,
         'company_id'   => $this->company->id,
     ]);
 
-    // Bayar kurang dari sisa (200000) → harus ditolak
+    // Bayar kurang dari sisa (300000) → harus ditolak
     $this->actingAs($this->owner)
         ->postJson("/api/v1/sales-installments/{$plan->ulid}/pay", ['paid_amount' => 50000])
         ->assertStatus(422)
@@ -304,7 +300,7 @@ it('must pay full remaining when overdue', function () {
 
     // Bayar penuh sisa → berhasil
     $this->actingAs($this->owner)
-        ->postJson("/api/v1/sales-installments/{$plan->ulid}/pay", ['paid_amount' => 200000])
+        ->postJson("/api/v1/sales-installments/{$plan->ulid}/pay", ['paid_amount' => 300000])
         ->assertStatus(200)
         ->assertJsonPath('success', true);
 });

@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -12,9 +13,11 @@ return new class extends Migration
             $table->foreignId('marketing_id')->nullable()->constrained('users')->onDelete('restrict');
         });
 
-        Schema::table('pos_sales_transactions', function (Blueprint $table) {
-            $table->dropIndex(['marketing_id', 'company_id']);
-        });
+        if (DB::getDriverName() === 'mysql') {
+            Schema::table('pos_sales_transactions', function (Blueprint $table) {
+                $table->dropIndex(['marketing_id', 'company_id']);
+            });
+        }
 
         Schema::table('pos_sales_transactions', function (Blueprint $table) {
             $table->index(['marketing_id', 'company_id']);

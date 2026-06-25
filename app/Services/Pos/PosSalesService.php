@@ -240,7 +240,7 @@ class PosSalesService
             'sales_transaction_id' => $transaction->id,
             'customer_id'          => $customerId,
             'total_amount'         => $total,
-            'paid_amount'          => 0,
+            'paid_amount'          => $downPayment,
             'down_payment'         => $downPayment,
             'start_date'           => now()->toDateString(),
             'status'               => PosInstallmentStatus::ACTIVE,

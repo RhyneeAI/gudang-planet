@@ -14,6 +14,7 @@ return new class extends Migration
             $table->enum('type', [
                 'PURCHASE_IN',
                 'SALES_OUT',
+                'RETURN_IN',
                 'ADJUST_IN',
                 'ADJUST_OUT',
                 'OPNAME',

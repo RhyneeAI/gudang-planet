@@ -60,6 +60,7 @@ return [
         'payment_recorded'  => 'Installment payment recorded successfully.',
         'completed'         => 'Installment fully paid.',
         'already_completed' => 'This installment has already been completed.',
+        'must_pay_full'     => 'Must pay the full remaining balance of Rp :remaining.',
         'overpaid'          => 'Payment amount exceeds remaining balance of Rp :remaining.',
         'validation'        => [
             'paid_amount_required' => 'Payment amount is required.',

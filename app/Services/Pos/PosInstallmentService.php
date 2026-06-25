@@ -29,6 +29,12 @@ class PosInstallmentService
             ]);
         }
 
+        if ($paidAmount < $remaining) {
+            throw ValidationException::withMessages([
+                'paid_amount' => [__('pos.installments.must_pay_full', ['remaining' => $remaining])],
+            ]);
+        }
+
         return DB::transaction(function () use ($plan, $paidAmount, $notes, $user) {
             $plan->payments()->create([
                 'ulid'                      => Str::ulid(),
