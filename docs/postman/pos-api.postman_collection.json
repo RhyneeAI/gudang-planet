@@ -1,0 +1,300 @@
+{
+  "info": {
+    "name": "Gudang Planet — POS API (v1.9)",
+    "description": "Collection untuk modul POS Gudang Planet (perubahan v1.9).\n\n**Base URL:** `{{base_url}}/api/v1`\n\n**Auth:** Bearer token dari `POST /api/v1/login`\n\n**Credential demo:**\n| Role | Phone | Password |\n|------|-------|----------|\n| KASIR | 087777888888 | kasir_gp |\n| ADMIN | 081122223333 | admin_gp |\n\n**Header:**\n- `Accept: application/json`\n- `Accept-Language: {{lang}}` (id/en)\n- `Authorization: Bearer {{token}}`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "lang", "value": "id", "type": "string" },
+    { "key": "product_uuid", "value": "", "type": "string" },
+    { "key": "transaction_ulid", "value": "", "type": "string" },
+    { "key": "installment_ulid", "value": "", "type": "string" },
+    { "key": "detail_ulid", "value": "", "type": "string" },
+    { "key": "customer_uuid", "value": "", "type": "string" },
+    { "key": "marketing_uuid", "value": "", "type": "string" },
+    { "key": "return_ulid", "value": "", "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.token) {",
+                  "    pm.collectionVariables.set('token', json.data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"087777888888\",\n  \"password\": \"kasir_gp\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Product (v1.9 — New Pricing Fields)",
+      "item": [
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Produk Contoh\",\n  \"code\": \"PRD-001\",\n  \"base_price\": 20000,\n  \"leader_price\": 25000,\n  \"marketing_price\": 26000,\n  \"sell_price\": 30000,\n  \"category_id\": 1,\n  \"unit_id\": 1,\n  \"stock\": 100,\n  \"min_stock\": 10,\n  \"description\": \"Produk contoh untuk testing\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products"]
+            }
+          }
+        },
+        {
+          "name": "List Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products"]
+            }
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Produk Contoh Updated\",\n  \"base_price\": 18000,\n  \"leader_price\": 23000,\n  \"marketing_price\": 24000,\n  \"sell_price\": 28000,\n  \"stock\": 90\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/{{product_uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "{{product_uuid}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sales Transaction (v1.9 — Down Payment + Marketing)",
+      "item": [
+        {
+          "name": "Create Transaction (CASH)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_date\": \"2026-06-25 10:00:00\",\n  \"customer_uuid\": null,\n  \"marketing_uuid\": null,\n  \"payment_type\": \"CASH\",\n  \"discount\": 0,\n  \"total\": 60000,\n  \"paid\": 60000,\n  \"items\": [\n    {\n      \"product_uuid\": \"{{product_uuid}}\",\n      \"quantity\": 2,\n      \"sell_price\": 30000,\n      \"marketing_price\": 26000,\n      \"discount\": 0\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sales-transactions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sales-transactions"]
+            }
+          }
+        },
+        {
+          "name": "Create Transaction (CICIL — DP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_date\": \"2026-06-25 10:00:00\",\n  \"customer_uuid\": \"{{customer_uuid}}\",\n  \"marketing_uuid\": \"{{marketing_uuid}}\",\n  \"payment_type\": \"CICIL\",\n  \"down_payment\": 10000,\n  \"discount\": 0,\n  \"total\": 60000,\n  \"items\": [\n    {\n      \"product_uuid\": \"{{product_uuid}}\",\n      \"quantity\": 2,\n      \"sell_price\": 30000,\n      \"marketing_price\": 26000,\n      \"discount\": 0\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sales-transactions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sales-transactions"]
+            }
+          }
+        },
+        {
+          "name": "List Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sales-transactions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sales-transactions"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sales Installment (v1.9 — DP + Full Bayar)",
+      "item": [
+        {
+          "name": "List Installments",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sales-installments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sales-installments"]
+            }
+          }
+        },
+        {
+          "name": "Detail Installment",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sales-installments/{{installment_ulid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sales-installments", "{{installment_ulid}}"]
+            }
+          }
+        },
+        {
+          "name": "Pay Installment (Pelunasan)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paid_amount\": 50000,\n  \"notes\": \"Pelunasan\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sales-installments/{{installment_ulid}}/pay",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sales-installments", "{{installment_ulid}}", "pay"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Returns (BARU — v1.9)",
+      "item": [
+        {
+          "name": "Create Return",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sales_transaction_uuid\": \"{{transaction_ulid}}\",\n  \"sales_detail_uuid\": \"{{detail_ulid}}\",\n  \"product_uuid\": \"{{product_uuid}}\",\n  \"qty\": 1,\n  \"reason\": \"Produk cacat\",\n  \"refund_amount\": 30000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/returns",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "returns"]
+            }
+          }
+        },
+        {
+          "name": "List Returns",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/returns",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "returns"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stock Card (BARU — v1.9)",
+      "item": [
+        {
+          "name": "Stock Card by Product",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/stock-card/{{product_uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "stock-card", "{{product_uuid}}"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
