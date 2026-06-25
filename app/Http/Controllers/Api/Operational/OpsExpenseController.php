@@ -19,6 +19,7 @@ use App\Services\Operational\OpsNotificationService;
 use App\Services\Operational\OpsOperationalConfigService;
 use App\Services\Operational\OpsWalletService;
 use App\Services\SubCompanyService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -588,7 +589,7 @@ class OpsExpenseController extends Controller
 
         $expenses = OpsExpense::with(['mandor', 'subCompany', 'createdBy', 'transferIncome.transferConfirmation', 'editLogs'])
             ->withCount('editLogs')
-            ->when(true, fn ($query) => $this->applySubCompanyFilter($query, $request))
+            ->when(true, fn (Builder $query) => $this->applySubCompanyFilter($query, $request))
             ->when($request->date_from, fn($q, $date) => $q->whereDate('date', '>=', $date))
             ->when($request->date_to, fn($q, $date) => $q->whereDate('date', '<=', $date))
             ->when(

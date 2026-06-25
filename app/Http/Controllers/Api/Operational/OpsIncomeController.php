@@ -14,6 +14,7 @@ use App\Services\Operational\OpsFileService;
 use App\Services\Operational\OpsOperationalConfigService;
 use App\Services\Operational\OpsWalletService;
 use App\Services\SubCompanyService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -414,7 +415,7 @@ class OpsIncomeController extends Controller
         $orderByValue = strtoupper($request->input('order_by_value', 'DESC')) === 'ASC' ? 'ASC' : 'DESC';
 
         $incomes = OpsIncome::with(['mandor', 'subCompany', 'createdBy', 'transferConfirmation', 'editLogs'])
-            ->when(true, fn ($query) => $this->applySubCompanyFilter($query, $request))
+            ->when(true, fn (Builder $query) => $this->applySubCompanyFilter($query, $request))
             ->when($request->date_from, fn($q, $date) => $q->whereDate('date', '>=', $date))
             ->when($request->date_to, fn($q, $date) => $q->whereDate('date', '<=', $date))
             ->when(

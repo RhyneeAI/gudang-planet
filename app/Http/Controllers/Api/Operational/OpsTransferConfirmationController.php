@@ -14,6 +14,7 @@ use App\Models\OpsTransferConfirmation;
 use App\Services\Operational\OpsFileService;
 use App\Services\Operational\OpsTransferConfirmationAccess;
 use App\Services\Operational\OpsWalletService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -34,7 +35,7 @@ class OpsTransferConfirmationController extends Controller
         $confirmations = OpsTransferConfirmation::with(['confirmable.subCompany', 'confirmable.mandor', 'confirmedBy'])
             ->when(
                 $user->role === Role::MANDOR,
-                fn ($query) => $this->transferAccess->scopeForMandor($query, $user)
+                fn (Builder $query) => $this->transferAccess->scopeForMandor($query, $user)
             )
             ->when($request->status, fn($q, $status) => $q->where('status', $status))
             ->when($request->sub_company_uuid, function ($query, $uuid) {
