@@ -12,15 +12,13 @@ return new class extends Migration
             $table->foreignId('marketing_id')->nullable()->constrained('users')->onDelete('restrict');
         });
 
-        try {
-            Schema::table('pos_sales_transactions', function (Blueprint $table) {
-                $table->index(['marketing_id', 'company_id']);
-            });
-        } catch (\Illuminate\Database\QueryException $e) {
-            if (! str_contains($e->getMessage(), 'Duplicate key name')) {
-                throw $e;
-            }
-        }
+        Schema::table('pos_sales_transactions', function (Blueprint $table) {
+            $table->dropIndex(['marketing_id', 'company_id']);
+        });
+
+        Schema::table('pos_sales_transactions', function (Blueprint $table) {
+            $table->index(['marketing_id', 'company_id']);
+        });
 
         Schema::table('pos_sales_details', function (Blueprint $table) {
             $table->double('company_profit', 15, 2)->default(0)->after('marketing_price');
