@@ -65,6 +65,8 @@ class PosSalesTransactionController extends Controller
             $transaction = $this->salesService->store(
                 data: array_merge($request->validated(), [
                     'customer_id' => $request->getCustomerId(),
+                    'marketing_id' => $request->getMarketingId(),
+                    'marketing_role' => $request->getMarketingRole(),
                 ]),
                 user: $request->user(),
             );

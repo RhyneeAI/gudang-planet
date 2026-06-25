@@ -6,6 +6,7 @@ use App\Enums\PosInstallmentStatus;
 use App\Enums\PosPaymentType;
 use App\Enums\PosStockMutationType;
 use App\Enums\PosTransactionStatus;
+use App\Enums\Role;
 use App\Models\PosProduct;
 use App\Models\PosSalesDetail;
 use App\Models\PosSalesInstallmentPlan;
@@ -26,6 +27,8 @@ class PosSalesService
     public function store(array $data, User $user): PosSalesTransaction
     {
         $customerId = $data['customer_id'];
+        $marketingId = $data['marketing_id'] ?? null;
+        $marketingRole = $data['marketing_role'] ?? null;
         $discount   = $data['discount'] ?? 0;
         $items      = $data['items'];
 
@@ -35,7 +38,7 @@ class PosSalesService
 
         $transactionCode = $this->generateTransactionCode($user);
 
-        return DB::transaction(function () use ($data, $items, $products, $transactionCode, $customerId, $discount, $user) {
+        return DB::transaction(function () use ($data, $items, $products, $transactionCode, $customerId, $marketingId, $marketingRole, $discount, $user) {
             $paymentType = PosPaymentType::tryFrom($data['payment_type']);
 
             $transaction = PosSalesTransaction::create([
@@ -51,12 +54,13 @@ class PosSalesService
                                             ? PosTransactionStatus::UNPAID
                                             : PosTransactionStatus::PAID,
                 'customer_id'        => $customerId,
+                'marketing_id'       => $marketingId,
                 'created_by'         => $user->id,
                 'company_id'         => $user->company_id,
             ]);
 
             foreach ($items as $item) {
-                $this->processSalesItem($item, $products, $transaction, $transactionCode, $user);
+                $this->processSalesItem($item, $products, $transaction, $transactionCode, $marketingRole, $user);
             }
 
             if ($paymentType === PosPaymentType::CICIL) {
@@ -167,6 +171,7 @@ class PosSalesService
         Collection $products,
         PosSalesTransaction $transaction,
         string $transactionCode,
+        ?Role $marketingRole,
         User $user,
     ): void {
         $product         = $products->get($item['product_uuid']);
@@ -178,15 +183,34 @@ class PosSalesService
         $stockBefore     = (int) $product->stock;
         $stockAfter      = $stockBefore - $quantity;
 
+        $basePrice   = (float) $product->base_price;
+        $leaderPrice = (float) $product->leader_price;
+
+        $companyProfit = ($leaderPrice - $basePrice) * $quantity;
+
+        if ($marketingRole === Role::MARKETING_LEAD) {
+            $leadProfit = ($sellPrice - $leaderPrice) * $quantity;
+            $marketingProfit = 0;
+        } elseif ($marketingRole === Role::MARKETING) {
+            $leadProfit = ($marketingPrice - $leaderPrice) * $quantity;
+            $marketingProfit = ($sellPrice - $marketingPrice) * $quantity;
+        } else {
+            $leadProfit = 0;
+            $marketingProfit = 0;
+        }
+
         $detail = PosSalesDetail::create([
-            'sale_id'         => $transaction->id,
-            'product_id'      => $product->id,
-            'quantity'        => $quantity,
-            'sell_price'      => $sellPrice,
-            'marketing_price' => $marketingPrice,
-            'discount'        => $itemDiscount,
-            'subtotal'        => $subtotal,
-            'company_id'      => $user->company_id,
+            'sale_id'           => $transaction->id,
+            'product_id'        => $product->id,
+            'quantity'          => $quantity,
+            'sell_price'        => $sellPrice,
+            'marketing_price'   => $marketingPrice,
+            'company_profit'    => $companyProfit,
+            'lead_profit'       => $leadProfit,
+            'marketing_profit'  => $marketingProfit,
+            'discount'          => $itemDiscount,
+            'subtotal'          => $subtotal,
+            'company_id'        => $user->company_id,
         ]);
 
         $this->stockMutationService->adjustStock($product, $stockAfter);

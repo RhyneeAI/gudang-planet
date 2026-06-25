@@ -46,10 +46,10 @@ class PosSalesTransactionRequest extends FormRequest
                 'string',
                 'uuid',
                 function ($attribute, $value, $fail) {
-                    if (!$value) return; // nullable
+                    if (!$value) return;
                     
                     if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $value)) {
-                        return; // uuid rule handle error
+                        return;
                     }
                     
                     $customerExists = PosCustomer::where('uuid', $value)
@@ -60,6 +60,12 @@ class PosSalesTransactionRequest extends FormRequest
                         $fail(__('pos.sales_transactions.validation.customer_not_found'));
                     }
                 }
+            ],
+            'marketing_uuid'        => [
+                'nullable',
+                'string',
+                'uuid',
+                'exists:users,uuid',
             ],
             'items'                     => ['required', 'array', 'min:1'],
             'items.*.product_uuid'      => ['required', 'string', 'uuid', 'exists:pos_products,uuid'],
@@ -106,6 +112,18 @@ class PosSalesTransactionRequest extends FormRequest
         return PosCustomer::where('uuid', $this->customer_uuid)
             ->where('company_id', $this->user()->company_id)
             ->value('id');
+    }
+
+    public function getMarketingId(): ?int
+    {
+        if (!$this->marketing_uuid) return null;
+        return \App\Models\User::where('uuid', $this->marketing_uuid)->value('id');
+    }
+
+    public function getMarketingRole(): ?\App\Enums\Role
+    {
+        if (!$this->marketing_uuid) return null;
+        return \App\Models\User::where('uuid', $this->marketing_uuid)->value('role');
     }
 
     public function messages(): array
