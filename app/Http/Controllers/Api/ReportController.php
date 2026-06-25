@@ -26,12 +26,13 @@ class ReportController extends Controller
     public function marketingCommission(PosMarketingCommissionRequest $request)
     {
         $companyId   = $request->user()->company_id;
+        $roles       = [Role::MARKETING, Role::MARKETING_LEAD];
 
         // Resolve marketing_uuid → id jika ada
         $marketingId = null;
         if ($request->marketing_uuid) {
             $marketingId = User::where('uuid', $request->marketing_uuid)
-                ->where('role', Role::MARKETING)
+                ->whereIn('role', $roles)
                 ->where('company_id', $companyId)
                 ->value('id');
 
@@ -44,23 +45,23 @@ class ReportController extends Controller
             }
         }
 
-        // Ambil semua user role marketing di company ini
+        // Ambil semua user marketing + marketing_lead di company ini
         $marketingUserIds = User::where('company_id', $companyId)
-            ->where('role', Role::MARKETING)
+            ->whereIn('role', $roles)
             ->pluck('id');
 
         $transactions = PosSalesTransaction::with([
                 'customer:id,name',
-                'createdBy:id,name,uuid',
+                'marketing:id,name,uuid,role',
                 'details.product:id,uuid,name,code,leader_price,marketing_price',
             ])
             ->where('company_id', $companyId)
-            ->whereIn('created_by', $marketingUserIds) 
+            ->whereIn('marketing_id', $marketingUserIds)
             ->where('transaction_status', PosTransactionStatus::PAID)
             ->whereDate('transaction_date', '>=', $request->date_from)
             ->whereDate('transaction_date', '<=', $request->date_to)
-            ->when($marketingId, fn($q, $id) => $q->where('created_by', $id))
-            ->orderBy('created_by')
+            ->when($marketingId, fn($q, $id) => $q->where('marketing_id', $id))
+            ->orderBy('marketing_id')
             ->orderBy('transaction_date')
             ->get();
 
@@ -72,23 +73,19 @@ class ReportController extends Controller
             'total_commission' => 0,
         ];
 
-        $grouped = $transactions->groupBy('created_by');
+        $grouped = $transactions->groupBy('marketing_id');
 
-        foreach ($grouped as $createdBy => $mktTransactions) {
-            $marketing        = $mktTransactions->first()->createdBy;
+        foreach ($grouped as $mktId => $mktTransactions) {
+            $marketing        = $mktTransactions->first()->marketing;
+            $isLead           = $marketing && $marketing->role === Role::MARKETING_LEAD;
             $marketingSummary = ['total_sales' => 0, 'total_commission' => 0];
             $transactionRows  = [];
 
             foreach ($mktTransactions as $trx) {
                 $totalAfterDiscount = $trx->total - $trx->discount;
-                // Hitung komisi kotor dari items
-                $grossCommission = 0;
-                foreach ($trx->details as $detail) {
-                    $grossCommission += ($detail->sell_price - $detail->discount - $detail->marketing_price) * $detail->quantity;
-                }
 
-                // Diskon sepenuhnya ditanggung marketing
-                $netCommission = max(0, $grossCommission - $trx->discount);
+                // Komisi dari stored profit fields
+                $commission = $trx->details->sum(fn($d) => $isLead ? $d->lead_profit : $d->marketing_profit);
 
                 $transactionRows[] = [
                     'date'                 => Carbon::parse($trx->transaction_date)->format('d/m/Y'),
@@ -98,17 +95,18 @@ class ReportController extends Controller
                     'total'                => $trx->total,
                     'discount'             => $trx->discount,
                     'total_after_discount' => $totalAfterDiscount,
-                    'commission'           => $netCommission,
+                    'commission'           => $commission,
                 ];
 
                 $marketingSummary['total_sales']      += $totalAfterDiscount;
-                $marketingSummary['total_commission'] += $netCommission;
+                $marketingSummary['total_commission'] += $commission;
             }
 
             $report[] = [
                 'marketing'    => [
-                    'uuid' => $marketing->uuid,
-                    'name' => $marketing->name,
+                    'uuid' => $marketing?->uuid,
+                    'name' => $marketing?->name,
+                    'role' => $marketing?->role?->value,
                 ],
                 'transactions' => $transactionRows,
                 'summary'      => $marketingSummary,
@@ -167,12 +165,13 @@ class ReportController extends Controller
     public function salesRevenue(PosSalesRevenueRequest $request)
     {
         $companyId = $request->user()->company_id;
+        $roles     = [Role::MARKETING, Role::MARKETING_LEAD];
 
         // Resolve marketing_uuid → id jika ada
         $marketingId = null;
         if ($request->marketing_uuid) {
             $marketingId = User::where('uuid', $request->marketing_uuid)
-                ->where('role', Role::MARKETING)
+                ->whereIn('role', $roles)
                 ->where('company_id', $companyId)
                 ->value('id');
 
@@ -185,12 +184,12 @@ class ReportController extends Controller
             }
         }
 
-        // Ambil semua sales_details dalam rentang transaksi PAID
+        // Ambil semua sales_details dalam rentang transaksi
         $details = PosSalesDetail::with([
-                'product:id,uuid,name,code,base_price,marketing_price,unit_id,leader_price', 
-                'product.unit:id,name',                                         
-                'saleTransaction:id,transaction_code,transaction_date,total,paid,additional_cost,payment_type,created_by',
-                'saleTransaction.createdBy:id,name,role',                   
+                'product:id,uuid,name,code,base_price,marketing_price,unit_id,leader_price',
+                'product.unit:id,name',
+                'saleTransaction:id,transaction_code,transaction_date,total,paid,additional_cost,payment_type,created_by,marketing_id',
+                'saleTransaction.createdBy:id,name,role',
                 'saleTransaction.installmentPlan:id,sales_transaction_id,paid_amount,total_amount,status',
             ])
             ->whereHas('saleTransaction', function ($q) use ($companyId, $request, $marketingId) {
@@ -198,10 +197,10 @@ class ReportController extends Controller
                 ->whereIn('transaction_status', [PosTransactionStatus::PAID, PosTransactionStatus::PROCESS, PosTransactionStatus::UNPAID])
                 ->whereDate('transaction_date', '>=', $request->date_from)
                 ->whereDate('transaction_date', '<=', $request->date_to);
-                
+
                 // Filter by marketing if provided
                 if ($marketingId) {
-                    $q->where('created_by', $marketingId);
+                    $q->where('marketing_id', $marketingId);
                 }
             })
             ->where('company_id', $companyId)
@@ -229,57 +228,45 @@ class ReportController extends Controller
             ->take(10)
             ->values();
 
-        $detailTransactions = $details->groupBy('saleTransaction.id')->map(function ($items, $transactionId) {
+        $detailTransactions = $details->groupBy('saleTransaction.id')->map(function ($items) {
             $firstItem = $items->first();
             $trx = $firstItem->saleTransaction;
             $isCicil = $trx->payment_type === PosPaymentType::CICIL;
             $plan = $isCicil ? $trx->installmentPlan : null;
-            
-            // Cek apakah transaksi dibuat oleh OWNER atau MARKETING
-            $createdBy = $trx->createdBy;
-            $isOwner = $createdBy->role === Role::OWNER;
-            
-            // Hitung total keuntungan transaksi
-            $totalProfitFull = $items->sum(function ($item) use ($isOwner) {
-                $basePrice = $item->product->base_price;
-                $profit = $isOwner 
-                    ? $item->sell_price - $basePrice 
-                    : $item->marketing_price - $basePrice;
-                return $profit * $item->quantity;
-            });
+
+            // Total company profit dari stored fields
+            $totalProfitFull = $items->sum(fn($item) => $item->company_profit);
 
             if ($isCicil && $plan && $plan->status !== 'COMPLETED') {
                 $totalProfit = 0;
             } else {
                 $totalProfit = $totalProfitFull;
-            }           
-            
+            }
+
             return [
                 'transaction_code' => $trx->transaction_code,
                 'date'             => $trx->transaction_date->format('d/m/Y'),
                 'cashier'          => $trx->createdBy->name ?? '-',
                 'payment_type'     => $trx->payment_type?->value,
                 'total'            => $trx->total - $trx->additional_cost,
-                'profit'           => $totalProfit, 
+                'profit'           => $totalProfit,
                 'is_cicil'         => $isCicil,
                 'cicil_info'       => $isCicil ? [
                     'paid_amount'      => $plan?->paid_amount ?? 0,
                     'remaining_amount' => $plan?->remainingAmount() ?? 0,
                     'status'           => $plan?->status->label(),
                 ] : null,
-                'items'            => $items->map(function ($row) use ($isOwner) {
+                'items'            => $items->map(function ($row) {
                     return [
-                        'code'       => $row->product->code ?? '-',
-                        'name'       => $row->product->name ?? '-',
-                        'unit'       => $row->product->unit->name ?? '-',
-						'base_price' => $row->product->base_price ?? '-',
-                        'leader_price'=> $row->product->leader_price ?? '-',
-                        'sell_price' => $row->sell_price,
-                        'quantity'   => $row->quantity,
-                        'subtotal'   => $row->subtotal,
-                        'profit'     => $isOwner 
-                            ? ($row->sell_price - $row->product->base_price) * $row->quantity
-                            : ($row->marketing_price - $row->product->base_price) * $row->quantity,
+                        'code'          => $row->product->code ?? '-',
+                        'name'          => $row->product->name ?? '-',
+                        'unit'          => $row->product->unit->name ?? '-',
+                        'base_price'    => $row->product->base_price ?? '-',
+                        'leader_price'  => $row->product->leader_price ?? '-',
+                        'sell_price'    => $row->sell_price,
+                        'quantity'      => $row->quantity,
+                        'subtotal'      => $row->subtotal,
+                        'profit'        => $row->company_profit,
                     ];
                 })->values(),
             ];
