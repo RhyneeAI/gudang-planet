@@ -29,7 +29,7 @@ class SubCompanyController extends Controller
         $subCompanies = SubCompany::with(['mandor', 'createdBy', 'wallet'])
             ->when($user->role === Role::MANDOR, fn ($query) => $query->where('mandor_id', $user->id))
             ->when(
-                $request->mandor_uuid && $user->role !== Role::MANDOR,
+                $request->mandor_uuid && !in_array($user->role, [Role::MANDOR, Role::KEPALA_MANDOR]),
                 fn ($query) => $query->whereHas(
                     'mandor',
                     fn ($mandorQuery) => $mandorQuery->where('uuid', $request->mandor_uuid)
