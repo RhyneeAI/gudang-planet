@@ -110,6 +110,7 @@ return [
     ],
     'report' => [
         'income_expense_report' => 'Laporan pemasukan dan pengeluaran berhasil diambil.',
+        'income_expense_detail' => 'Rincian pemasukan dan pengeluaran berhasil diambil.',
         'download_ready' => 'File laporan siap diunduh.',
         'no_data' => 'Tidak ada data untuk periode yang dipilih.',
     ],
