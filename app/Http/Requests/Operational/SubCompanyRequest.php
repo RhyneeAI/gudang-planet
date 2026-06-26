@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Operational;
 
+use App\Enums\Role;
 use App\Models\SubCompany;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -48,6 +49,7 @@ class SubCompanyRequest extends FormRequest
                     ->ignore($mandorId),
             ],
             'mandor.address' => ['sometimes', 'nullable', 'string'],
+            'mandor.role' => ['sometimes', 'string', Rule::in([Role::MANDOR->value, Role::KEPALA_MANDOR->value])],
             'mandor.is_active' => ['sometimes', 'boolean'],
 
             'sub_company' => [$subCompanyRequired, 'array'],

@@ -44,7 +44,7 @@ class AuthController extends Controller
         $deviceName = $request->header('User-Agent', 'unknown-device');
         $user->tokens()->where('name', $deviceName)->delete();
 
-        if ($user->role === Role::MANDOR) {
+        if (in_array($user->role, [Role::MANDOR, Role::KEPALA_MANDOR])) {
             $user->load(['subCompanies' => fn ($query) => $query->where('is_active', true)->orderBy('name')]);
         }
 
