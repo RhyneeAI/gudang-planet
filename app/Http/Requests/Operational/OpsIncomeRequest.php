@@ -19,7 +19,7 @@ class OpsIncomeRequest extends FormRequest
 
     public function rules(): array
     {
-        if ($this->user()->role === Role::MANDOR) {
+        if (in_array($this->user()->role, [Role::MANDOR, Role::KEPALA_MANDOR])) {
             return $this->mandorRules();
         }
 
@@ -42,7 +42,7 @@ class OpsIncomeRequest extends FormRequest
 
                     $exists = User::where('uuid', $value)
                         ->where('company_id', $this->user()->company_id)
-                        ->where('role', Role::MANDOR)
+                        ->whereIn('role', [Role::MANDOR, Role::KEPALA_MANDOR])
                         ->where('is_active', true)
                         ->exists();
 
@@ -63,7 +63,7 @@ class OpsIncomeRequest extends FormRequest
 
                     $mandorId = User::where('uuid', $this->mandor_uuid)
                         ->where('company_id', $this->user()->company_id)
-                        ->where('role', Role::MANDOR)
+                        ->whereIn('role', [Role::MANDOR, Role::KEPALA_MANDOR])
                         ->value('id');
 
                     if (!$mandorId) {

@@ -110,6 +110,7 @@ return [
     ],
     'report' => [
         'income_expense_report' => 'Income and expense report retrieved successfully.',
+        'income_expense_detail' => 'Income and expense detail retrieved successfully.',
         'download_ready' => 'Report files are ready for download.',
         'no_data' => 'No data found for the selected period.',
     ],

@@ -14,7 +14,7 @@ trait ScopesOperationalBySubCompany
     {
         $user = $request->user();
 
-        if ($user->role === Role::MANDOR) {
+        if (in_array($user->role, [Role::MANDOR, Role::KEPALA_MANDOR])) {
             $query->where(function (Builder $mandorScope) use ($user) {
                 $mandorScope->where('mandor_id', $user->id)
                     ->orWhereHas(

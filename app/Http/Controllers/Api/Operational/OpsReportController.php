@@ -13,8 +13,11 @@ use App\Models\OpsExpense;
 use App\Models\OpsIncome;
 use App\Models\User;
 use App\Services\ExportService;
+use App\Services\Operational\OpsFileService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
@@ -23,6 +26,7 @@ class OpsReportController extends Controller
 {
     public function __construct(
         protected ExportService $exportService,
+        protected OpsFileService $fileService,
     ) {}
 
     public function incomeExpenseReport(OpsReportRequest $request)
@@ -75,7 +79,9 @@ class OpsReportController extends Controller
         $companyId  = $request->user()->company_id;
         $startDate  = Carbon::parse($request->start_date)->startOfDay();
         $endDate    = Carbon::parse($request->end_date)->endOfDay();
-        $mandorUuid = $request->mandor_uuid;
+        $user         = $request->user();
+        $mandorUuid   = $request->mandor_uuid;
+        $isKepala     = $user->role === Role::KEPALA_MANDOR;
 
         $incomeQuery   = OpsIncome::query();
         $expenseQuery  = OpsExpense::query();
@@ -97,16 +103,22 @@ class OpsReportController extends Controller
         $saldoAwalMethods   = $this->paymentMethodSaldo($incomeQuery, $expenseQuery, '<', $startDate);
         $saldoAkhirMethods  = $this->paymentMethodSaldo($incomeQuery, $expenseQuery, '<=', $endDate);
 
+        $mandorRoles = $isKepala
+            ? [Role::MANDOR, Role::KEPALA_MANDOR]
+            : [Role::MANDOR];
+
         $mandors = User::where('company_id', $companyId)
-            ->where('role', Role::MANDOR)
+            ->whereIn('role', $mandorRoles)
             ->orderBy('name')
             ->when($mandorUuid, fn($q) => $q->where('uuid', $mandorUuid))
-            ->get();
+            ->get()
+            ->when($isKepala && !$mandorUuid, fn ($collection) => $collection->sortByDesc(fn ($m) => $m->id === $user->id));
 
         $groups = collect();
+        $showInternal = !$isKepala && !$mandorUuid;
 
-        // Pusat (internal) ditempatkan paling awal
-        if (!$mandorUuid) {
+        // Pusat (internal) — skip untuk KEPALA_MANDOR
+        if ($showInternal) {
             $internalIncomes  = $this->internalIncomes($startDate, $endDate);
             $internalExpenses = $this->internalExpenses($startDate, $endDate);
 
@@ -250,6 +262,7 @@ class OpsReportController extends Controller
                 'payment_method' => $income->payment_method->value,
                 'source_type'    => $income->source_type->value,
                 'note'           => $income->note,
+                'proof_files'    => $this->mapProofFiles($income->proof_files ?? []),
             ]);
     }
 
@@ -270,6 +283,7 @@ class OpsReportController extends Controller
                 'payment_method' => $expense->payment_method->value,
                 'expense_type'   => $expense->expense_type->value,
                 'note'           => $expense->note,
+                'proof_files'    => $this->mapProofFiles($expense->proof_files ?? []),
             ]);
     }
 
@@ -289,6 +303,7 @@ class OpsReportController extends Controller
                 'payment_method' => $income->payment_method->value,
                 'source_type'    => $income->source_type->value,
                 'note'           => $income->note,
+                'proof_files'    => $this->mapProofFiles($income->proof_files ?? []),
             ]);
     }
 
@@ -330,6 +345,7 @@ class OpsReportController extends Controller
                 'payment_method' => $expense->payment_method->value,
                 'expense_type'   => $expense->expense_type->value,
                 'note'           => $expense->note,
+                'proof_files'    => $this->mapProofFiles($expense->proof_files ?? []),
                 'mandor'         => $expense->mandor ? [
                     'uuid' => $expense->mandor->uuid,
                     'name' => $expense->mandor->name,
@@ -340,6 +356,98 @@ class OpsReportController extends Controller
                     'code' => $expense->subCompany->code,
                 ] : null,
             ]);
+    }
+
+    protected function mapProofFiles(array $paths): array
+    {
+        return $this->fileService->urls($paths);
+    }
+
+    public function incomeExpenseDetail(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date'   => 'required|date|after_or_equal:start_date',
+            'mandor_uuid' => 'nullable|string|uuid',
+            'per_page'    => 'nullable|integer|min:1|max:100',
+        ]);
+
+        $companyId = $request->user()->company_id;
+        $startDate = Carbon::parse($request->start_date)->startOfDay();
+        $endDate   = Carbon::parse($request->end_date)->endOfDay();
+        $perPage   = $request->input('per_page', 15);
+
+        $incomes = OpsIncome::query();
+        $expenses = OpsExpense::query();
+
+        if ($request->filled('mandor_uuid')) {
+            $mandorId = User::where('uuid', $request->mandor_uuid)
+                ->where('company_id', $companyId)
+                ->value('id');
+
+            $incomes->where('mandor_id', $mandorId);
+            $expenses->where('mandor_id', $mandorId)->where('expense_type', '!=', OpsExpenseType::MANDOR);
+        } else {
+            $incomes->whereNull('mandor_id');
+            $expenses->where(function (Builder $q) {
+                $q->whereNull('mandor_id')
+                  ->orWhere('expense_type', OpsExpenseType::MANDOR);
+            });
+        }
+
+        $incomes->whereDate('date', '>=', $startDate)
+            ->whereDate('date', '<=', $endDate)
+            ->orderBy('date')
+            ->orderBy('created_at');
+
+        $expenses->whereDate('date', '>=', $startDate)
+            ->whereDate('date', '<=', $endDate)
+            ->orderBy('date')
+            ->orderBy('created_at');
+
+        $incomeResults = $incomes->get()->map(fn ($income) => [
+            'type'           => 'income',
+            'uuid'           => $income->uuid,
+            'name'           => $income->name,
+            'amount'         => (float) $income->amount,
+            'date'           => $income->date->format('Y-m-d'),
+            'payment_method' => $income->payment_method->value,
+            'source_type'    => $income->source_type->value,
+            'note'           => $income->note,
+            'proof_files'    => $this->mapProofFiles($income->proof_files ?? []),
+        ]);
+
+        $expenseResults = $expenses->get()->map(fn ($expense) => [
+            'type'           => 'expense',
+            'uuid'           => $expense->uuid,
+            'name'           => $expense->name,
+            'amount'         => (float) $expense->amount,
+            'date'           => $expense->date->format('Y-m-d'),
+            'payment_method' => $expense->payment_method->value,
+            'expense_type'   => $expense->expense_type->value,
+            'note'           => $expense->note,
+            'proof_files'    => $this->mapProofFiles($expense->proof_files ?? []),
+        ]);
+
+        $merged = $incomeResults->concat($expenseResults)
+            ->sortBy('date')
+            ->values();
+
+        $page = $request->integer('page', 1);
+        $total = $merged->count();
+        $items = $merged->forPage($page, $perPage)->values();
+
+        return response()->json([
+            'success' => true,
+            'message' => __('operational.report.income_expense_detail'),
+            'data' => $items,
+            'meta' => [
+                'current_page' => $page,
+                'per_page'     => (int) $perPage,
+                'total'        => $total,
+                'last_page'    => max(1, (int) ceil($total / $perPage)),
+            ],
+        ]);
     }
 
     protected function generatePdf($request, array $data): string

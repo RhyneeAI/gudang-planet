@@ -45,8 +45,8 @@ class SubCompanyService
 
     public function createDefaultForMandor(User $mandor, ?User $createdBy = null): SubCompany
     {
-        if ($mandor->role !== Role::MANDOR) {
-            throw new \InvalidArgumentException('User must have MANDOR role.');
+        if (!in_array($mandor->role, [Role::MANDOR, Role::KEPALA_MANDOR])) {
+            throw new \InvalidArgumentException('User must have MANDOR or KEPALA_MANDOR role.');
         }
 
         $existing = SubCompany::where('mandor_id', $mandor->id)->first();
@@ -154,6 +154,9 @@ class SubCompanyService
     public function createMandorWithSubCompany(User $createdBy, array $mandorData, array $subCompanyData): array
     {
         $rawPassword = $this->generateMandorPassword($mandorData['name']);
+        $role = isset($mandorData['role']) && $mandorData['role'] === Role::KEPALA_MANDOR->value
+            ? Role::KEPALA_MANDOR
+            : Role::MANDOR;
 
         User::$skipSubCompanyAutoCreate = true;
 
@@ -163,7 +166,7 @@ class SubCompanyService
             'email' => $mandorData['email'] ?? null,
             'password' => Hash::make($rawPassword),
             'address' => $mandorData['address'] ?? null,
-            'role' => Role::MANDOR,
+            'role' => $role,
             'is_active' => true,
             'company_id' => $createdBy->company_id,
         ]);
@@ -201,8 +204,8 @@ class SubCompanyService
         ?string $subCompanyCode,
         ?User $createdBy = null,
     ): SubCompany {
-        if ($mandor->role !== Role::MANDOR) {
-            throw new \InvalidArgumentException('User must have MANDOR role.');
+        if (!in_array($mandor->role, [Role::MANDOR, Role::KEPALA_MANDOR])) {
+            throw new \InvalidArgumentException('User must have MANDOR or KEPALA_MANDOR role.');
         }
 
         if ($subCompanyUuid) {
@@ -323,7 +326,7 @@ class SubCompanyService
     {
         $mandor = User::where('uuid', $mandorUuid)
             ->where('company_id', $companyId)
-            ->where('role', Role::MANDOR)
+            ->whereIn('role', [Role::MANDOR, Role::KEPALA_MANDOR])
             ->where('is_active', true)
             ->first();
 
@@ -463,7 +466,7 @@ class SubCompanyService
 
             if (
                 $mandor
-                && $mandor->role === Role::MANDOR
+                && in_array($mandor->role, [Role::MANDOR, Role::KEPALA_MANDOR])
                 && $this->countForMandor($mandor->id) === 0
             ) {
                 $mandor->delete();

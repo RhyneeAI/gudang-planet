@@ -10,7 +10,8 @@ class UserResource extends JsonResource
 {
     public function toArray($request): array
     {
-        $subCompanies = $this->role === Role::MANDOR && $this->relationLoaded('subCompanies')
+        $isMandorOrKepala = in_array($this->role, [Role::MANDOR, Role::KEPALA_MANDOR]);
+        $subCompanies = $isMandorOrKepala && $this->relationLoaded('subCompanies')
             ? $this->subCompanies
             : collect();
 
@@ -23,13 +24,13 @@ class UserResource extends JsonResource
             'phone'      => $this->phone,
             'company_id' => $this->company_id,
             'sub_company_uuid' => $this->when(
-                $this->role === Role::MANDOR,
+                $isMandorOrKepala,
                 fn () => $subCompanies->count() === 1
                     ? (string) $subCompanies->first()->uuid
                     : null
             ),
             'sub_companies' => $this->when(
-                $this->role === Role::MANDOR,
+                $isMandorOrKepala,
                 fn () => $subCompanies->map(fn ($subCompany) => [
                     'uuid' => (string) $subCompany->uuid,
                     'name' => $subCompany->name,
