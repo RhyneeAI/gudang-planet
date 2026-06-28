@@ -79,6 +79,20 @@ Route::prefix('v1/operational')->middleware(['auth:sanctum'])->group(function ()
             ->parameters(['marketings' => 'user:uuid']);
     });
 
+    Route::middleware(['role:SUPERADMIN,OWNER,ADMIN,KEPALA_GUDANG,KEPALA_MANDOR,GUDANG'])->group(function () {
+
+        Route::apiResource('marketings', OpsMarketingController::class)
+            ->parameters(['marketings' => 'marketing:uuid'])
+            ->only(['index', 'show']);
+    });
+
+    Route::middleware(['role:SUPERADMIN,ADMIN,KEPALA_GUDANG,KEPALA_MANDOR'])->group(function () {
+
+        Route::apiResource('marketings', OpsMarketingController::class)
+            ->parameters(['marketings' => 'marketing:uuid'])
+            ->only(['store', 'update', 'destroy']);
+    });
+
     Route::middleware(['role:MANDOR,KEPALA_MANDOR'])->group(function () {
 
         Route::get('wallet', [OpsWalletController::class, 'show']);
