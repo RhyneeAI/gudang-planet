@@ -17,6 +17,7 @@ class OpsEmployeeResource extends JsonResource
             'name' => $this->name,
             'phone' => $this->phone,
             'role' => $this->role?->value,
+            'can_login' => true,
             'is_active' => (bool) $this->is_active,
             'profile' => $this->whenLoaded('absEmployeeProfile', function () {
                 return [
