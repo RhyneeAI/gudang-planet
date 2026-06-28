@@ -53,7 +53,7 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
 
         Route::apiResource('marketings', PosMarketingController::class)->parameters([
             'marketings' => 'marketing:uuid',
-        ])->only(['index', 'show']);
+        ])->only(['index', 'show'])->names('pos.marketings');
 
         Route::apiResource('marketing-products', PosMarketingProductController::class)->parameters([
             'marketing-products' => 'marketingProduct:uuid',

@@ -49,10 +49,6 @@ Route::prefix('v1/operational')->middleware(['auth:sanctum'])->group(function ()
             ->parameters(['jabatans' => 'absJabatan:uuid'])
             ->only(['index', 'show']);
 
-        Route::apiResource('marketings', OpsMarketingController::class)
-            ->parameters(['marketings' => 'user:uuid'])
-            ->only(['index', 'show']);
-
         Route::get('edit-logs', [OpsEditLogController::class, 'index']);
     });
 
@@ -74,23 +70,22 @@ Route::prefix('v1/operational')->middleware(['auth:sanctum'])->group(function ()
         Route::apiResource('jabatans', OpsJabatanController::class)
             ->parameters(['jabatans' => 'absJabatan:uuid'])
             ->only(['store', 'update', 'destroy']);
-
-        Route::apiResource('marketings', OpsMarketingController::class)
-            ->parameters(['marketings' => 'user:uuid']);
     });
 
     Route::middleware(['role:SUPERADMIN,OWNER,ADMIN,KEPALA_GUDANG,KEPALA_MANDOR,GUDANG'])->group(function () {
 
         Route::apiResource('marketings', OpsMarketingController::class)
-            ->parameters(['marketings' => 'marketing:uuid'])
-            ->only(['index', 'show']);
+            ->parameters(['marketings' => 'user:uuid'])
+            ->only(['index', 'show'])
+            ->names('operational.marketings');
     });
 
     Route::middleware(['role:SUPERADMIN,ADMIN,KEPALA_GUDANG,KEPALA_MANDOR'])->group(function () {
 
         Route::apiResource('marketings', OpsMarketingController::class)
-            ->parameters(['marketings' => 'marketing:uuid'])
-            ->only(['store', 'update', 'destroy']);
+            ->parameters(['marketings' => 'user:uuid'])
+            ->only(['store', 'update', 'destroy'])
+            ->names('operational.marketings');
     });
 
     Route::middleware(['role:MANDOR,KEPALA_MANDOR'])->group(function () {
