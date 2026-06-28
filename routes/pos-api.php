@@ -24,6 +24,15 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
         ->middleware('role:SUPERADMIN,ADMIN,GUDANG,KEPALA_GUDANG,KEPALA_MANDOR');
 
     // =======================================================
+    // PRODUCTS — READ (termasuk KASIR untuk picker transaksi)
+    // =======================================================
+    Route::group(['middleware' => ['role:SUPERADMIN,OWNER,ADMIN,KEPALA_GUDANG,KEPALA_MANDOR,GUDANG,KASIR']], function () {
+        Route::apiResource('products', PosProductController::class)->parameters([
+            'products' => 'product:uuid',
+        ])->only(['index', 'show']);
+    });
+
+    // =======================================================
     // MASTER DATA — READ (index & show)
     // =======================================================
     Route::group(['middleware' => ['role:SUPERADMIN,OWNER,ADMIN,KEPALA_GUDANG,KEPALA_MANDOR,GUDANG']], function () {
@@ -33,10 +42,6 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
 
         Route::apiResource('units', PosUnitController::class)->parameters([
             'units' => 'unit:uuid',
-        ])->only(['index', 'show']);
-
-        Route::apiResource('products', PosProductController::class)->parameters([
-            'products' => 'product:uuid',
         ])->only(['index', 'show']);
 
         Route::apiResource('suppliers', PosSupplierController::class)->parameters([
