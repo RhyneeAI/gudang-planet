@@ -21,8 +21,7 @@
 <body>
   <div class="container">
     <div class="logo">Planet <span>Sinergi</span></div>
-    <p class="tagline">Backend API</p>
-    <div class="status">Sistem berjalan normal</div>
+    <div class="status">Trident Tech Corp.co</div>
     <p class="footer">&copy; {{ date('Y') }} Planet Sinergi</p>
   </div>
 </body>
