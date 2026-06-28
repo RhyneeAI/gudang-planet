@@ -39,7 +39,7 @@ class UserSeeder extends Seeder
                 'phone' => '08123456789',
                 'email' => 'kepala_mandor_ps@ps.com',
                 'password' => 'kepala_mandor_ps',
-                'role' => Role::GUDANG,
+                'role' => Role::KEPALA_MANDOR,
             ],
             [
                 'name' => 'Marketing ps',
