@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Gudang Planet — POS API (v1.9)",
-    "description": "Collection untuk modul POS Gudang Planet (perubahan v1.9).\n\n**Base URL:** `{{base_url}}/api/v1`\n\n**Auth:** Bearer token dari `POST /api/v1/login`\n\n**Credential demo:**\n| Role | Phone | Password |\n|------|-------|----------|\n| KASIR | 087777888888 | kasir_gp |\n| ADMIN | 081122223333 | admin_gp |\n\n**Header:**\n- `Accept: application/json`\n- `Accept-Language: {{lang}}` (id/en)\n- `Authorization: Bearer {{token}}`",
+    "description": "Collection untuk modul POS Gudang Planet (perubahan v1.9 + marketing v2).\n\n**Base URL:** `{{base_url}}/api/v1`\n\n**Auth:** Bearer token dari `POST /api/v1/login`\n\n**Credential demo:**\n| Role | Phone | Password |\n|------|-------|----------|\n| KASIR | 087777888888 | kasir_gp |\n| ADMIN | 081122223333 | admin_gp |\n\n**Marketing v2:**\n- Picker POS: `GET /marketings` (read-only)\n- CRUD: `POST /api/v1/operational/marketings` (collection OPS terpisah)\n- Transaksi wajib/isian `marketing_uuid` — role: MARKETING_LEAD, MARKETING, MARKETING_TETAP\n\n**Header:**\n- `Accept: application/json`\n- `Accept-Language: {{lang}}` (id/en)\n- `Authorization: Bearer {{token}}`",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -14,6 +14,7 @@
     { "key": "detail_ulid", "value": "", "type": "string" },
     { "key": "customer_uuid", "value": "", "type": "string" },
     { "key": "marketing_uuid", "value": "", "type": "string" },
+    { "key": "marketing_lead_uuid", "value": "", "type": "string" },
     { "key": "return_ulid", "value": "", "type": "string" }
   ],
   "auth": {
@@ -122,6 +123,161 @@
       ]
     },
     {
+      "name": "Marketing (v2 — Picker & Reports)",
+      "description": "Modul marketing di POS bersifat **read-only** (picker transaksi + laporan komisi).\n\n**CRUD marketing** (MARKETING_LEAD / MARKETING + assign `leader_uuid`) dilakukan di OPS:\n`POST/PATCH/DELETE /api/v1/operational/marketings`\n\n**Role picker transaksi:** `MARKETING_LEAD`, `MARKETING`, `MARKETING_TETAP`\n\n**Response field penting:**\n- `role` — tipe marketing\n- `leader` — diisi jika role `MARKETING` (lead induknya)\n\n**Catatan komisi:**\n- `MARKETING` → lead & marketing dapat komisi\n- `MARKETING_LEAD` → lead dapat komisi\n- `MARKETING_TETAP` → tidak masuk laporan komisi POS (bonus via absensi)",
+      "item": [
+        {
+          "name": "List Marketings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.length > 0 && json.data[0].uuid) {",
+                  "    pm.collectionVariables.set('marketing_uuid', json.data[0].uuid);",
+                  "    const lead = json.data.find((row) => row.role === 'MARKETING_LEAD');",
+                  "    if (lead) pm.collectionVariables.set('marketing_lead_uuid', lead.uuid);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketings?per_page=15&order_by_key=name&order_by_value=ASC",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "marketings"],
+              "query": [
+                { "key": "per_page", "value": "15" },
+                { "key": "order_by_key", "value": "name" },
+                { "key": "order_by_value", "value": "ASC" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "role", "value": "", "disabled": true, "description": "MARKETING_LEAD | MARKETING | MARKETING_TETAP" }
+              ]
+            },
+            "description": "Daftar marketing untuk picker transaksi penjualan (kasir/admin)."
+          }
+        },
+        {
+          "name": "List Marketings — MARKETING",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketings?role=MARKETING",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "marketings"],
+              "query": [
+                { "key": "role", "value": "MARKETING" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Marketings — MARKETING_LEAD",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketings?role=MARKETING_LEAD",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "marketings"],
+              "query": [
+                { "key": "role", "value": "MARKETING_LEAD" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Marketings — MARKETING_TETAP",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketings?role=MARKETING_TETAP",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "marketings"],
+              "query": [
+                { "key": "role", "value": "MARKETING_TETAP" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Show Marketing",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketings/{{marketing_uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "marketings", "{{marketing_uuid}}"]
+            },
+            "description": "Detail marketing termasuk `role` dan `leader` (jika role MARKETING)."
+          }
+        },
+        {
+          "name": "Report — Marketing Commission (All)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reports/marketing-commission?date_from=2026-06-01&date_to=2026-06-30",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reports", "marketing-commission"],
+              "query": [
+                { "key": "date_from", "value": "2026-06-01" },
+                { "key": "date_to", "value": "2026-06-30" }
+              ]
+            },
+            "description": "Laporan komisi MARKETING + MARKETING_LEAD. MARKETING_TETAP tidak termasuk."
+          }
+        },
+        {
+          "name": "Report — Marketing Commission (By UUID)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reports/marketing-commission?date_from=2026-06-01&date_to=2026-06-30&marketing_uuid={{marketing_uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reports", "marketing-commission"],
+              "query": [
+                { "key": "date_from", "value": "2026-06-01" },
+                { "key": "date_to", "value": "2026-06-30" },
+                { "key": "marketing_uuid", "value": "{{marketing_uuid}}" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Sales Transaction (v1.9 — Down Payment + Marketing)",
       "item": [
         {
@@ -135,7 +291,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"transaction_date\": \"2026-06-25 10:00:00\",\n  \"customer_uuid\": null,\n  \"marketing_uuid\": null,\n  \"payment_type\": \"CASH\",\n  \"discount\": 0,\n  \"total\": 60000,\n  \"paid\": 60000,\n  \"items\": [\n    {\n      \"product_uuid\": \"{{product_uuid}}\",\n      \"quantity\": 2,\n      \"sell_price\": 30000,\n      \"marketing_price\": 26000,\n      \"discount\": 0\n    }\n  ]\n}"
+              "raw": "{\n  \"transaction_date\": \"2026-06-25 10:00:00\",\n  \"marketing_uuid\": \"{{marketing_uuid}}\",\n  \"payment_type\": \"CASH\",\n  \"discount\": 0,\n  \"total\": 60000,\n  \"paid\": 60000,\n  \"items\": [\n    {\n      \"product_uuid\": \"{{product_uuid}}\",\n      \"quantity\": 2,\n      \"sell_price\": 30000,\n      \"marketing_price\": 26000,\n      \"discount\": 0\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/sales-transactions",
@@ -155,7 +311,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"transaction_date\": \"2026-06-25 10:00:00\",\n  \"customer_uuid\": \"{{customer_uuid}}\",\n  \"marketing_uuid\": \"{{marketing_uuid}}\",\n  \"payment_type\": \"CICIL\",\n  \"down_payment\": 10000,\n  \"discount\": 0,\n  \"total\": 60000,\n  \"items\": [\n    {\n      \"product_uuid\": \"{{product_uuid}}\",\n      \"quantity\": 2,\n      \"sell_price\": 30000,\n      \"marketing_price\": 26000,\n      \"discount\": 0\n    }\n  ]\n}"
+              "raw": "{\n  \"transaction_date\": \"2026-06-25 10:00:00\",\n  \"marketing_uuid\": \"{{marketing_uuid}}\",\n  \"payment_type\": \"CICIL\",\n  \"down_payment\": 10000,\n  \"discount\": 0,\n  \"total\": 60000,\n  \"items\": [\n    {\n      \"product_uuid\": \"{{product_uuid}}\",\n      \"quantity\": 2,\n      \"sell_price\": 30000,\n      \"marketing_price\": 26000,\n      \"discount\": 0\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/sales-transactions",
