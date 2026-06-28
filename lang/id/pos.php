@@ -269,7 +269,7 @@ return [
             'name_unique'   => 'Nama satuan sudah digunakan.',
         ],
     ],
-    'returns' => [
+    'sales_transaction_returns' => [
         'list'   => 'Daftar retur berhasil diambil.',
         'stored' => 'Retur berhasil dibuat. Stok telah disesuaikan.',
         'validation' => [
