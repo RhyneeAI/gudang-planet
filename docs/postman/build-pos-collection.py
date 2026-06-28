@@ -12,11 +12,11 @@ HEADERS_JSON_BODY = HEADERS_JSON + [{"key": "Content-Type", "value": "applicatio
 AUTH = {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]}
 
 
-def url(path_segments, query=None):
-    path = ["api", "v1", *path_segments]
-    raw_path = "/".join(path)
+def url(path_segments, query=None, *, pos=True):
+    prefix = ["api", "v1", "pos"] if pos else ["api", "v1"]
+    path = [*prefix, *path_segments]
     item = {
-        "raw": f"{BASE}/api/v1/{'/'.join(path_segments)}",
+        "raw": f"{BASE}/{'/'.join(path)}",
         "host": [BASE],
         "path": path,
     }
@@ -28,11 +28,11 @@ def url(path_segments, query=None):
     return item
 
 
-def req(method, path_segments, name, body=None, query=None, description=None, auth=None, test_script=None):
+def req(method, path_segments, name, body=None, query=None, description=None, auth=None, test_script=None, pos=True):
     request = {
         "method": method,
         "header": HEADERS_JSON_BODY if body is not None else HEADERS_JSON,
-        "url": url(path_segments, query),
+        "url": url(path_segments, query, pos=pos),
     }
     if body is not None:
         request["body"] = {"mode": "raw", "raw": body}
@@ -83,7 +83,7 @@ collection = {
         "name": "Gudang Planet — POS API (v2.7)",
         "description": (
             "Dokumentasi lengkap REST API modul POS Gudang Planet v2.7.\n\n"
-            "**Base URL:** `{{base_url}}/api/v1`\n\n"
+            "**Base URL:** `{{base_url}}/api/v1/pos`\n\n"
             "**Auth:** `POST /api/v1/login` → set `{{token}}`\n\n"
             "**Credential demo:**\n"
             "| Role | Phone | Password |\n|------|-------|----------|\n"
@@ -124,15 +124,15 @@ collection = {
     "auth": AUTH,
     "item": [
         folder("Auth", [
-            req("POST", ["login"], "Login", '{\n  "phone": "087777888888",\n  "password": "kasir_gp"\n}', auth={"type": "noauth"}, test_script=LOGIN_TEST),
-            req("POST", ["logout"], "Logout"),
-            req("POST", ["reset-password"], "Reset Password (authenticated)", '{\n  "password": "newpassword123",\n  "password_confirmation": "newpassword123"\n}'),
-            req("POST", ["forgot-password", "verify"], "Forgot Password — Verify Phone", '{\n  "phone": "087777888888"\n}', auth={"type": "noauth"}, test_script=FORGOT_VERIFY_TEST),
-            req("POST", ["forgot-password", "reset"], "Forgot Password — Reset", '{\n  "password": "newpassword123",\n  "password_confirmation": "newpassword123"\n}', auth={"type": "bearer", "bearer": [{"key": "token", "value": "{{reset_token}}", "type": "string"}]}, description="Gunakan `reset_token` dari langkah Verify (bukan token login)."),
+            req("POST", ["login"], "Login", '{\n  "phone": "087777888888",\n  "password": "kasir_gp"\n}', auth={"type": "noauth"}, test_script=LOGIN_TEST, pos=False),
+            req("POST", ["logout"], "Logout", pos=False),
+            req("POST", ["reset-password"], "Reset Password (authenticated)", '{\n  "password": "newpassword123",\n  "password_confirmation": "newpassword123"\n}', pos=False),
+            req("POST", ["forgot-password", "verify"], "Forgot Password — Verify Phone", '{\n  "phone": "087777888888"\n}', auth={"type": "noauth"}, test_script=FORGOT_VERIFY_TEST, pos=False),
+            req("POST", ["forgot-password", "reset"], "Forgot Password — Reset", '{\n  "password": "newpassword123",\n  "password_confirmation": "newpassword123"\n}', auth={"type": "bearer", "bearer": [{"key": "token", "value": "{{reset_token}}", "type": "string"}]}, description="Gunakan `reset_token` dari langkah Verify (bukan token login).", pos=False),
         ], "Autentikasi Sanctum token."),
         folder("Profile & Home", [
-            req("GET", ["profile"], "Get Profile"),
-            req("PATCH", ["profile"], "Update Profile", '{\n  "name": "Kasir GP",\n  "email": "kasir@example.com"\n}'),
+            req("GET", ["profile"], "Get Profile", pos=False),
+            req("PATCH", ["profile"], "Update Profile", '{\n  "name": "Kasir GP",\n  "email": "kasir@example.com"\n}', pos=False),
             req("GET", ["home"], "Dashboard Home — Day", query=[{"key": "period", "value": "day"}]),
             req("GET", ["home"], "Dashboard Home — Month", query=[{"key": "period", "value": "month"}]),
             req("GET", ["home"], "Dashboard Home — Year", query=[{"key": "period", "value": "year"}]),

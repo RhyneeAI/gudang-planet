@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Pos\PosHomeController;
 use App\Http\Controllers\Api\Pos\PosCategoryController;
 use App\Http\Controllers\Api\Pos\PosCustomerController;
 use App\Http\Controllers\Api\Pos\PosCustomerTypeController;
@@ -17,7 +18,9 @@ use App\Http\Controllers\Api\Pos\PosUnitController;
 use App\Http\Controllers\Api\ReportController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
+Route::prefix('v1/pos')->middleware(['auth:sanctum'])->group(function () {
+
+    Route::get('home', [PosHomeController::class, 'index']);
 
     // Generate-code harus sebelum apiResource agar tidak tertelan route {product}
     Route::get('products/generate-code', [PosProductController::class, 'generateCode'])

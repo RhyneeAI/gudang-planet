@@ -19,7 +19,7 @@ it('can get pos marketing picker list including marketing tetap', function () {
     User::factory()->kasir()->create(['company_id' => $this->company->id]);
 
     $this->actingAs($this->user)
-        ->getJson('/api/v1/marketings')
+        ->getJson('/api/v1/pos/marketings')
         ->assertOk()
         ->assertJsonPath('success', true)
         ->assertJsonCount(3, 'data');
@@ -42,18 +42,18 @@ it('returns marketing role and leader on pos marketing detail', function () {
     ]);
 
     $this->actingAs($this->user)
-        ->getJson('/api/v1/marketings/' . $member->uuid)
+        ->getJson('/api/v1/pos/marketings/' . $member->uuid)
         ->assertOk()
         ->assertJsonPath('data.role', Role::MARKETING->value)
         ->assertJsonPath('data.leader.uuid', $lead->uuid);
 });
 
 it('returns 401 when not authenticated on pos marketing index', function () {
-    $this->getJson('/api/v1/marketings')->assertUnauthorized();
+    $this->getJson('/api/v1/pos/marketings')->assertUnauthorized();
 });
 
 it('does not expose pos write routes for marketings', function () {
     $this->actingAs($this->user)
-        ->postJson('/api/v1/marketings', ['name' => 'Test'])
+        ->postJson('/api/v1/pos/marketings', ['name' => 'Test'])
         ->assertStatus(405);
 });
