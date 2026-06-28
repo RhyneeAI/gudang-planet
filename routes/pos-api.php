@@ -109,7 +109,7 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
     });
 
     // =======================================================
-    // SALES TRANSACTIONS, INSTALLMENTS & RETURNS
+    // SALES TRANSACTIONS, INSTALLMENTS & SALES TRANSACTION RETURNS
     // =======================================================
     Route::group(['middleware' => ['role:SUPERADMIN,OWNER,ADMIN,KEPALA_GUDANG,KEPALA_MANDOR,KASIR']], function () {
         Route::prefix('sales-transactions')->group(function () {
@@ -125,7 +125,7 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
             Route::post('/{salesInstallmentPlan:ulid}/pay', [PosSalesInstallmentController::class, 'pay']);
         });
 
-        Route::prefix('returns')->group(function () {
+        Route::prefix('sales-transaction-returns')->group(function () {
             Route::get('/',  [PosReturnController::class, 'index']);
             Route::post('/', [PosReturnController::class, 'store']);
         });

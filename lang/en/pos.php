@@ -269,7 +269,7 @@ return [
             'name_unique'   => 'The unit name has already been taken.',
         ],
     ],
-    'returns' => [
+    'sales_transaction_returns' => [
         'list'   => 'Return list retrieved successfully.',
         'stored' => 'Return created successfully. Stock has been adjusted.',
         'validation' => [
