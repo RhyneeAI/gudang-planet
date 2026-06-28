@@ -88,6 +88,7 @@ return [
     'marketings' => [
         'list'          => 'Daftar marketing berhasil diambil.',
         'detail'        => 'Detail marketing berhasil diambil.',
+        'not_found'     => 'Marketing tidak ditemukan.',
         'stored'        => 'Marketing berhasil dibuat.',
         'updated'       => 'Marketing berhasil diperbarui.',
         'deleted'       => 'Marketing berhasil dihapus.',

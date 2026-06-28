@@ -21,6 +21,7 @@ class OpsEmployeeResource extends JsonResource
             'email' => $this->email,
             'address' => $this->address,
             'role' => $this->role?->value,
+            'can_login' => true,
             'is_active' => (bool) $this->is_active,
             'profile' => $profile ? [
                 'jabatan' => $profile->relationLoaded('jabatan') && $profile->jabatan

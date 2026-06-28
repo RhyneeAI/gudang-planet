@@ -88,6 +88,7 @@ return [
     'marketings' => [
         'list'          => 'Marketing list retrieved successfully.',
         'detail'        => 'Marketing detail retrieved successfully.',
+        'not_found'     => 'Marketing not found.',
         'stored'        => 'Marketing created successfully.',
         'updated'       => 'Marketing updated successfully.',
         'deleted'       => 'Marketing deleted successfully.',

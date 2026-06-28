@@ -91,10 +91,6 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
             'customers' => 'customer:uuid',
         ])->except(['index', 'show']);
 
-        Route::apiResource('marketings', PosMarketingController::class)->parameters([
-            'marketings' => 'marketing:uuid',
-        ])->except(['index', 'show']);
-
         Route::apiResource('marketing-products', PosMarketingProductController::class)->parameters([
             'marketing-products' => 'marketingProduct:uuid',
         ])->except(['index', 'show']);
