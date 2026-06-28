@@ -98,7 +98,7 @@ jobs:
           set -e
           SSH_OPTS="-p ${SSH_PORT:-2223} -o BatchMode=yes -o StrictHostKeyChecking=accept-new"
           REMOTE="${SSH_USER}@${SSH_HOST}"
-          DEPLOY_PATH="/public_html/staging.planetsinergi.com"
+          DEPLOY_PATH="/home/plaq5446/public_html/staging.planetsinergi.com"
 
           ssh ${SSH_OPTS} "${REMOTE}" "mkdir -p '${DEPLOY_PATH}'"
 
@@ -124,7 +124,7 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
         run: |
           set -e
-          DEPLOY_PATH="/public_html/staging.planetsinergi.com"
+          DEPLOY_PATH="/home/plaq5446/public_html/staging.planetsinergi.com"
           ssh -p "${SSH_PORT:-2223}" \
             -o BatchMode=yes \
             -o StrictHostKeyChecking=accept-new \
