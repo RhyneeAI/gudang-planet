@@ -1,25 +1,115 @@
 {
   "info": {
-    "name": "Gudang Planet — POS API (v1.9)",
-    "description": "Collection untuk modul POS Gudang Planet (perubahan v1.9 + marketing v2).\n\n**Base URL:** `{{base_url}}/api/v1`\n\n**Auth:** Bearer token dari `POST /api/v1/login`\n\n**Credential demo:**\n| Role | Phone | Password |\n|------|-------|----------|\n| KASIR | 087777888888 | kasir_gp |\n| ADMIN | 081122223333 | admin_gp |\n\n**Marketing v2:**\n- Picker POS: `GET /marketings` (read-only)\n- CRUD: `POST /api/v1/operational/marketings` (collection OPS terpisah)\n- Transaksi wajib/isian `marketing_uuid` — role: MARKETING_LEAD, MARKETING, MARKETING_TETAP\n\n**Header:**\n- `Accept: application/json`\n- `Accept-Language: {{lang}}` (id/en)\n- `Authorization: Bearer {{token}}`",
+    "name": "Gudang Planet — POS API (v2.7)",
+    "description": "Dokumentasi lengkap REST API modul POS Gudang Planet v2.7.\n\n**Base URL:** `{{base_url}}/api/v1`\n\n**Auth:** `POST /api/v1/login` → set `{{token}}`\n\n**Credential demo:**\n| Role | Phone | Password |\n|------|-------|----------|\n| KASIR | 087777888888 | kasir_gp |\n| ADMIN | 081122223333 | admin_gp |\n| MANAGER_GUDANG | (lihat seeder) | — |\n\n**Header wajib:**\n- `Accept: application/json`\n- `Accept-Language: {{lang}}` (id/en)\n- `Authorization: Bearer {{token}}`\n\n**Modul sales:** `sales-transactions`, `sales-installments`, `sales-transaction-returns`\n\n**Marketing CRUD:** dilakukan di OPS (`/api/v1/operational/marketings`). POS hanya read picker.\n\nFolder **Legacy** = endpoint lama yang masih ada di backend tetapi tidak dipakai di POS v2.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "base_url", "value": "http://localhost:8000", "type": "string" },
-    { "key": "token", "value": "", "type": "string" },
-    { "key": "lang", "value": "id", "type": "string" },
-    { "key": "product_uuid", "value": "", "type": "string" },
-    { "key": "transaction_ulid", "value": "", "type": "string" },
-    { "key": "installment_ulid", "value": "", "type": "string" },
-    { "key": "detail_ulid", "value": "", "type": "string" },
-    { "key": "customer_uuid", "value": "", "type": "string" },
-    { "key": "marketing_uuid", "value": "", "type": "string" },
-    { "key": "marketing_lead_uuid", "value": "", "type": "string" },
-    { "key": "return_ulid", "value": "", "type": "string" }
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "lang",
+      "value": "id",
+      "type": "string"
+    },
+    {
+      "key": "category_uuid",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "unit_uuid",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_uuid",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "marketing_uuid",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "marketing_lead_uuid",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "transaction_ulid",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sales_detail_uuid",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "installment_ulid",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "return_ulid",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "supplier_uuid",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customer_type_uuid",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customer_uuid",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "marketing_product_uuid",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "purchase_transaction_ulid",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "purchase_installment_ulid",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reset_token",
+      "value": "",
+      "type": "string"
+    }
   ],
   "auth": {
     "type": "bearer",
-    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
   },
   "item": [
     {
@@ -27,61 +117,758 @@
       "item": [
         {
           "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"087777888888\",\n  \"password\": \"kasir_gp\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "const json = pm.response.json();",
                   "if (json.data && json.data.token) {",
                   "    pm.collectionVariables.set('token', json.data.token);",
                   "}"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ],
+          ]
+        },
+        {
+          "name": "Logout",
           "request": {
-            "auth": { "type": "noauth" },
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "logout"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reset Password (authenticated)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reset-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reset-password"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"phone\": \"087777888888\",\n  \"password\": \"kasir_gp\"\n}"
-            },
+              "raw": "{\n  \"password\": \"newpassword123\",\n  \"password_confirmation\": \"newpassword123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Forgot Password — Verify Phone",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
-              "raw": "{{base_url}}/api/v1/login",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "login"]
+              "raw": "{{base_url}}/api/v1/forgot-password/verify",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "forgot-password",
+                "verify"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"087777888888\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.reset_token) pm.collectionVariables.set('reset_token', json.data.reset_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Forgot Password — Reset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/forgot-password/reset",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "forgot-password",
+                "reset"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"newpassword123\",\n  \"password_confirmation\": \"newpassword123\"\n}"
+            },
+            "description": "Gunakan `reset_token` dari langkah Verify (bukan token login).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{reset_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "description": "Autentikasi Sanctum token."
+    },
+    {
+      "name": "Profile & Home",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kasir GP\",\n  \"email\": \"kasir@example.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Dashboard Home — Day",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/home?period=day",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "home"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "day"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Dashboard Home — Month",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/home?period=month",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "home"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "month"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Dashboard Home — Year",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/home?period=year",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "home"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "year"
+                }
+              ]
             }
           }
         }
       ]
     },
     {
-      "name": "Product (v1.9 — New Pricing Fields)",
+      "name": "Categories",
       "item": [
         {
-          "name": "Create Product",
+          "name": "List Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categories"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const row = json.data?.data?.[0] || json.data?.[0];",
+                  "if (row?.uuid) pm.collectionVariables.set('category_uuid', row.uuid);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Show Category",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/categories/{{category_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categories",
+                "{{category_uuid}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Category",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categories"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Produk Contoh\",\n  \"code\": \"PRD-001\",\n  \"base_price\": 20000,\n  \"leader_price\": 25000,\n  \"marketing_price\": 26000,\n  \"sell_price\": 30000,\n  \"category_id\": 1,\n  \"unit_id\": 1,\n  \"stock\": 100,\n  \"min_stock\": 10,\n  \"description\": \"Produk contoh untuk testing\"\n}"
-            },
+              "raw": "{\n  \"name\": \"Kategori Contoh\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
-              "raw": "{{base_url}}/api/v1/products",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "products"]
+              "raw": "{{base_url}}/api/v1/categories/{{category_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categories",
+                "{{category_uuid}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kategori Updated\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/categories/{{category_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categories",
+                "{{category_uuid}}"
+              ]
+            }
+          }
+        }
+      ],
+      "description": "Role write: SUPERADMIN, ADMIN, MANAGER_GUDANG"
+    },
+    {
+      "name": "Units",
+      "item": [
+        {
+          "name": "List Units",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/units",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "units"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const row = json.data?.data?.[0] || json.data?.[0];",
+                  "if (row?.uuid) pm.collectionVariables.set('unit_uuid', row.uuid);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Show Unit",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/units/{{unit_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "units",
+                "{{unit_uuid}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Unit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/units",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "units"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Pcs\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Unit",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/units/{{unit_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "units",
+                "{{unit_uuid}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Pieces\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Unit",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/units/{{unit_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "units",
+                "{{unit_uuid}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products (v2.7 Pricing)",
+      "item": [
+        {
+          "name": "Generate Product Code",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/generate-code",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "generate-code"
+              ]
             }
           }
         },
@@ -90,13 +877,107 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products?per_page=15",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "per_page",
+                  "value": "15"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const row = json.data?.data?.[0] || json.data?.[0];",
+                  "if (row?.uuid) pm.collectionVariables.set('product_uuid', row.uuid);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Show Product",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/{{product_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "{{product_uuid}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/products",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "products"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Produk Contoh\",\n  \"code\": \"PRD-001\",\n  \"base_price\": 20000,\n  \"leader_price\": 25000,\n  \"marketing_price\": 26000,\n  \"sell_price\": 30000,\n  \"category_uuid\": \"{{category_uuid}}\",\n  \"unit_uuid\": \"{{unit_uuid}}\",\n  \"stock\": 100,\n  \"min_stock\": 10,\n  \"description\": \"Produk contoh\"\n}"
             }
           }
         },
@@ -105,116 +986,346 @@
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Produk Contoh Updated\",\n  \"base_price\": 18000,\n  \"leader_price\": 23000,\n  \"marketing_price\": 24000,\n  \"sell_price\": 28000,\n  \"stock\": 90\n}"
-            },
             "url": {
               "raw": "{{base_url}}/api/v1/products/{{product_uuid}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "products", "{{product_uuid}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "{{product_uuid}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Produk Updated\",\n  \"leader_price\": 24000,\n  \"marketing_price\": 25500,\n  \"sell_price\": 29000,\n  \"stock\": 90\n}"
             }
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/{{product_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "{{product_uuid}}"
+              ]
+            }
+          }
+        }
+      ],
+      "description": "Pricing: base_price, leader_price, marketing_price, sell_price"
+    },
+    {
+      "name": "Stock",
+      "item": [
+        {
+          "name": "Stock Card by Product",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/stock-card/{{product_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stock-card",
+                "{{product_uuid}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Stock Mutations (by products)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/stock-mutations/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stock-mutations",
+                "products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Stock Mutations by Product",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/stock-mutations/products/{{product_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stock-mutations",
+                "products",
+                "{{product_uuid}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Stock Mutation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/stock-mutations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stock-mutations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_uuid\": \"{{product_uuid}}\",\n  \"type\": \"ADJUST_IN\",\n  \"quantity\": 5,\n  \"notes\": \"Stok masuk manual\"\n}"
+            },
+            "description": "type: ADJUST_IN | ADJUST_OUT | OPNAME"
           }
         }
       ]
     },
     {
-      "name": "Marketing (v2 — Picker & Reports)",
-      "description": "Modul marketing di POS bersifat **read-only** (picker transaksi + laporan komisi).\n\n**CRUD marketing** (MARKETING_LEAD / MARKETING + assign `leader_uuid`) dilakukan di OPS:\n`POST/PATCH/DELETE /api/v1/operational/marketings`\n\n**Role picker transaksi:** `MARKETING_LEAD`, `MARKETING`, `MARKETING_TETAP`\n\n**Response field penting:**\n- `role` — tipe marketing\n- `leader` — diisi jika role `MARKETING` (lead induknya)\n\n**Catatan komisi:**\n- `MARKETING` → lead & marketing dapat komisi\n- `MARKETING_LEAD` → lead dapat komisi\n- `MARKETING_TETAP` → tidak masuk laporan komisi POS (bonus via absensi)",
+      "name": "Marketing (v2.7 — Picker & Reports)",
       "item": [
         {
           "name": "List Marketings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketings?per_page=15",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "marketings"
+              ],
+              "query": [
+                {
+                  "key": "per_page",
+                  "value": "15"
+                },
+                {
+                  "key": "role",
+                  "value": "",
+                  "disabled": true,
+                  "description": "MARKETING_LEAD|MARKETING|MARKETING_TETAP"
+                }
+              ]
+            }
+          },
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "const json = pm.response.json();",
-                  "if (json.data && json.data.length > 0 && json.data[0].uuid) {",
-                  "    pm.collectionVariables.set('marketing_uuid', json.data[0].uuid);",
-                  "    const lead = json.data.find((row) => row.role === 'MARKETING_LEAD');",
-                  "    if (lead) pm.collectionVariables.set('marketing_lead_uuid', lead.uuid);",
-                  "}"
-                ],
-                "type": "text/javascript"
+                  "const rows = json.data?.data || json.data || [];",
+                  "if (rows[0]?.uuid) pm.collectionVariables.set('marketing_uuid', rows[0].uuid);",
+                  "const lead = rows.find((r) => r.role === 'MARKETING_LEAD');",
+                  "if (lead) pm.collectionVariables.set('marketing_lead_uuid', lead.uuid);"
+                ]
               }
             }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/marketings?per_page=15&order_by_key=name&order_by_value=ASC",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "marketings"],
-              "query": [
-                { "key": "per_page", "value": "15" },
-                { "key": "order_by_key", "value": "name" },
-                { "key": "order_by_value", "value": "ASC" },
-                { "key": "search", "value": "", "disabled": true },
-                { "key": "role", "value": "", "disabled": true, "description": "MARKETING_LEAD | MARKETING | MARKETING_TETAP" }
-              ]
-            },
-            "description": "Daftar marketing untuk picker transaksi penjualan (kasir/admin)."
-          }
+          ]
         },
         {
-          "name": "List Marketings — MARKETING",
+          "name": "List — MARKETING",
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/marketings?role=MARKETING",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "marketings"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "marketings"
+              ],
               "query": [
-                { "key": "role", "value": "MARKETING" }
+                {
+                  "key": "role",
+                  "value": "MARKETING"
+                }
               ]
             }
           }
         },
         {
-          "name": "List Marketings — MARKETING_LEAD",
+          "name": "List — MARKETING_LEAD",
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/marketings?role=MARKETING_LEAD",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "marketings"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "marketings"
+              ],
               "query": [
-                { "key": "role", "value": "MARKETING_LEAD" }
+                {
+                  "key": "role",
+                  "value": "MARKETING_LEAD"
+                }
               ]
             }
           }
         },
         {
-          "name": "List Marketings — MARKETING_TETAP",
+          "name": "List — MARKETING_TETAP",
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/marketings?role=MARKETING_TETAP",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "marketings"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "marketings"
+              ],
               "query": [
-                { "key": "role", "value": "MARKETING_TETAP" }
+                {
+                  "key": "role",
+                  "value": "MARKETING_TETAP"
+                }
               ]
             }
           }
@@ -224,233 +1335,1472 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/marketings/{{marketing_uuid}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "marketings", "{{marketing_uuid}}"]
-            },
-            "description": "Detail marketing termasuk `role` dan `leader` (jika role MARKETING)."
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "marketings",
+                "{{marketing_uuid}}"
+              ]
+            }
           }
         },
         {
-          "name": "Report — Marketing Commission (All)",
+          "name": "Report Marketing Commission",
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/reports/marketing-commission?date_from=2026-06-01&date_to=2026-06-30",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "reports", "marketing-commission"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reports",
+                "marketing-commission"
+              ],
               "query": [
-                { "key": "date_from", "value": "2026-06-01" },
-                { "key": "date_to", "value": "2026-06-30" }
+                {
+                  "key": "date_from",
+                  "value": "2026-06-01"
+                },
+                {
+                  "key": "date_to",
+                  "value": "2026-06-30"
+                },
+                {
+                  "key": "marketing_uuid",
+                  "value": "{{marketing_uuid}}",
+                  "disabled": true
+                }
               ]
-            },
-            "description": "Laporan komisi MARKETING + MARKETING_LEAD. MARKETING_TETAP tidak termasuk."
+            }
           }
         },
         {
-          "name": "Report — Marketing Commission (By UUID)",
+          "name": "Report Sales Revenue",
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/reports/marketing-commission?date_from=2026-06-01&date_to=2026-06-30&marketing_uuid={{marketing_uuid}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "reports", "marketing-commission"],
+              "raw": "{{base_url}}/api/v1/reports/sales-revenue?date_from=2026-06-01&date_to=2026-06-30",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reports",
+                "sales-revenue"
+              ],
               "query": [
-                { "key": "date_from", "value": "2026-06-01" },
-                { "key": "date_to", "value": "2026-06-30" },
-                { "key": "marketing_uuid", "value": "{{marketing_uuid}}" }
+                {
+                  "key": "date_from",
+                  "value": "2026-06-01"
+                },
+                {
+                  "key": "date_to",
+                  "value": "2026-06-30"
+                },
+                {
+                  "key": "marketing_uuid",
+                  "value": "{{marketing_uuid}}",
+                  "disabled": true
+                }
               ]
             }
           }
         }
-      ]
+      ],
+      "description": "CRUD marketing di OPS. POS read-only + laporan komisi."
     },
     {
-      "name": "Sales Transaction (v1.9 — Down Payment + Marketing)",
+      "name": "Sales Transactions",
       "item": [
         {
-          "name": "Create Transaction (CASH)",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"transaction_date\": \"2026-06-25 10:00:00\",\n  \"marketing_uuid\": \"{{marketing_uuid}}\",\n  \"payment_type\": \"CASH\",\n  \"discount\": 0,\n  \"total\": 60000,\n  \"paid\": 60000,\n  \"items\": [\n    {\n      \"product_uuid\": \"{{product_uuid}}\",\n      \"quantity\": 2,\n      \"sell_price\": 30000,\n      \"marketing_price\": 26000,\n      \"discount\": 0\n    }\n  ]\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/v1/sales-transactions",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sales-transactions"]
-            }
-          }
-        },
-        {
-          "name": "Create Transaction (CICIL — DP)",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"transaction_date\": \"2026-06-25 10:00:00\",\n  \"marketing_uuid\": \"{{marketing_uuid}}\",\n  \"payment_type\": \"CICIL\",\n  \"down_payment\": 10000,\n  \"discount\": 0,\n  \"total\": 60000,\n  \"items\": [\n    {\n      \"product_uuid\": \"{{product_uuid}}\",\n      \"quantity\": 2,\n      \"sell_price\": 30000,\n      \"marketing_price\": 26000,\n      \"discount\": 0\n    }\n  ]\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/v1/sales-transactions",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sales-transactions"]
-            }
-          }
-        },
-        {
-          "name": "List Transactions",
+          "name": "List Sales Transactions",
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sales-transactions?per_page=15",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales-transactions"
+              ],
+              "query": [
+                {
+                  "key": "per_page",
+                  "value": "15"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "date_from",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "date_to",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "disabled": true,
+                  "description": "COMPLETED|CANCELLED|..."
+                },
+                {
+                  "key": "order_by_key",
+                  "value": "transaction_date",
+                  "disabled": true
+                },
+                {
+                  "key": "order_by_value",
+                  "value": "DESC",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const row = json.data?.data?.[0] || json.data?.[0];",
+                  "if (row?.ulid) pm.collectionVariables.set('transaction_ulid', row.ulid);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create — CASH",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/sales-transactions",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sales-transactions"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales-transactions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_date\": \"2026-06-25 10:00:00\",\n  \"marketing_uuid\": \"{{marketing_uuid}}\",\n  \"payment_type\": \"CASH\",\n  \"discount\": 0,\n  \"total\": 60000,\n  \"paid\": 60000,\n  \"items\": [{\n    \"product_uuid\": \"{{product_uuid}}\",\n    \"quantity\": 2,\n    \"sell_price\": 30000,\n    \"marketing_price\": 26000,\n    \"discount\": 0\n  }]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.ulid) pm.collectionVariables.set('transaction_ulid', json.data.ulid);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create — CICIL (DP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sales-transactions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales-transactions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_date\": \"2026-06-25 10:00:00\",\n  \"marketing_uuid\": \"{{marketing_uuid}}\",\n  \"payment_type\": \"CICIL\",\n  \"down_payment\": 10000,\n  \"discount\": 0,\n  \"total\": 60000,\n  \"items\": [{\n    \"product_uuid\": \"{{product_uuid}}\",\n    \"quantity\": 2,\n    \"sell_price\": 30000,\n    \"marketing_price\": 26000,\n    \"discount\": 0\n  }]\n}"
+            }
+          }
+        },
+        {
+          "name": "Show Sales Transaction",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sales-transactions/{{transaction_ulid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales-transactions",
+                "{{transaction_ulid}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel Sales Transaction",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sales-transactions/{{transaction_ulid}}/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales-transactions",
+                "{{transaction_ulid}}",
+                "cancel"
+              ]
             }
           }
         }
-      ]
+      ],
+      "description": "Role: SUPERADMIN, OWNER, ADMIN, MANAGER_GUDANG, KASIR"
     },
     {
-      "name": "Sales Installment (v1.9 — DP + Full Bayar)",
+      "name": "Sales Installments",
       "item": [
         {
-          "name": "List Installments",
+          "name": "List Installment Plans",
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/sales-installments",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sales-installments"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales-installments"
+              ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const row = json.data?.data?.[0] || json.data?.[0];",
+                  "if (row?.ulid) pm.collectionVariables.set('installment_ulid', row.ulid);"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Detail Installment",
+          "name": "Show Installment Plan",
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/sales-installments/{{installment_ulid}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sales-installments", "{{installment_ulid}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales-installments",
+                "{{installment_ulid}}"
+              ]
             }
           }
         },
         {
-          "name": "Pay Installment (Pelunasan)",
+          "name": "Pay Installment",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"paid_amount\": 50000,\n  \"notes\": \"Pelunasan\"\n}"
-            },
             "url": {
               "raw": "{{base_url}}/api/v1/sales-installments/{{installment_ulid}}/pay",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sales-installments", "{{installment_ulid}}", "pay"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales-installments",
+                "{{installment_ulid}}",
+                "pay"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paid_amount\": 25000,\n  \"notes\": \"Cicilan ke-1\"\n}"
             }
           }
         }
       ]
     },
     {
-      "name": "Returns (BARU — v1.9)",
+      "name": "Sales Transaction Returns",
       "item": [
-        {
-          "name": "Create Return",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"sales_transaction_uuid\": \"{{transaction_ulid}}\",\n  \"sales_detail_uuid\": \"{{detail_ulid}}\",\n  \"product_uuid\": \"{{product_uuid}}\",\n  \"qty\": 1,\n  \"reason\": \"Produk cacat\",\n  \"refund_amount\": 30000\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/v1/returns",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "returns"]
-            }
-          }
-        },
         {
           "name": "List Returns",
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/returns",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "returns"]
+              "raw": "{{base_url}}/api/v1/sales-transaction-returns",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales-transaction-returns"
+              ]
             }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const row = json.data?.data?.[0] || json.data?.[0];",
+                  "if (row?.ulid) pm.collectionVariables.set('return_ulid', row.ulid);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Return",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sales-transaction-returns",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales-transaction-returns"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sales_transaction_uuid\": \"{{transaction_ulid}}\",\n  \"sales_detail_uuid\": \"{{sales_detail_uuid}}\",\n  \"product_uuid\": \"{{product_uuid}}\",\n  \"qty\": 1,\n  \"reason\": \"Produk cacat\",\n  \"refund_amount\": 30000\n}"
+            },
+            "description": "Retur item dari transaksi penjualan. Stok dikembalikan otomatis.\n\n**sales_detail_uuid:** ambil dari kolom `ulid` tabel `pos_sales_details` (belum diekspos di response Show Transaction). Set variabel `{{sales_detail_uuid}}` manual."
           }
         }
-      ]
+      ],
+      "description": "Modul retur penjualan (sebelumnya `/returns`)."
     },
     {
-      "name": "Stock Card (BARU — v1.9)",
+      "name": "Legacy — Master & Purchase",
       "item": [
         {
-          "name": "Stock Card by Product",
-          "request": {
-            "method": "GET",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/stock-card/{{product_uuid}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "stock-card", "{{product_uuid}}"]
+          "name": "Suppliers",
+          "item": [
+            {
+              "name": "List Suppliers",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/suppliers",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "suppliers"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "const row = json.data?.data?.[0] || json.data?.[0];",
+                      "if (row?.uuid) pm.collectionVariables.set('supplier_uuid', row.uuid);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Show Supplier",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/suppliers/{{supplier_uuid}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "suppliers",
+                    "{{supplier_uuid}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Supplier",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/suppliers",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "suppliers"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Supplier Contoh\",\n  \"phone\": \"081200000001\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Update Supplier",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/suppliers/{{supplier_uuid}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "suppliers",
+                    "{{supplier_uuid}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Supplier Updated\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Delete Supplier",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/suppliers/{{supplier_uuid}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "suppliers",
+                    "{{supplier_uuid}}"
+                  ]
+                }
+              }
             }
-          }
+          ]
+        },
+        {
+          "name": "Customer Types",
+          "item": [
+            {
+              "name": "List Customer Types",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/customer-types",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "customer-types"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "const row = json.data?.data?.[0] || json.data?.[0];",
+                      "if (row?.uuid) pm.collectionVariables.set('customer_type_uuid', row.uuid);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Show Customer Type",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/customer-types/{{customer_type_uuid}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "customer-types",
+                    "{{customer_type_uuid}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Customer Type",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/customer-types",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "customer-types"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"Retail\",\n  \"discount\": 0\n}"
+                }
+              }
+            },
+            {
+              "name": "Update Customer Type",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/customer-types/{{customer_type_uuid}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "customer-types",
+                    "{{customer_type_uuid}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"Grosir\",\n  \"discount\": 5\n}"
+                }
+              }
+            },
+            {
+              "name": "Delete Customer Type",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/customer-types/{{customer_type_uuid}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "customer-types",
+                    "{{customer_type_uuid}}"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Customers",
+          "item": [
+            {
+              "name": "List Customers",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/customers",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "customers"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "const row = json.data?.data?.[0] || json.data?.[0];",
+                      "if (row?.uuid) pm.collectionVariables.set('customer_uuid', row.uuid);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Show Customer",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/customers/{{customer_uuid}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "customers",
+                    "{{customer_uuid}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Customer",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/customers",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "customers"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Pelanggan Contoh\",\n  \"phone\": \"081300000001\",\n  \"customer_type_uuid\": \"{{customer_type_uuid}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Update Customer",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/customers/{{customer_uuid}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "customers",
+                    "{{customer_uuid}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Pelanggan Updated\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Delete Customer",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/customers/{{customer_uuid}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "customers",
+                    "{{customer_uuid}}"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Marketing Products",
+          "item": [
+            {
+              "name": "List Marketing Products",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/marketing-products",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "marketing-products"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "const row = json.data?.data?.[0] || json.data?.[0];",
+                      "if (row?.uuid) pm.collectionVariables.set('marketing_product_uuid', row.uuid);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Show Marketing Product",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/marketing-products/{{marketing_product_uuid}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "marketing-products",
+                    "{{marketing_product_uuid}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Marketing Product",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/marketing-products",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "marketing-products"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"product_uuid\": \"{{product_uuid}}\",\n  \"marketing_uuid\": \"{{marketing_uuid}}\",\n  \"marketing_price\": 26500\n}"
+                }
+              }
+            },
+            {
+              "name": "Update Marketing Product",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/marketing-products/{{marketing_product_uuid}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "marketing-products",
+                    "{{marketing_product_uuid}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"marketing_price\": 27000\n}"
+                }
+              }
+            },
+            {
+              "name": "Delete Marketing Product",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/marketing-products/{{marketing_product_uuid}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "marketing-products",
+                    "{{marketing_product_uuid}}"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Purchase Transactions",
+          "item": [
+            {
+              "name": "List Purchase Transactions",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/purchase-transactions",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "purchase-transactions"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "const row = json.data?.data?.[0] || json.data?.[0];",
+                      "if (row?.ulid) pm.collectionVariables.set('purchase_transaction_ulid', row.ulid);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Create Purchase Transaction",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/purchase-transactions",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "purchase-transactions"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"supplier_uuid\": \"{{supplier_uuid}}\",\n  \"transaction_date\": \"2026-06-25 10:00:00\",\n  \"discount\": 0,\n  \"total\": 40000,\n  \"paid\": 40000,\n  \"payment_type\": \"CASH\",\n  \"items\": [{\n    \"product_uuid\": \"{{product_uuid}}\",\n    \"quantity\": 2,\n    \"buy_price\": 20000\n  }]\n}"
+                }
+              }
+            },
+            {
+              "name": "Show Purchase Transaction",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/purchase-transactions/{{purchase_transaction_ulid}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "purchase-transactions",
+                    "{{purchase_transaction_ulid}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Cancel Purchase Transaction",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/purchase-transactions/{{purchase_transaction_ulid}}/cancel",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "purchase-transactions",
+                    "{{purchase_transaction_ulid}}",
+                    "cancel"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Purchase Installments",
+          "item": [
+            {
+              "name": "List Purchase Installment Plans",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/purchase-installments",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "purchase-installments"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "const row = json.data?.data?.[0] || json.data?.[0];",
+                      "if (row?.ulid) pm.collectionVariables.set('purchase_installment_ulid', row.ulid);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Show Purchase Installment Plan",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/purchase-installments/{{purchase_installment_ulid}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "purchase-installments",
+                    "{{purchase_installment_ulid}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Pay Purchase Installment",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "{{lang}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/purchase-installments/{{purchase_installment_ulid}}/pay",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "purchase-installments",
+                    "{{purchase_installment_ulid}}",
+                    "pay"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"paid_amount\": 50000\n}"
+                }
+              }
+            }
+          ]
         }
-      ]
+      ],
+      "description": "Endpoint legacy — tidak dipakai di alur POS v2 utama."
     }
   ]
 }
