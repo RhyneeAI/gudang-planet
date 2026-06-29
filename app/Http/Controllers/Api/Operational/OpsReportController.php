@@ -390,10 +390,10 @@ class OpsReportController extends Controller
                 ->value('id');
 
             $incomes->where('mandor_id', $mandorId);
-            $expenses->where('mandor_id', $mandorId);
+            $expenses->where('mandor_id', $mandorId)->where('expense_type', '!=', OpsExpenseType::MANDOR);
         } elseif ($isKepala) {
             $incomes->whereNotNull('mandor_id');
-            $expenses->whereNotNull('mandor_id');
+            $expenses->whereNotNull('mandor_id')->where('expense_type', '!=', OpsExpenseType::MANDOR);
         } else {
             $incomes->whereNull('mandor_id');
             $expenses->where(function (Builder $q) {
