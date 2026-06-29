@@ -5,14 +5,11 @@ namespace App\Http\Controllers\Api\Pos;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Pos\PosMarketingProductRequest;
 use App\Http\Resources\Pos\PosMarketingProductResource;
-use App\Http\Traits\DataTablesResponse;
 use App\Models\PosMarketingProduct;
 use Illuminate\Http\Request;
 
 class PosMarketingProductController extends Controller
 {
-    use DataTablesResponse;
-
     protected array $sortableColumns = ['created_at', 'product_name'];
 
     public function index(Request $request)
@@ -42,13 +39,11 @@ class PosMarketingProductController extends Controller
             )
             ->paginate($request->input('per_page', 15));
 
-        return response()->json(
-            $this->dataTablesResponse($request, $marketingProducts, [
-                'success' => true,
-                'message' => __('pos.marketing_product.list'),
-                'data'    => PosMarketingProductResource::collection($marketingProducts),
-            ])
-        );
+        return response()->json([
+            'success' => true,
+            'message' => __('pos.marketing_product.list'),
+            'data'    => PosMarketingProductResource::collection($marketingProducts),
+        ]);
     }
 
     public function store(PosMarketingProductRequest $request)

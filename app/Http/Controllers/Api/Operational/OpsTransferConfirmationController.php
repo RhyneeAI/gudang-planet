@@ -10,20 +10,17 @@ use App\Http\Controllers\Api\Operational\ReturnsEmptyShowResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Operational\OpsTransferConfirmationRequest;
 use App\Http\Resources\Operational\OpsTransferConfirmationResource;
-use App\Models\OpsExpense;
 use App\Models\OpsIncome;
 use App\Models\OpsTransferConfirmation;
 use App\Services\Operational\OpsFileService;
 use App\Services\Operational\OpsTransferConfirmationAccess;
 use App\Services\Operational\OpsWalletService;
-use App\Http\Traits\DataTablesResponse;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class OpsTransferConfirmationController extends Controller
 {
-    use DataTablesResponse;
     use ReturnsEmptyShowResponse;
 
     public function __construct(
@@ -52,13 +49,11 @@ class OpsTransferConfirmationController extends Controller
             ->orderByDesc('created_at')
             ->paginate($request->input('per_page', 15));
 
-        return response()->json(
-            $this->dataTablesResponse($request, $confirmations, [
-                'success' => true,
-                'message' => __('operational.confirmations.list'),
-                'data' => OpsTransferConfirmationResource::collection($confirmations),
-            ])
-        );
+        return response()->json([
+            'success' => true,
+            'message' => __('operational.confirmations.list'),
+            'data' => OpsTransferConfirmationResource::collection($confirmations),
+        ]);
     }
 
     public function show(Request $request, string $uuid)
@@ -222,7 +217,7 @@ class OpsTransferConfirmationController extends Controller
             'success' => true,
             'message' => __('operational.confirmations.rejected'),
             'data' => new OpsTransferConfirmationResource(
-                $opsTransferConfirmation->fresh()->load(['confirmable' => fn ($q) => $q->withTrashed(), 'confirmable.subCompany', 'confirmable.mandor', 'confirmedBy'])
+                $opsTransferConfirmation->fresh()->load(['confirmable.subCompany', 'confirmable.mandor', 'confirmedBy'])
             ),
         ]);
     }
