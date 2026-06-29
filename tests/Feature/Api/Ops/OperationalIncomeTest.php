@@ -98,8 +98,7 @@ it('stores admin mandor transfer expense with pending income confirmation', func
 
     $response->assertCreated()
         ->assertJsonPath('data.expense_type', OpsExpenseType::MANDOR->value)
-        ->assertJsonPath('data.transfer_income.source_type', OpsSourceType::MANDOR->value)
-        ->assertJsonPath('data.transfer_income.transfer_confirmation.status', 'PENDING');
+        ->assertJsonPath('data.transfer_confirmation.status', 'PENDING');
 
     expect(OpsTransferConfirmation::count())->toBe(1);
 });
