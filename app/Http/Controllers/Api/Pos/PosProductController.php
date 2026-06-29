@@ -9,14 +9,11 @@ use App\Http\Resources\Pos\PosProductResource;
 use App\Models\PosCategory;
 use App\Models\PosProduct;
 use App\Models\PosStockMutation;
-use App\Http\Traits\DataTablesResponse;
 use App\Models\PosUnit;
 use Illuminate\Http\Request;
 
 class PosProductController extends Controller
 {
-    use DataTablesResponse;
-
     protected array $sortableColumns = ['name', 'code', 'leader_price', 'stock', 'created_at'];
 
     public function generateCode(Request $request)
@@ -70,13 +67,11 @@ class PosProductController extends Controller
             ->orderBy($orderByKey, $orderByValue)
             ->paginate($request->input('per_page', 15));
 
-        return response()->json(
-            $this->dataTablesResponse($request, $products, [
-                'success' => true,
-                'message' => __('pos.products.list'),
-                'data' => PosProductResource::collection($products),
-            ])
-        );
+        return response()->json([
+            'success' => true,
+            'message' => __('pos.products.list'),
+            'data' => PosProductResource::collection($products),
+        ]);
     }
 
     public function store(PosProductRequest $request)

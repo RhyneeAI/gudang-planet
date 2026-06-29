@@ -26,7 +26,6 @@ class DatabaseSeeder extends Seeder
             PosCustomerTypeSeeder::class,
             PosCustomerSeeder::class,
             PosProductSeeder::class,
-            PosSalesDemoSeeder::class,
 
             OpsConfigurationSeeder::class,
             SubCompanySeeder::class,

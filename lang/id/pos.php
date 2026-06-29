@@ -88,7 +88,6 @@ return [
     'marketings' => [
         'list'          => 'Daftar marketing berhasil diambil.',
         'detail'        => 'Detail marketing berhasil diambil.',
-        'not_found'     => 'Marketing tidak ditemukan.',
         'stored'        => 'Marketing berhasil dibuat.',
         'updated'       => 'Marketing berhasil diperbarui.',
         'deleted'       => 'Marketing berhasil dihapus.',
@@ -269,7 +268,7 @@ return [
             'name_unique'   => 'Nama satuan sudah digunakan.',
         ],
     ],
-    'sales_transaction_returns' => [
+    'returns' => [
         'list'   => 'Daftar retur berhasil diambil.',
         'stored' => 'Retur berhasil dibuat. Stok telah disesuaikan.',
         'validation' => [
@@ -284,5 +283,8 @@ return [
             'product_not_in_detail'      => 'Produk tidak sesuai dengan detail penjualan.',
             'qty_exceeds_available'      => 'Tidak dapat retur lebih dari :available item untuk produk ini.',
         ],
+    ],
+    'stock_card' => [
+        'detail' => 'Kartu stok berhasil diambil.',
     ],
 ];
