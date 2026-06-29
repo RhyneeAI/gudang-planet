@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\OpsExpenseType;
 use App\Enums\OpsTransferConfirmationStatus;
 use App\Enums\Role;
 use App\Models\Company;
@@ -441,19 +440,8 @@ class SubCompanyService
 
     public function hasPendingTransfers(SubCompany $subCompany): bool
     {
-        if (OpsIncome::query()
+        return OpsIncome::query()
             ->where('sub_company_id', $subCompany->id)
-            ->whereHas('transferConfirmation', function ($query) {
-                $query->where('status', OpsTransferConfirmationStatus::PENDING);
-            })
-            ->exists()
-        ) {
-            return true;
-        }
-
-        return OpsExpense::query()
-            ->where('sub_company_id', $subCompany->id)
-            ->where('expense_type', OpsExpenseType::MANDOR)
             ->whereHas('transferConfirmation', function ($query) {
                 $query->where('status', OpsTransferConfirmationStatus::PENDING);
             })

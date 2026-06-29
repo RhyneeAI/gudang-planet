@@ -16,7 +16,7 @@ class OpsNotificationService
 {
     public function notifyMandorIncomePending(
         User $mandor,
-        OpsExpense $expense,
+        OpsIncome $income,
         OpsTransferConfirmation $confirmation
     ): OpsNotification {
         return OpsNotification::create([

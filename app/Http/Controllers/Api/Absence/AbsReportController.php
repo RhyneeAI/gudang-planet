@@ -11,14 +11,11 @@ use App\Http\Resources\Absence\AbsPayrollPeriodResource;
 use App\Http\Resources\Absence\AbsReportBonusResource;
 use App\Http\Resources\Absence\AbsReportDeductionResource;
 use App\Http\Resources\Operational\OpsEmployeeResource;
-use App\Http\Traits\DataTablesResponse;
 use App\Services\Absence\AbsReportService;
 use App\Services\ExportService;
 
 class AbsReportController extends Controller
 {
-    use DataTablesResponse;
-
     public function __construct(
         protected AbsReportService $reportService,
         protected ExportService $exportService,
@@ -69,11 +66,11 @@ class AbsReportController extends Controller
 
         $records = $query->paginate($request->input('per_page', 50));
 
-        return response()->json($this->dataTablesResponse($request, $records, [
+        return response()->json([
             'success' => true,
             'message' => __('absence.reports.attendance'),
             'data' => AbsAttendanceResource::collection($records),
-        ]));
+        ]);
     }
 
     public function payroll(AbsPayrollReportRequest $request)
@@ -121,11 +118,11 @@ class AbsReportController extends Controller
 
         $records = $query->paginate($request->input('per_page', 50));
 
-        return response()->json($this->dataTablesResponse($request, $records, [
+        return response()->json([
             'success' => true,
             'message' => __('absence.reports.payroll'),
             'data' => AbsPayrollPeriodResource::collection($records),
-        ]));
+        ]);
     }
 
     public function deductions(AbsAttendanceReportRequest $request)
@@ -173,11 +170,11 @@ class AbsReportController extends Controller
 
         $records = $query->paginate($request->input('per_page', 50));
 
-        return response()->json($this->dataTablesResponse($request, $records, [
+        return response()->json([
             'success' => true,
             'message' => __('absence.reports.deductions'),
             'data' => AbsReportDeductionResource::collection($records),
-        ]));
+        ]);
     }
 
     public function bonuses(AbsAttendanceReportRequest $request)
@@ -225,11 +222,11 @@ class AbsReportController extends Controller
 
         $records = $query->paginate($request->input('per_page', 50));
 
-        return response()->json($this->dataTablesResponse($request, $records, [
+        return response()->json([
             'success' => true,
             'message' => __('absence.reports.bonuses'),
             'data' => AbsReportBonusResource::collection($records),
-        ]));
+        ]);
     }
 
     public function employees(AbsEmployeeReportRequest $request)
@@ -277,10 +274,10 @@ class AbsReportController extends Controller
 
         $records = $query->paginate($request->input('per_page', 50));
 
-        return response()->json($this->dataTablesResponse($request, $records, [
+        return response()->json([
             'success' => true,
             'message' => __('absence.reports.employees'),
             'data' => OpsEmployeeResource::collection($records),
-        ]));
+        ]);
     }
 }

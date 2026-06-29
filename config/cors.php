@@ -20,16 +20,12 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        'http://localhost:3000',
         'https://planetsinergi.com',
         'https://www.planetsinergi.com',
         'https://operational.planetsinergi.com',
+        'https://operational.planetsinergi.com',
         'https://staging.planetsinergi.com',
-        'https://operational-gp.vercel.app',
-
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'http://localhost:8000',
+        'https://operational-gp.vercel.app'
     ],
 
     'allowed_origins_patterns' => [],

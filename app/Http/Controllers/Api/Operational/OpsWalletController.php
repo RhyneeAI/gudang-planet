@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\Operational;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Operational\OpsWalletResource;
 use App\Http\Resources\Operational\OpsWalletTransactionResource;
-use App\Http\Traits\DataTablesResponse;
 use App\Models\OpsWalletTransaction;
 use App\Services\SubCompanyService;
 use App\Services\Operational\OpsWalletService;
@@ -13,8 +12,6 @@ use Illuminate\Http\Request;
 
 class OpsWalletController extends Controller
 {
-    use DataTablesResponse;
-
     protected array $sortableColumns = ['type', 'amount', 'reference_type', 'created_at'];
 
     public function __construct(
@@ -52,11 +49,11 @@ class OpsWalletController extends Controller
             ->orderBy($orderByKey, $orderByValue)
             ->paginate($request->input('per_page', 15));
 
-        return response()->json($this->dataTablesResponse($request, $transactions, [
+        return response()->json([
             'success' => true,
             'message' => __('operational.wallet.transactions'),
             'data' => OpsWalletTransactionResource::collection($transactions),
-        ]));
+        ]);
     }
 
     protected function resolveSubCompany(Request $request)

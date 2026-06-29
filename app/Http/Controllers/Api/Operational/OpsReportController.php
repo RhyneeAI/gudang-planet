@@ -103,7 +103,9 @@ class OpsReportController extends Controller
         $saldoAwalMethods   = $this->paymentMethodSaldo($incomeQuery, $expenseQuery, '<', $startDate);
         $saldoAkhirMethods  = $this->paymentMethodSaldo($incomeQuery, $expenseQuery, '<=', $endDate);
 
-        $mandorRoles = [Role::MANDOR, Role::KEPALA_MANDOR];
+        $mandorRoles = $isKepala
+            ? [Role::MANDOR, Role::KEPALA_MANDOR]
+            : [Role::MANDOR];
 
         $mandors = User::where('company_id', $companyId)
             ->whereIn('role', $mandorRoles)
