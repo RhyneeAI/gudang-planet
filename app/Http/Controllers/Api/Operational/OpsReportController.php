@@ -390,10 +390,10 @@ class OpsReportController extends Controller
                 ->value('id');
 
             $incomes->where('mandor_id', $mandorId);
-            $expenses->where('mandor_id', $mandorId)->where('expense_type', '!=', OpsExpenseType::MANDOR);
+            $expenses->where('mandor_id', $mandorId);
         } elseif ($isKepala) {
             $incomes->whereNotNull('mandor_id');
-            $expenses->whereNotNull('mandor_id')->where('expense_type', '!=', OpsExpenseType::MANDOR);
+            $expenses->whereNotNull('mandor_id');
         } else {
             $incomes->whereNull('mandor_id');
             $expenses->where(function (Builder $q) {
@@ -410,7 +410,8 @@ class OpsReportController extends Controller
         $expenses->whereDate('date', '>=', $startDate)
             ->whereDate('date', '<=', $endDate)
             ->orderBy('date')
-            ->orderBy('created_at');
+            ->orderBy('created_at')
+            ->with(['mandor', 'subCompany']);
 
         $incomeResults = $incomes->get()->map(fn ($income) => [
             'type'           => 'income',
@@ -434,6 +435,15 @@ class OpsReportController extends Controller
             'expense_type'   => $expense->expense_type->value,
             'note'           => $expense->note,
             'proof_files'    => $this->mapProofFiles($expense->proof_files ?? []),
+            'mandor'         => $expense->mandor ? [
+                'uuid' => $expense->mandor->uuid,
+                'name' => $expense->mandor->name,
+            ] : null,
+            'sub_company'    => $expense->subCompany ? [
+                'uuid' => $expense->subCompany->uuid,
+                'name' => $expense->subCompany->name,
+                'code' => $expense->subCompany->code,
+            ] : null,
         ]);
 
         $merged = $incomeResults->concat($expenseResults)
