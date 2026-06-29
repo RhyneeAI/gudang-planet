@@ -89,8 +89,7 @@ it('allows mandor to confirm transfer with adjustable received amount', function
         ], ['Accept' => 'application/json'])
         ->assertOk()
         ->assertJsonPath('data.status', 'CONFIRMED')
-        ->assertJsonPath('data.confirmed_amount', 235000)
-        ->assertJsonPath('data.confirmable.amount', 235000);
+        ->assertJsonPath('data.confirmed_amount', 235000);
 
     expect((float) $this->subCompany->fresh()->wallet?->balance)->toBe(235000.0);
 });

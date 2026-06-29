@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\Operational;
 
 use App\Enums\OpsExpenseType;
-use App\Enums\OpsSourceType;
 use App\Enums\OpsTransferConfirmationStatus;
 use App\Enums\OpsWalletTransactionType;
 use App\Enums\Role;
@@ -12,7 +11,6 @@ use App\Http\Requests\Operational\OpsExpenseRequest;
 use App\Http\Resources\Operational\OpsExpenseResource;
 use App\Models\OpsEditLog;
 use App\Models\OpsExpense;
-use App\Models\OpsIncome;
 use App\Models\OpsTransferConfirmation;
 use App\Services\Operational\OpsFileService;
 use App\Services\Operational\OpsNotificationService;
@@ -172,30 +170,14 @@ class OpsExpenseController extends Controller
                 'company_id' => $companyId,
             ]);
 
-            $income = OpsIncome::create([
-                'name' => $request->name,
-                'amount' => $request->amount,
-                'date' => $request->date,
-                'payment_method' => $request->payment_method,
-                'proof_files' => $proofFiles,
-                'note' => $request->note,
-                'source_type' => OpsSourceType::MANDOR,
-                'mandor_id' => $mandor->id,
-                'sub_company_id' => $subCompany->id,
-                'created_by' => $request->user()->id,
-                'company_id' => $companyId,
-            ]);
-
-            $expense->update(['transfer_income_id' => $income->id]);
-
             $confirmation = OpsTransferConfirmation::create([
-                'confirmable_type' => $income->getMorphClass(),
-                'confirmable_id' => $income->id,
+                'confirmable_type' => $expense->getMorphClass(),
+                'confirmable_id' => $expense->id,
                 'status' => OpsTransferConfirmationStatus::PENDING,
                 'company_id' => $companyId,
             ]);
 
-            $this->notificationService->notifyMandorIncomePending($mandor, $income, $confirmation);
+            $this->notificationService->notifyMandorIncomePending($mandor, $expense, $confirmation);
 
             DB::commit();
 
@@ -203,7 +185,7 @@ class OpsExpenseController extends Controller
                 'success' => true,
                 'message' => __('operational.expenses.mandor_transfer_stored'),
                 'data' => new OpsExpenseResource(
-                    $expense->load(['mandor', 'subCompany', 'createdBy', 'transferIncome.transferConfirmation'])
+                    $expense->load(['mandor', 'subCompany', 'createdBy', 'transferConfirmation'])
                 ),
             ], 201);
         } catch (\Throwable $e) {
