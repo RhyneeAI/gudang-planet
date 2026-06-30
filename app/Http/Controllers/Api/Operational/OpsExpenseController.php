@@ -42,7 +42,35 @@ class OpsExpenseController extends Controller
 
     public function index(Request $request)
     {
-        return $this->indexResponse($request);
+        $orderByKey = in_array($request->input('order_by_key', 'date'), $this->sortableColumns)
+            ? $request->input('order_by_key', 'date')
+            : 'date';
+        $orderByValue = strtoupper($request->input('order_by_value', 'DESC')) === 'ASC' ? 'ASC' : 'DESC';
+
+        $expenses = OpsExpense::with(['mandor', 'subCompany', 'createdBy', 'transferIncome.transferConfirmation', 'editLogs'])
+            ->withCount('editLogs')
+            ->when(true, fn (Builder $query) => $this->applySubCompanyFilter($query, $request))
+            ->when($request->date_from, fn($q, $date) => $q->whereDate('date', '>=', $date))
+            ->when($request->date_to, fn($q, $date) => $q->whereDate('date', '<=', $date))
+            ->when(
+                $request->mandor_uuid,
+                fn($q, $uuid) =>
+                $q->whereHas('mandor', fn($m) => $m->where('uuid', $uuid))
+            )
+            ->when($request->expense_type, fn ($q, $type) => $q->where('expense_type', $type))
+            ->when($request->search, function ($query, $search) {
+                $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
+            })
+            ->orderBy($orderByKey, $orderByValue)
+            ->paginate($request->input('per_page', 15));
+
+        return response()->json(
+            $this->dataTablesResponse($request, $expenses, [
+                'success' => true,
+                'message' => __('operational.expenses.list'),
+                'data' => OpsExpenseResource::collection($expenses),
+            ])
+        );
     }
 
     public function pusat(Request $request)
@@ -54,6 +82,7 @@ class OpsExpenseController extends Controller
 
         $expenses = OpsExpense::with(['createdBy'])
             ->where('expense_type', OpsExpenseType::INTERNAL)
+            ->whereNull('mandor_id')
             ->when($request->date_from, fn($q, $date) => $q->whereDate('date', '>=', $date))
             ->when($request->date_to, fn($q, $date) => $q->whereDate('date', '<=', $date))
             ->when($request->search, function ($query, $search) {
@@ -96,7 +125,13 @@ class OpsExpenseController extends Controller
             $this->authorizeExpenseAccess($opsExpense);
         }
 
-        return $this->showResponse($opsExpense);
+        return response()->json([
+            'success' => true,
+            'message' => __('operational.expenses.detail'),
+            'data' => new OpsExpenseResource(
+                $opsExpense->load(['mandor', 'subCompany', 'createdBy', 'transferIncome.transferConfirmation', 'editLogs'])
+            ),
+        ]);
     }
 
     public function update(OpsExpenseRequest $request, string $uuid)
@@ -588,50 +623,6 @@ class OpsExpenseController extends Controller
         }
 
         return null;
-    }
-
-    protected function indexResponse(Request $request)
-    {
-        $orderByKey = in_array($request->input('order_by_key', 'date'), $this->sortableColumns)
-            ? $request->input('order_by_key', 'date')
-            : 'date';
-        $orderByValue = strtoupper($request->input('order_by_value', 'DESC')) === 'ASC' ? 'ASC' : 'DESC';
-
-        $expenses = OpsExpense::with(['mandor', 'subCompany', 'createdBy', 'transferIncome.transferConfirmation', 'editLogs'])
-            ->withCount('editLogs')
-            ->when(true, fn (Builder $query) => $this->applySubCompanyFilter($query, $request))
-            ->when($request->date_from, fn($q, $date) => $q->whereDate('date', '>=', $date))
-            ->when($request->date_to, fn($q, $date) => $q->whereDate('date', '<=', $date))
-            ->when(
-                $request->mandor_uuid,
-                fn($q, $uuid) =>
-                $q->whereHas('mandor', fn($m) => $m->where('uuid', $uuid))
-            )
-            ->when($request->expense_type, fn ($q, $type) => $q->where('expense_type', $type))
-            ->when($request->search, function ($query, $search) {
-                $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
-            })
-            ->orderBy($orderByKey, $orderByValue)
-            ->paginate($request->input('per_page', 15));
-
-        return response()->json(
-            $this->dataTablesResponse($request, $expenses, [
-                'success' => true,
-                'message' => __('operational.expenses.list'),
-                'data' => OpsExpenseResource::collection($expenses),
-            ])
-        );
-    }
-
-    protected function showResponse(OpsExpense $opsExpense)
-    {
-        return response()->json([
-            'success' => true,
-            'message' => __('operational.expenses.detail'),
-            'data' => new OpsExpenseResource(
-                $opsExpense->load(['mandor', 'subCompany', 'createdBy', 'transferIncome.transferConfirmation', 'editLogs'])
-            ),
-        ]);
     }
 
     protected function authorizeExpenseAccess(OpsExpense $expense, ?Role $mandorOnly = null): void
