@@ -27,6 +27,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check migration safety
+        run: |
+          set -e
+          FILES=$(git diff --name-only origin/main HEAD -- database/migrations/ 2>/dev/null || true)
+          if [ -z "$FILES" ]; then
+            echo "No changed migrations to check"
+            exit 0
+          fi
+          echo "Checking migrations: $FILES"
+          for FILE in $FILES; do
+            if [ -f "$FILE" ]; then
+              if grep -nE '(dropColumn|dropForeign|dropPrimary|dropUnique|dropIndex|dropIfExists)' "$FILE" | grep -v '//.*drop\|dropIfExists.*users\b\|DROP TABLE IF EXISTS.*users'; then
+                echo "❌ DESTRUCTIVE MIGRATION DETECTED in $FILE"
+                echo "   Using dropColumn/dropForeign/etc is forbidden — it can destroy production data."
+                echo "   Use ALTER TABLE ... MODIFY COLUMN instead, or ask before creating the migration."
+                exit 1
+              fi
+            fi
+          done
+          echo "✅ All changed migrations are safe"
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
