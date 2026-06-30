@@ -1,77 +1,134 @@
-name: Deploy
+name: Deploy Production
 
 on:
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Target environment'
-        required: true
-        default: 'production'
-        type: choice
-        options:
-          - staging
-          - production
-      branch:
-        description: 'Branch to deploy'
-        required: true
-        default: 'main'
-      migrate:
-        description: 'Run migrations?'
-        required: true
-        default: true
-        type: boolean
+  push:
+    branches: [main]
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: gudang_planet_testing
+          MYSQL_USER: laravel
+          MYSQL_PASSWORD: laravel
+          MYSQL_ROOT_PASSWORD: root
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+        ports:
+          - 3306:3306
+
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
-          ref: ${{ github.event.inputs.branch }}
+          php-version: '8.3'
+          extensions: bcmath, pdo_mysql
+          coverage: none
 
-      - name: Setup SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -p ${{ secrets.SSH_PORT || '22' }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+      - name: Install Composer dependencies
+        run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
 
-      - name: Execute deploy
+      - name: Copy environment file
+        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      - name: Run migrations
         env:
-          SSH_USER: ${{ secrets.SSH_USER }}
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: gudang_planet_testing
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: php artisan migrate --force
+
+      - name: Run tests
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: gudang_planet_testing
+          DB_USERNAME: root
+          DB_PASSWORD: root
+          APP_ENV: testing
+        run: php artisan test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - name: Verify SSH connection
+        env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
-          DEPLOY_PATH_STAGING: ${{ secrets.DEPLOY_PATH_STAGING }}
-          DEPLOY_PATH_PRODUCTION: ${{ secrets.DEPLOY_PATH_PRODUCTION }}
-          PHP_BIN: ${{ secrets.PHP_BIN }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
         run: |
-          DEPLOY_PATH="$DEPLOY_PATH_STAGING"
-          if [ "${{ github.event.inputs.environment }}" = "production" ]; then
-            DEPLOY_PATH="$DEPLOY_PATH_PRODUCTION"
-          fi
+          set -e
+          ssh -p "${SSH_PORT:-2223}" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=accept-new \
+            "${SSH_USER}@${SSH_HOST}" \
+            'echo "SSH OK"'
 
-          if [ -z "$DEPLOY_PATH" ]; then
-            echo "Error: DEPLOY_PATH for ${{ github.event.inputs.environment }} is not set"
-            exit 1
-          fi
+      - name: Sync files to server
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -e
+          SSH_OPTS="-p ${SSH_PORT:-2223} -o BatchMode=yes -o StrictHostKeyChecking=accept-new"
+          REMOTE="${SSH_USER}@${SSH_HOST}"
 
-          PHP="${PHP_BIN:-php}"
+          # Shared hosting (Rumahweb) usually has no rsync — stream tarball over SSH instead.
+          ssh ${SSH_OPTS} "${REMOTE}" "mkdir -p '${DEPLOY_PATH}'"
 
-          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" << ENDSSH
-            set -e
-            cd "$DEPLOY_PATH"
+          tar czf - \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            --exclude='tests' \
+            --exclude='node_modules' \
+            --exclude='vendor' \
+            --exclude='storage/app/public/*' \
+            --exclude='storage/logs/*' \
+            --exclude='storage/framework/cache/data/*' \
+            --exclude='storage/framework/sessions/*' \
+            --exclude='storage/framework/views/*' \
+            . | ssh ${SSH_OPTS} "${REMOTE}" "cd '${DEPLOY_PATH}' && tar xzf -"
 
-            git fetch origin
-            git checkout -f ${{ github.event.inputs.branch }}
-            git clean -fd
-            git reset --hard origin/${{ github.event.inputs.branch }}
-
-            if [ "${{ github.event.inputs.migrate }}" = "true" ]; then
-              $PHP artisan migrate --force
-            fi
-
-            $PHP artisan queue:restart || true
-
-            echo "Deploy to ${{ github.event.inputs.environment }} complete"
-          ENDSSH
+      - name: Run migrations and cache on server
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -e
+          ssh -p "${SSH_PORT:-2223}" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=accept-new \
+            "${SSH_USER}@${SSH_HOST}" \
+            "set -e && cd '${DEPLOY_PATH}' && php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan storage:link 2>/dev/null || true"
