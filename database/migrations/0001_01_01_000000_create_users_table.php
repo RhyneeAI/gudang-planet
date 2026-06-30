@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('address')->nullable();
             $table->string('phone')->unique()->nullable(); // ← TAMBAHKAN unique
             $table->string('password');
-            $table->enum('role', ['SUPERADMIN', 'OWNER', 'MARKETING']);
+            $table->enum('role', ['SUPERADMIN', 'OWNER', 'ADMIN', 'HRD', 'GUDANG', 'KEPALA_GUDANG', 'MARKETING_LEAD', 'MARKETING', 'MARKETING_TETAP', 'KASIR', 'KEPALA_MANDOR', 'MANDOR', 'KARYAWAN']);
             $table->boolean('is_active')->default(true);
             $table->foreignId('company_id')->constrained()->onDelete('cascade');
             $table->rememberToken();
