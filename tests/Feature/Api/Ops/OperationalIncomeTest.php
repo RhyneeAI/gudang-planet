@@ -345,6 +345,47 @@ it('rejects income edit after H+3 from creation', function () {
         ->assertJsonPath('message', __('operational.incomes.edit_window_expired', ['days' => 3]));
 });
 
+it('shows pusat internal incomes via pusat endpoint', function () {
+    $pusatIncome = OpsIncome::create([
+        'name' => 'Pemasukan Pusat',
+        'amount' => 1000000,
+        'date' => now()->toDateString(),
+        'proof_files' => ['proofs/test.jpg'],
+        'source_type' => OpsSourceType::INTERNAL,
+        'mandor_id' => null,
+        'sub_company_id' => $this->subCompany->id,
+        'created_by' => $this->admin->id,
+        'company_id' => $this->company->id,
+    ]);
+
+    $mandorIncome = OpsIncome::create([
+        'name' => 'Pemasukan Cabang',
+        'amount' => 200000,
+        'date' => now()->toDateString(),
+        'proof_files' => ['proofs/test.jpg'],
+        'source_type' => OpsSourceType::INTERNAL,
+        'mandor_id' => $this->mandor->id,
+        'sub_company_id' => $this->subCompany->id,
+        'created_by' => $this->mandor->id,
+        'company_id' => $this->company->id,
+    ]);
+
+    $response = $this->actingAs($this->admin)
+        ->getJson('/api/v1/operational/incomes/pusat');
+
+    $response->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonFragment(['name' => 'Pemasukan Pusat'])
+        ->assertJsonMissing(['name' => 'Pemasukan Cabang']);
+});
+
+it('rejects pusat endpoint for non-admin roles', function () {
+    $response = $this->actingAs($this->mandor)
+        ->getJson('/api/v1/operational/incomes/pusat');
+
+    $response->assertForbidden();
+});
+
 it('includes sub companies in admin dashboard', function () {
     $response = $this->actingAs($this->admin)
         ->getJson('/api/v1/operational/dashboard/admin');
