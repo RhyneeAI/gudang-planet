@@ -215,6 +215,48 @@ it('shows pusat internal and mandor transfer expenses via pusat endpoint', funct
         ->assertJsonMissing(['name' => 'Belanja Cabang']);
 });
 
+it('filters pusat expenses by date range', function () {
+    $admin = User::factory()->admin()->create([
+        'company_id' => $this->company->id,
+    ]);
+
+    OpsExpense::create([
+        'name' => 'Pengeluaran Lama', 'amount' => 100000,
+        'date' => now()->subDays(5)->toDateString(), 'proof_files' => ['proofs/test.jpg'],
+        'expense_type' => OpsExpenseType::INTERNAL, 'mandor_id' => null,
+        'sub_company_id' => $this->subCompany->id, 'created_by' => $admin->id,
+        'company_id' => $this->company->id,
+    ]);
+    OpsExpense::create([
+        'name' => 'Pengeluaran Baru', 'amount' => 200000,
+        'date' => now()->toDateString(), 'proof_files' => ['proofs/test.jpg'],
+        'expense_type' => OpsExpenseType::INTERNAL, 'mandor_id' => null,
+        'sub_company_id' => $this->subCompany->id, 'created_by' => $admin->id,
+        'company_id' => $this->company->id,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->getJson('/api/v1/operational/expenses/pusat?date_from=' . now()->subDays(2)->toDateString());
+
+    $response->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonFragment(['name' => 'Pengeluaran Baru'])
+        ->assertJsonMissing(['name' => 'Pengeluaran Lama']);
+});
+
+it('returns empty pusat expenses when no data', function () {
+    $admin = User::factory()->admin()->create([
+        'company_id' => $this->company->id,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->getJson('/api/v1/operational/expenses/pusat');
+
+    $response->assertOk()
+        ->assertJsonCount(0, 'data')
+        ->assertJsonPath('recordsTotal', 0);
+});
+
 it('rejects pusat endpoint for non-admin roles', function () {
     $response = $this->actingAs($this->mandor)
         ->getJson('/api/v1/operational/expenses/pusat');

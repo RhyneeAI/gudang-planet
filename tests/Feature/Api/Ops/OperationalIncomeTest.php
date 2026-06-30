@@ -379,6 +379,40 @@ it('shows pusat internal incomes via pusat endpoint', function () {
         ->assertJsonMissing(['name' => 'Pemasukan Cabang']);
 });
 
+it('filters pusat incomes by search', function () {
+    OpsIncome::create([
+        'name' => 'Pemasukan Unik', 'amount' => 100000,
+        'date' => now()->toDateString(), 'proof_files' => ['proofs/test.jpg'],
+        'source_type' => OpsSourceType::INTERNAL, 'mandor_id' => null,
+        'sub_company_id' => $this->subCompany->id, 'created_by' => $this->admin->id,
+        'company_id' => $this->company->id,
+    ]);
+    OpsIncome::create([
+        'name' => 'Pemasukan Biasa', 'amount' => 200000,
+        'date' => now()->toDateString(), 'proof_files' => ['proofs/test.jpg'],
+        'source_type' => OpsSourceType::INTERNAL, 'mandor_id' => null,
+        'sub_company_id' => $this->subCompany->id, 'created_by' => $this->admin->id,
+        'company_id' => $this->company->id,
+    ]);
+
+    $response = $this->actingAs($this->admin)
+        ->getJson('/api/v1/operational/incomes/pusat?search=Unik');
+
+    $response->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonFragment(['name' => 'Pemasukan Unik'])
+        ->assertJsonMissing(['name' => 'Pemasukan Biasa']);
+});
+
+it('returns empty pusat incomes when no data', function () {
+    $response = $this->actingAs($this->admin)
+        ->getJson('/api/v1/operational/incomes/pusat');
+
+    $response->assertOk()
+        ->assertJsonCount(0, 'data')
+        ->assertJsonPath('recordsTotal', 0);
+});
+
 it('rejects pusat endpoint for non-admin roles', function () {
     $response = $this->actingAs($this->mandor)
         ->getJson('/api/v1/operational/incomes/pusat');
