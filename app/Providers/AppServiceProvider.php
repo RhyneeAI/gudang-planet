@@ -2,12 +2,18 @@
 
 namespace App\Providers;
 
-use Carbon\Carbon;
+use App\Models\OpsExpense;
+use App\Models\OpsIncome;
+use App\Models\OpsTransferConfirmation;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Support\ServiceProvider;
+use App\Observers\UserObserver;
+use Carbon\Carbon;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Events\CommandStarting;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\ServiceProvider;
+use RuntimeException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,24 +34,24 @@ class AppServiceProvider extends ServiceProvider
     {
         if ($this->app->environment('production')) {
             $this->app['events']->listen(
-                \Illuminate\Console\Events\CommandStarting::class,
+                CommandStarting::class,
                 function ($event) {
                     $forbidden = ['migrate:fresh', 'migrate:refresh', 'migrate:reset', 'db:wipe'];
                     if (in_array($event->command, $forbidden, true)) {
-                        throw new \RuntimeException("{$event->command} dilarang di production!");
+                        throw new RuntimeException("{$event->command} dilarang di production!");
                     }
                 }
             );
         }
 
-        User::observe(\App\Observers\UserObserver::class);
+        User::observe(UserObserver::class);
 
         Relation::enforceMorphMap([
-            'users' => \App\Models\User::class,
-            'ops_incomes' => \App\Models\OpsIncome::class,
-            'ops_expenses' => \App\Models\OpsExpense::class,
-            'ops_mandor_expenses' => \App\Models\OpsExpense::class,
-            'ops_transfer_confirmations' => \App\Models\OpsTransferConfirmation::class,
+            'users' => User::class,
+            'ops_incomes' => OpsIncome::class,
+            'ops_expenses' => OpsExpense::class,
+            'ops_mandor_expenses' => OpsExpense::class,
+            'ops_transfer_confirmations' => OpsTransferConfirmation::class,
         ]);
 
         RateLimiter::for('api', function ($request) {
