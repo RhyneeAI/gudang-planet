@@ -120,6 +120,32 @@ it('allows current branch mandor to confirm after sub company reassignment', fun
         ->assertJsonPath('data.status', 'CONFIRMED');
 });
 
+it('creates income visible in incomes index after confirm transfer', function () {
+    $confirmation = createPendingTransferConfirmation($this->admin, $this->mandor, $this->subCompany);
+
+    $this->actingAs($this->mandor)
+        ->post('/api/v1/operational/transfer-confirmations/' . $confirmation->uuid . '/confirm', [
+            'confirmed_amount' => 250000,
+            'mandor_proof_files' => [UploadedFile::fake()->create('mandor-proof.jpg', 100, 'image/jpeg')],
+        ], ['Accept' => 'application/json'])
+        ->assertOk();
+
+    $response = $this->actingAs($this->admin)
+        ->getJson('/api/v1/operational/incomes?mandor_uuid=' . $this->mandor->uuid);
+
+    $response->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.source_type', OpsSourceType::MANDOR->value)
+        ->assertJsonPath('data.0.name', 'Transfer Dana')
+        ->assertJsonPath('data.0.mandor.uuid', $this->mandor->uuid);
+
+    $responseAll = $this->actingAs($this->admin)
+        ->getJson('/api/v1/operational/incomes');
+
+    $responseAll->assertOk()
+        ->assertJsonFragment(['name' => 'Transfer Dana']);
+});
+
 it('still lists transfer for original mandor after sub company reassignment', function () {
     $confirmation = createPendingTransferConfirmation($this->admin, $this->mandor, $this->subCompany);
 
