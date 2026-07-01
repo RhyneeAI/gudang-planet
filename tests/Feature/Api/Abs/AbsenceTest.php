@@ -64,9 +64,9 @@ beforeEach(function () {
     ]);
 });
 
-it('admin can create employee via operational api', function () {
+it('admin can create employee via employees api', function () {
     $this->actingAs($this->admin)
-        ->postJson('/api/v1/operational/employees', [
+        ->postJson('/api/v1/employees', [
             'name' => 'Budi',
             'phone' => '081234567890',
             'password' => 'password123',
@@ -128,7 +128,7 @@ it('owner can view abs dashboard but cannot create employee', function () {
         ->assertStatus(200);
 
     $this->actingAs($owner)
-        ->postJson('/api/v1/operational/employees', [
+        ->postJson('/api/v1/employees', [
             'name' => 'Blocked',
             'phone' => '081111111111',
             'password' => 'password123',

@@ -127,7 +127,7 @@ it('prevents deleting marketing lead that still has members', function () {
 
 it('rejects employee creation for commission marketing roles', function () {
     $this->actingAs($this->admin)
-        ->postJson('/api/v1/operational/employees', [
+        ->postJson('/api/v1/employees', [
             'name' => 'Should Fail',
             'phone' => '081999999999',
             'password' => 'password123',
@@ -139,7 +139,7 @@ it('rejects employee creation for commission marketing roles', function () {
 
 it('allows employee creation for marketing tetap', function () {
     $this->actingAs($this->admin)
-        ->postJson('/api/v1/operational/employees', [
+        ->postJson('/api/v1/employees', [
             'name' => 'Marketing Tetap',
             'phone' => '081888888888',
             'password' => 'password123',
