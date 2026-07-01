@@ -14,10 +14,12 @@ description: Backend Laravel multi-modul (POS, Operasional, Absensi) untuk Gudan
 | --------------- | ----------------------- | ---------------------------------- | ------------------ | -------------------------------------------------- |
 | **POS**         | Aktif (v2)              | `/api/v1/pos/`*                    | `pos_`             | `App\Http\Controllers\Api\Pos\`                    |
 | **Operasional** | Aktif                   | `/api/v1/operational/`*            | `ops_`             | `App\Http\Controllers\Api\Operational\`            |
-| **Absensi**     | Aktif (mulai v1.7)      | `/api/v1/abs/`*                    | `abs_`             | `App\Http\Controllers\Api\Absensi\`                |
+| **Absensi**     | Aktif (mulai v1.7)      | `/api/v1/abs/`*                    | `abs_`             | `App\Http\Controllers\Api\Absence\`                |
 
 
 **Stack:** Laravel Sanctum (auth), Pest (testing), DomPDF + Maatwebsite Excel (laporan), Laravel Telescope (monitoring dev).
+
+> **v1 sudah berakhir.** Pengembangan sekarang di **v2** — deploy ke hosting berbeda dari v1.
 
 ---
 
@@ -30,11 +32,13 @@ enum Role: string
     case OWNER = 'OWNER';
     case ADMIN = 'ADMIN';
     case HRD = 'HRD';
-    case MANAGER_GUDANG = 'MANAGER_GUDANG';
+    case GUDANG = 'GUDANG';
+    case KEPALA_GUDANG = 'KEPALA_GUDANG';
     case MARKETING_LEAD = 'MARKETING_LEAD';
     case MARKETING = 'MARKETING';
     case MARKETING_TETAP = 'MARKETING_TETAP';
     case KASIR = 'KASIR';
+    case KEPALA_MANDOR = 'KEPALA_MANDOR';
     case MANDOR = 'MANDOR';
     case KARYAWAN = 'KARYAWAN';
 }
@@ -64,10 +68,12 @@ enum Role: string
 | OWNER            | **Read-only** rekapitulasi                | **Read-only** rekapitulasi                   | **Read-only** rekapitulasi |
 | ADMIN            | Master data (no transaksi POS)            | Pemasukan/pengeluaran pusat, audit mandor    | Konfigurasi, penggajian    |
 | HRD              | —                                         | Input karyawan, lihat lembur & kasbon        | **Full** (lembur, kasbon, payroll lihat) |
-| MANAGER_GUDANG   | Produk, kategori, stok, laporan           | —                                            | —                          |
-| MARKETING_LEAD   | Transaksi + laporan commission            | —                                            | —                          |
-| MARKETING        | Transaksi + laporan commission (sendiri)  | —                                            | —                          |
-| MARKETING_TETAP  | Transaksi (no commission report)          | —                                            | —                          |
+| KEPALA_GUDANG    | Produk, kategori, stok, laporan           | —                                            | —                          |
+| GUDANG           | Produk, stok (mutasi)                     | —                                            | —                          |
+| KEPALA_MANDOR    | —                                         | Dashboard, income/expense, report            | —                          |
+| MARKETING_LEAD   | — (hanya marker komisi)                   | —                                            | —                          |
+| MARKETING        | — (hanya marker komisi)                   | —                                            | —                          |
+| MARKETING_TETAP  | — (hanya marker komisi)                   | —                                            | ✅ (sama seperti KARYAWAN) |
 | KASIR            | **Satu-satunya role transaksi penjualan** | —                                            | —                          |
 | MANDOR           | —                                         | Pemasukan/pengeluaran cabang, dompet digital | Absen (jika pegawai)       |
 | KARYAWAN         | —                                         | —                                            | Absen                      |
@@ -124,7 +130,7 @@ Gunakan `__('module.key')` untuk i18n (`lang/en/`, `lang/id/`).
 
 - Semua entitas POS (`products`, `sales_transactions`, dll.) hanya punya `company_id`.
 - Tidak ada relasi ke sub-company / cabang.
-- User POS (KASIR, MANAGER_GUDANG, MARKETING, dll.) terikat ke `company_id` pusat.
+- User POS (KASIR, KEPALA_GUDANG, GUDANG, MARKETING, dll.) terikat ke `company_id` pusat.
 
 ### Status Saat Ini (v2 — mulai v1.7)
 
@@ -155,18 +161,19 @@ Gunakan `__('module.key')` untuk i18n (`lang/en/`, `lang/id/`).
 - **Profit fields baru** di `pos_sales_details`: `company_profit`, `lead_profit`, `marketing_profit`
 - Discount, biaya opsional, custom sell_price tetap ada
 
-#### 3. Piutang v2 (`pos_receivables`)
+#### 3. Piutang v2 (`pos_receivables`) — *belum diimplementasi*
 
-- No installment / tenor — hanya DP + pelunasan langsung
-- Installment lama (`pos_installments`) tetap berjalan
+- Rencana: no installment / tenor — hanya DP + pelunasan langsung
+- Installment lama (`pos_installments`) tetap berjalan (aktif)
+- Model & migration `pos_receivables` masih upcoming
 
 #### 4. Retur Penjualan (`pos_returns`)
 
-- KASIR input → MANAGER_GUDANG proses; stok otomatis dikembalikan
+- KASIR input → KEPALA_GUDANG / GUDANG proses; stok otomatis dikembalikan
 
 #### 5. Module Config (disabled modules)
 
-`pos_customer`, `pos_purchase`, `pos_installment` → disabled via `config/modules.php` (endpoint return 410)
+`pos_customer`, `pos_purchase`, `pos_installment` → disabled via `config/modules.php`. Middleware `CheckModule` sudah terdaftar di `bootstrap/app.php` tapi **belum dipasang di route group** (endpoint masih accessible — upcoming)
 
 #### 6. Laporan
 
@@ -174,7 +181,11 @@ Gunakan `__('module.key')` untuk i18n (`lang/en/`, `lang/id/`).
 - **Kartu stok:** `GET /api/v1/pos/stock-card/{productId}`
 - **Sales report:** disesuaikan profit per role
 
-#### 7. MARKETING tidak punya akses ke aplikasi POS
+#### 7. MARKETING & MARKETING_LEAD tidak bisa login
+
+- **MARKETING & MARKETING_LEAD:** Tidak bisa login — murni marker untuk perhitungan komisi. Hanya dipakai sebagai `marketing_id` di transaksi penjualan.
+- **MARKETING_TETAP:** Bisa login, hak akses setara KARYAWAN (bisa absensi).
+- Ketiganya tetap di tabel `users` (bukan tabel terpisah) agar FE cukup filter by role parameter, dan relasi `marketing_id` di transaksi tetap sederhana.
 
 **File kunci:**
 - Routes: `routes/pos-api.php`
@@ -188,13 +199,15 @@ Gunakan `__('module.key')` untuk i18n (`lang/en/`, `lang/id/`).
 | Role                         | Transaksi | Produk | Stok | Laporan Marketing |
 | ---------------------------- | --------- | ------ | ---- | ----------------- |
 | SUPERADMIN                   | ✅ Full    | ✅      | ✅    | ✅                 |
-| MANAGER_GUDANG               | ❌         | ✅ CRUD | ✅    | ❌                 |
+| KEPALA_GUDANG                | ❌         | ✅ CRUD | ✅    | ❌                 |
+| GUDANG                       | ❌         | ✅ CRUD | ✅    | ❌                 |
 | KASIR                        | ✅         | ❌      | ❌    | ❌                 |
-| MARKETING_LEAD               | ✅         | ❌      | ❌    | ✅                 |
-| MARKETING                    | ✅         | ❌      | ❌    | ✅ (diri sendiri)  |
-| MARKETING_TETAP              | ✅         | ❌      | ❌    | ❌ (bonus via absensi) |
+| MARKETING_LEAD               | ❌ (marker) | ❌     | ❌    | ✅                 |
+| MARKETING                    | ❌ (marker) | ❌     | ❌    | ✅ (diri sendiri)  |
+| MARKETING_TETAP              | ❌ (marker) | ❌     | ❌    | ❌ (bonus via absensi) |
 | ADMIN                        | ❌         | ✅      | ❌    | ❌                 |
 | OWNER                        | ❌         | ❌      | ❌    | Read-only          |
+| KEPALA_MANDOR                | ❌         | ❌      | ❌    | ❌                 |
 
 ---
 
@@ -409,9 +422,9 @@ Saat salary `AbsJabatan` berubah → insert ke `ops_edit_logs` (`loggable_type: 
 | Route prefix         | `/api/v1/abs/`*                                                |
 | Table prefix         | `abs_`                                                         |
 | Model prefix         | `Abs`*                                                         |
-| Namespace controller | `App\Http\Controllers\Api\Absensi\`                            |
-| Config               | `config/absensi.php`                                           |
-| Routes file          | `routes/absensi-api.php` (daftarkan di `bootstrap/app.php`)    |
+| Namespace controller | `App\Http\Controllers\Api\Absence\`                            |
+| Config               | `config/absence.php`                                           |
+| Routes file          | `routes/abs-api.php` (daftarkan di `bootstrap/app.php`)        |
 
 ### Entitas (Existing)
 
@@ -421,7 +434,9 @@ Saat salary `AbsJabatan` berubah → insert ke `ops_edit_logs` (`loggable_type: 
 | AbsJabatan         | abs_jabatans           | Jabatan + salary                           |
 | AbsShift           | abs_shifts             | Shift kerja                                |
 | AbsAttendance      | abs_attendances        | Record absensi harian                      |
-| AbsEmployeePayroll | abs_employee_payrolls  | Penggajian bulanan                         |
+| AbsPayrollPeriod   | abs_payroll_periods    | Periode penggajian bulanan                 |
+| AbsBonus           | abs_bonuses            | Bonus manual payroll                       |
+| AbsDeduction       | abs_deductions         | Potongan manual payroll                    |
 
 ### Entitas Baru (v1.7)
 
@@ -502,17 +517,17 @@ Saat salary `AbsJabatan` berubah → insert ke `ops_edit_logs` (`loggable_type: 
 app/
 ├── Enums/Abs*.php                    # Enum modul absensi
 ├── Http/
-│   ├── Controllers/Api/Absensi/      # Abs*Controller
-│   ├── Requests/Absensi/             # Form requests
-│   └── Resources/Absensi/            # API resources
+│   ├── Controllers/Api/Absence/      # Abs*Controller
+│   ├── Requests/Absence/             # Form requests
+│   └── Resources/Absence/            # API resources
 ├── Models/Abs*.php                   # Model dengan prefix Abs
-├── Services/Absensi/                 # Business logic
-config/absensi.php
-routes/absensi-api.php
+├── Services/Absence/                 # Business logic
+config/absence.php
+routes/abs-api.php
 database/migrations/                  # abs_* tables
-lang/en|id/absensi.php
-resources/views/reports/absensi/      # PDF templates
-tests/Feature/Api/Absensi/            # Pest tests
+lang/en|id/absence.php
+resources/views/reports/absence/      # PDF templates
+tests/Feature/Api/Abs/                # Pest tests
 ```
 
 ### Module Config & Versioning
@@ -530,7 +545,7 @@ return [
 ];
 ```
 
-Middleware `CheckModule` digunakan di route group untuk return 410 jika module disabled. Registrasi alias `module` di `bootstrap/app.php`.
+Middleware `CheckModule` sudah terdaftar (alias `module` di `bootstrap/app.php`) tapi **belum dipasang** di route group — disabled modules masih accessible. Pemasangan di route group adalah upcoming.
 
 ### Pola yang Sudah Ada (Operasional = Referensi)
 
@@ -554,8 +569,8 @@ Middleware `CheckModule` digunakan di route group untuk return 410 jika module d
 ### Testing
 
 - Framework: Pest.
-- Lokasi: `tests/Feature/Api/`.
-- Operasional: `OperationalIncomeTest.php`, `OperationalExpenseTest.php`, `OperationalTransferConfirmationTest.php`, `SubCompanyTest.php`.
+- Lokasi: `tests/Feature/Api/` (sub-folder per modul: `Pos/`, `Ops/`, `Abs/`).
+- Operasional: `tests/Feature/Api/Ops/` (OpsEmployeeTest, OperationalIncomeTest, OperationalExpenseTest, OperationalTransferConfirmationTest, OpsDashboardTest, OpsWalletTest, dll.).
 - Rate limit API (non-testing): auth 120/min, guest write 30/min, guest read 80/min (`AppServiceProvider`).
 
 ---
@@ -631,11 +646,11 @@ Middleware `CheckModule` digunakan di route group untuk return 410 jika module d
 | Ops config            | `config/operational.php`                                       |
 | Ops config seeder     | `database/seeders/OpsConfigurationSeeder.php`                  |
 | Production seeder     | `database/seeders/Test/ProductionSeeder.php`                     |
-| Absensi routes        | `routes/absensi-api.php`                                       |
-| Absensi controllers   | `app/Http/Controllers/Api/Absensi/`                            |
-| Absensi models        | `app/Models/Abs`* (AbsAttendance, AbsEmployeePayroll, dll.)     |
+| Absensi routes        | `routes/abs-api.php`                                           |
+| Absensi controllers   | `app/Http/Controllers/Api/Absence/`                            |
+| Absensi models        | `app/Models/Abs`* (AbsAttendance, AbsPayrollPeriod, dll.)       |
 | Custom config model   | `app/Models/CustomConfiguration.php`                           |
-| Absensi config        | `config/absensi.php`                                           |
+| Absensi config        | `config/absence.php`                                           |
 | Report scope fix      | `app/Http/Controllers/Api/Operational/OpsReportController.php` |
 | SubCompany request    | `app/Http/Requests/Operational/SubCompanyRequest.php`          |
 | Postman collection    | `docs/postman/operational-api.postman_collection.json`         |

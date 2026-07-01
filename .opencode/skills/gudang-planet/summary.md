@@ -1,27 +1,30 @@
-# Gudang Planet — Ringkasan Eksekutif (v1.9)
+# Gudang Planet — Ringkasan Eksekutif (v2)
+
+> **v1 sudah berakhir.** Pengembangan sekarang di **v2** — deploy ke hosting berbeda dari v1.
 
 ## 1. Arsitektur Inti
 - **Backend:** Laravel 12 (PHP 8.3) | **Auth:** Sanctum | **Testing:** Pest
-- **Multi-modul:** POS (v2), Operasional, Absensi (v1.7) — semua dalam satu backend.
+- **Multi-modul:** POS (v2), Operasional, Absensi — semua dalam satu backend.
 - **Multi-tenancy:** 
   - `Company` = Pusat (Global Scope otomatis).
   - `SubCompany` = Cabang (hanya untuk **Operasional & Absensi**).
   - **POS langsung ke Company, BUKAN SubCompany.**
 
 ## 2. Hierarki Role (Kunci!)
-- **Role:** SUPERADMIN, OWNER, ADMIN, HRD, MANAGER_GUDANG, MARKETING_LEAD, MARKETING, MARKETING_TETAP, KASIR, MANDOR, KARYAWAN.
+- **Role:** SUPERADMIN, OWNER, ADMIN, HRD, GUDANG, KEPALA_GUDANG, MARKETING_LEAD, MARKETING, MARKETING_TETAP, KASIR, KEPALA_MANDOR, MANDOR, KARYAWAN.
 - **Aturan Emas:**
   - **SUPERADMIN:** Bisa semua + Telescope.
   - **OWNER:** **READ-ONLY** di semua modul (rekapitulasi), TIDAK bisa Telescope.
-  - **MARKETING & MARKETING_TETAP:** TIDAK termasuk absensi/payroll.
+  - **MARKETING & MARKETING_LEAD:** Tidak bisa login — marker komisi saja.
+  - **MARKETING_TETAP:** Bisa login (sama seperti KARYAWAN).
   - **KASIR:** Satu-satunya role (selain SUPERADMIN) yang bisa transaksi POS.
 
 ## 3. Modul POS (v2)
 - **Pricing 4 Level:** `base_price` (modal) → `leader_price` → `marketing_price` → `sell_price`.
-- **Profit Flow:** Company, LEAD, dan Marketing dapat profit split sesuai role.
+- **Profit Flow:** Company, KEPALA_GUDANG, dan Marketing dapat profit split sesuai role.
 - **Transaksi:** Wajib pilih `marketing_id`. Customer nullable.
-- **Piutang:** Hanya DP + Pelunasan (installment dimatikan via config).
-- **Retur:** KASIR input → MANAGER_GUDANG proses (stok balik).
+- **Piutang:** Hanya DP + Pelunasan (installment lama masih aktif; piutang v2 masih upcoming).
+- **Retur:** KASIR input → KEPALA_GUDANG/GUDANG proses (stok balik).
 - **Laporan:** Kartu stok & Komisi Marketing (scope MARKETING_LEAD + MARKETING).
 
 ## 4. Modul Operasional
