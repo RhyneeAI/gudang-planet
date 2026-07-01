@@ -33,6 +33,8 @@ Route::prefix('v1/pos')->middleware(['auth:sanctum'])->group(function () {
         Route::apiResource('products', PosProductController::class)->parameters([
             'products' => 'product:uuid',
         ])->only(['index', 'show']);
+
+        Route::get('products/{product:uuid}/price-logs', [PosProductController::class, 'priceLogs']);
     });
 
     // =======================================================
