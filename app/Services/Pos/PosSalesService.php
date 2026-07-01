@@ -202,6 +202,8 @@ class PosSalesService
         $detail = PosSalesDetail::create([
             'sale_id'           => $transaction->id,
             'product_id'        => $product->id,
+            'base_price'        => $basePrice,
+            'leader_price'      => $leaderPrice,
             'quantity'          => $quantity,
             'sell_price'        => $sellPrice,
             'marketing_price'   => $marketingPrice,

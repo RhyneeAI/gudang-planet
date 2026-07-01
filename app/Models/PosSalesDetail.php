@@ -20,6 +20,8 @@ class PosSalesDetail extends Model
         'ulid',
         'sale_id',
         'product_id',
+        'base_price',
+        'leader_price',
         'quantity',
         'marketing_price',
         'sell_price',

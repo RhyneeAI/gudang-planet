@@ -5,7 +5,9 @@ namespace App\Providers;
 use App\Models\OpsExpense;
 use App\Models\OpsIncome;
 use App\Models\OpsTransferConfirmation;
+use App\Models\PosProduct;
 use App\Models\User;
+use App\Observers\PosProductObserver;
 use App\Observers\UserObserver;
 use Carbon\Carbon;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -45,6 +47,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         User::observe(UserObserver::class);
+        PosProduct::observe(PosProductObserver::class);
 
         Relation::enforceMorphMap([
             'users' => User::class,

@@ -655,6 +655,7 @@ Middleware `CheckModule` sudah terdaftar (alias `module` di `bootstrap/app.php`)
 | Release notes v1.6    | `RELEASE-v1.6.md`                                              |
 | Release notes v1.8    | `RELEASE-v1.8.md`                                              |
 | Deliverables v1.9     | `docs/release/v1.9-ABS.md`, `v1.9-OPS.md`, `v1.9-POS.md`      |
+| Product price log     | `app/Models/PosProductPriceLog.php`, `app/Observers/PosProductObserver.php`          |
 | Nullable company_id   | `database/migrations/2026_06_23_085116_make_company_id_nullable_on_users_table.php` |
 
 
