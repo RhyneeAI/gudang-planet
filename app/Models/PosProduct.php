@@ -96,4 +96,9 @@ class PosProduct extends Model
     {
         return $this->hasMany(PosStockMutation::class, 'product_id');
     }
+
+    public function priceLogs()
+    {
+        return $this->hasMany(PosProductPriceLog::class, 'product_id')->latest();
+    }
 }

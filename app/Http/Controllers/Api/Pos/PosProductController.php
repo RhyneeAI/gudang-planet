@@ -8,6 +8,7 @@ use App\Http\Requests\Pos\PosProductRequest;
 use App\Http\Resources\Pos\PosProductResource;
 use App\Models\PosCategory;
 use App\Models\PosProduct;
+use App\Models\PosProductPriceLog;
 use App\Models\PosStockMutation;
 use App\Http\Traits\DataTablesResponse;
 use App\Models\PosUnit;
@@ -167,6 +168,27 @@ class PosProductController extends Controller
             'success' => true,
             'message' => __('pos.products.updated'),
             'data' => new PosProductResource($product->load(['category', 'unit', 'createdBy'])),
+        ]);
+    }
+
+    public function priceLogs(PosProduct $product)
+    {
+        return response()->json([
+            'success' => true,
+            'message' => __('pos.products.price_logs'),
+            'data' => $product->priceLogs()->with('changedBy')->get()->map(fn($log) => [
+                'id' => $log->id,
+                'base_price_old' => (float) $log->base_price_old,
+                'base_price_new' => (float) $log->base_price_new,
+                'leader_price_old' => (float) $log->leader_price_old,
+                'leader_price_new' => (float) $log->leader_price_new,
+                'marketing_price_old' => (float) $log->marketing_price_old,
+                'marketing_price_new' => (float) $log->marketing_price_new,
+                'sell_price_old' => (float) $log->sell_price_old,
+                'sell_price_new' => (float) $log->sell_price_new,
+                'changed_by' => $log->changedBy ? $log->changedBy->name : null,
+                'created_at' => $log->created_at?->toISOString(),
+            ]),
         ]);
     }
 

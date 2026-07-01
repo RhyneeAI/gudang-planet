@@ -177,14 +177,14 @@ class PosSalesService
         $product         = $products->get($item['product_uuid']);
         $itemDiscount    = $item['discount'] ?? 0;
         $sellPrice       = (float) $item['sell_price'];
-        $marketingPrice  = (float) ($item['marketing_price'] ?? 0);
         $quantity        = (int) $item['quantity'];
         $subtotal        = $quantity * ($sellPrice - $itemDiscount);
         $stockBefore     = (int) $product->stock;
         $stockAfter      = $stockBefore - $quantity;
 
-        $basePrice   = (float) $product->base_price;
-        $leaderPrice = (float) $product->leader_price;
+        $basePrice       = (float) $product->base_price;
+        $leaderPrice     = (float) $product->leader_price;
+        $marketingPrice  = (float) $product->marketing_price;
 
         $companyProfit = ($leaderPrice - $basePrice) * $quantity;
 
@@ -202,6 +202,8 @@ class PosSalesService
         $detail = PosSalesDetail::create([
             'sale_id'           => $transaction->id,
             'product_id'        => $product->id,
+            'base_price'        => $basePrice,
+            'leader_price'      => $leaderPrice,
             'quantity'          => $quantity,
             'sell_price'        => $sellPrice,
             'marketing_price'   => $marketingPrice,

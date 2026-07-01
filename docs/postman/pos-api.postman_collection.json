@@ -1063,9 +1063,40 @@
               ]
             }
           }
+        },
+        {
+          "name": "Product Price Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pos/products/{{product_uuid}}/price-logs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pos",
+                "products",
+                "{{product_uuid}}",
+                "price-logs"
+              ]
+            },
+            "description": "Riwayat perubahan harga produk. Tercatat otomatis saat base_price/leader_price/marketing_price/sell_price diupdate."
+          }
         }
       ],
-      "description": "Pricing: base_price, leader_price, marketing_price, sell_price"
+      "description": "Pricing: base_price, leader_price, marketing_price, sell_price. Riwayat harga via price-logs."
     },
     {
       "name": "Stock",
@@ -1561,7 +1592,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"transaction_date\": \"2026-06-25 10:00:00\",\n  \"marketing_uuid\": \"{{marketing_uuid}}\",\n  \"payment_type\": \"CASH\",\n  \"discount\": 0,\n  \"total\": 60000,\n  \"paid\": 60000,\n  \"items\": [{\n    \"product_uuid\": \"{{product_uuid}}\",\n    \"quantity\": 2,\n    \"sell_price\": 30000,\n    \"marketing_price\": 26000,\n    \"discount\": 0\n  }]\n}"
+              "raw": "{\n  \"transaction_date\": \"2026-06-25 10:00:00\",\n  \"marketing_uuid\": \"{{marketing_uuid}}\",\n  \"payment_type\": \"CASH\",\n  \"discount\": 0,\n  \"total\": 60000,\n  \"paid\": 60000,\n  \"items\": [{\n    \"product_uuid\": \"{{product_uuid}}\",\n    \"quantity\": 2,\n    \"sell_price\": 30000,\n    \"discount\": 0\n  }]\n}"
             }
           },
           "event": [
@@ -1609,7 +1640,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"transaction_date\": \"2026-06-25 10:00:00\",\n  \"marketing_uuid\": \"{{marketing_uuid}}\",\n  \"payment_type\": \"CICIL\",\n  \"down_payment\": 10000,\n  \"discount\": 0,\n  \"total\": 60000,\n  \"items\": [{\n    \"product_uuid\": \"{{product_uuid}}\",\n    \"quantity\": 2,\n    \"sell_price\": 30000,\n    \"marketing_price\": 26000,\n    \"discount\": 0\n  }]\n}"
+              "raw": "{\n  \"transaction_date\": \"2026-06-25 10:00:00\",\n  \"marketing_uuid\": \"{{marketing_uuid}}\",\n  \"payment_type\": \"CICIL\",\n  \"down_payment\": 10000,\n  \"discount\": 0,\n  \"total\": 60000,\n  \"items\": [{\n    \"product_uuid\": \"{{product_uuid}}\",\n    \"quantity\": 2,\n    \"sell_price\": 30000,\n    \"discount\": 0\n  }]\n}"
             }
           }
         },

@@ -72,7 +72,7 @@ class PosSalesTransactionRequest extends FormRequest
             'items.*.product_uuid'      => ['required', 'string', 'uuid', 'exists:pos_products,uuid'],
             'items.*.quantity'          => ['required', 'integer', 'min:1'],
             'items.*.sell_price'        => ['required', 'numeric', 'min:0'],
-            'items.*.marketing_price'   => ['required', 'numeric', 'min:0'],
+            'items.*.marketing_price'   => ['sometimes', 'numeric', 'min:0'],
             'items.*.discount'          => ['nullable', 'numeric', 'min:0'],
         ];
     }
@@ -152,7 +152,6 @@ class PosSalesTransactionRequest extends FormRequest
             'items.*.quantity.min'                  => __('pos.sales_transactions.validation.item_quantity_min'),
             'items.*.sell_price.required'           => __('pos.sales_transactions.validation.item_sell_price_required'),
             'items.*.sell_price.min'                => __('pos.sales_transactions.validation.item_sell_price_min'),
-            'items.*.marketing_price.required'      => __('pos.sales_transactions.validation.item_marketing_price_required'),
         ];
     }
 }
