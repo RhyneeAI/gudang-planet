@@ -31,7 +31,7 @@ beforeEach(function () {
     ]);
     User::$skipSubCompanyAutoCreate = false;
 
-    $this->jabatan = Position::factory()->create(['company_id' => $this->company->id]);
+    $this->position = Position::factory()->create(['company_id' => $this->company->id]);
     $this->shift = AbsShift::factory()->create(['company_id' => $this->company->id]);
 
     $this->employee = User::factory()->karyawan()->create([
@@ -40,7 +40,7 @@ beforeEach(function () {
     ]);
 
     AbsEmployeeProfile::where('user_id', $this->employee->id)->update([
-        'abs_jabatan_id' => $this->jabatan->id,
+        'position_id' => $this->position->id,
         'sub_company_id' => $this->subCompany->id,
         'abs_shift_id' => $this->shift->id,
     ]);

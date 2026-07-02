@@ -37,7 +37,7 @@ class EmployeeRequest extends FormRequest
             ],
             'position_uuid' => ['nullable', 'uuid', function ($attribute, $value, $fail) {
                 if ($value && !Position::where('uuid', $value)->where('company_id', $this->user()->company_id)->exists()) {
-                    $fail(__('absence.validation.jabatan_uuid_not_found'));
+                    $fail(__('absence.validation.position_uuid_not_found'));
                 }
             }],
             'sub_company_uuid' => ['nullable', 'uuid', function ($attribute, $value, $fail) {

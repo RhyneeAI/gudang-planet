@@ -35,7 +35,7 @@ class AbsEmployeeAttendanceController extends Controller
             ], 422);
         }
 
-        $profile->load(['subCompany', 'shift', 'jabatan']);
+        $profile->load(['subCompany', 'shift', 'position']);
         $attendance = $this->attendanceService->todayFor($user);
         $summary = $this->attendanceService->monthSummary($user);
 
@@ -45,7 +45,7 @@ class AbsEmployeeAttendanceController extends Controller
             'data' => [
                 'employee' => [
                     'name' => $user->name,
-                    'jabatan' => $profile->jabatan ? new PositionResource($profile->jabatan) : null,
+                    'position' => $profile->position ? new PositionResource($profile->position) : null,
                     'date' => now(config('absence.timezone'))->toDateString(),
                 ],
                 'shift' => $profile->shift ? new AbsShiftResource($profile->shift) : null,

@@ -58,7 +58,7 @@ beforeEach(function () {
     ]);
 
     AbsEmployeeProfile::where('user_id', $this->employee->id)->update([
-        'abs_jabatan_id' => $this->position->id,
+        'position_id' => $this->position->id,
         'sub_company_id' => $this->subCompany->id,
         'abs_shift_id' => $this->shift->id,
     ]);
@@ -76,8 +76,8 @@ it('admin can create employee via employees api', function () {
             'shift_uuid' => $this->shift->uuid,
         ])
         ->assertStatus(201)
-        ->assertJsonPath('data.profile.jabatan.name', 'Operator')
-        ->assertJsonPath('data.profile.jabatan.daily_rate', 120000);
+        ->assertJsonPath('data.profile.position.name', 'Operator')
+        ->assertJsonPath('data.profile.position.daily_rate', 120000);
 });
 
 it('employee can check in within sub company radius', function () {

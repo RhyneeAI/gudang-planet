@@ -40,6 +40,6 @@ class Position extends Model
 
     public function employeeProfiles()
     {
-        return $this->hasMany(AbsEmployeeProfile::class, 'abs_jabatan_id');
+        return $this->hasMany(AbsEmployeeProfile::class, 'position_id');
     }
 }

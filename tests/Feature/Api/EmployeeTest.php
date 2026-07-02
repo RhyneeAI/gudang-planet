@@ -24,7 +24,7 @@ beforeEach(function () {
     ]);
     User::$skipSubCompanyAutoCreate = false;
 
-    $this->jabatan = Position::factory()->create(['company_id' => $this->company->id]);
+    $this->position = Position::factory()->create(['company_id' => $this->company->id]);
     $this->shift = AbsShift::factory()->create(['company_id' => $this->company->id]);
 });
 
@@ -56,13 +56,13 @@ it('admin can create employee', function () {
             'phone' => '081234567890',
             'password' => 'password123',
             'role' => 'KARYAWAN',
-            'position_uuid' => $this->jabatan->uuid,
+            'position_uuid' => $this->position->uuid,
             'sub_company_uuid' => $this->subCompany->uuid,
             'shift_uuid' => $this->shift->uuid,
         ])
         ->assertCreated()
         ->assertJsonPath('data.name', 'Budi Santoso')
-        ->assertJsonPath('data.profile.jabatan.uuid', $this->jabatan->uuid);
+        ->assertJsonPath('data.profile.position.uuid', $this->position->uuid);
 });
 
 it('admin can show employee detail', function () {

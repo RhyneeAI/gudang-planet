@@ -82,7 +82,7 @@ it('prevents deleting position with active employees', function () {
     $position = Position::factory()->create(['company_id' => $this->company->id]);
     $employee = User::factory()->karyawan()->create(['company_id' => $this->company->id]);
     AbsEmployeeProfile::where('user_id', $employee->id)->update([
-        'abs_jabatan_id' => $position->id,
+        'position_id' => $position->id,
     ]);
     $this->actingAs($this->admin)
         ->deleteJson('/api/v1/positions/' . $position->uuid)

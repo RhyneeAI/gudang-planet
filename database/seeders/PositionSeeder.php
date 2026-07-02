@@ -10,7 +10,7 @@ class PositionSeeder extends Seeder
 {
     public function run(): void
     {
-        $jabatans = [
+        $positions = [
             'Super Admin' => 0,
             'Owner' => 0,
             'Admin' => 0,
@@ -22,9 +22,9 @@ class PositionSeeder extends Seeder
             'Karyawan' => 0,
         ];
 
-        Company::withoutGlobalScopes()->chunk(50, function ($companies) use ($jabatans) {
+        Company::withoutGlobalScopes()->chunk(50, function ($companies) use ($positions) {
             foreach ($companies as $company) {
-                foreach ($jabatans as $name => $dailyRate) {
+                foreach ($positions as $name => $dailyRate) {
                     Position::firstOrCreate(
                         ['company_id' => $company->id, 'name' => $name],
                         ['daily_rate' => $dailyRate]

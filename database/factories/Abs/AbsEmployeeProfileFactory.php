@@ -16,7 +16,7 @@ class AbsEmployeeProfileFactory extends Factory
     {
         return [
             'user_id' => User::factory()->karyawan(),
-            'abs_jabatan_id' => Position::factory(),
+            'position_id' => Position::factory(),
             'sub_company_id' => SubCompany::factory(),
             'abs_shift_id' => AbsShift::factory(),
             'company_id' => fn (array $attrs) => User::find($attrs['user_id'])?->company_id ?? Company::factory(),

@@ -39,9 +39,9 @@ class PosMarketingRequest extends FormRequest
                     ->ignore($userId),
             ],
             'address' => ['sometimes', 'nullable', 'string'],
-            'jabatan_uuid' => ['sometimes', 'nullable', 'uuid', function ($attribute, $value, $fail) use ($companyId) {
+            'position_uuid' => ['sometimes', 'nullable', 'uuid', function ($attribute, $value, $fail) use ($companyId) {
                 if ($value && !Position::where('uuid', $value)->where('company_id', $companyId)->exists()) {
-                    $fail(__('absence.validation.jabatan_uuid_not_found'));
+                    $fail(__('absence.validation.position_uuid_not_found'));
                 }
             }],
             'sub_company_uuid' => ['sometimes', 'nullable', 'uuid', function ($attribute, $value, $fail) use ($companyId) {

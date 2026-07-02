@@ -18,9 +18,9 @@ class AbsEmployeeProfileService
         $existing = AbsEmployeeProfile::where('user_id', $user->id)->first();
 
         $payload = [
-            'abs_jabatan_id' => array_key_exists('abs_jabatan_id', $attributes)
-                ? $attributes['abs_jabatan_id']
-                : ($existing?->abs_jabatan_id ?? $this->resolveDefaultJabatanId($user)),
+            'position_id' => array_key_exists('position_id', $attributes)
+                ? $attributes['position_id']
+                : ($existing?->position_id ?? $this->resolveDefaultPositionId($user)),
             'sub_company_id' => array_key_exists('sub_company_id', $attributes)
                 ? $attributes['sub_company_id']
                 : ($existing?->sub_company_id ?? $this->resolveDefaultSubCompanyId($user)),
@@ -41,7 +41,7 @@ class AbsEmployeeProfileService
         $attributes = [];
 
         if (!empty($input['position_uuid'])) {
-            $attributes['abs_jabatan_id'] = Position::where('uuid', $input['position_uuid'])
+            $attributes['position_id'] = Position::where('uuid', $input['position_uuid'])
                 ->where('company_id', $user->company_id)
                 ->value('id');
         }
@@ -97,7 +97,7 @@ class AbsEmployeeProfileService
             ->value('id');
     }
 
-    protected function resolveDefaultJabatanId(User $user): ?int
+    protected function resolveDefaultPositionId(User $user): ?int
     {
         $role = $user->role->value;
         if ($role == Role::SUPERADMIN->value) {
