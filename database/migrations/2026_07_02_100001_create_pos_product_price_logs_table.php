@@ -12,7 +12,7 @@ return new class extends Migration
     {
         Schema::create('pos_product_price_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(PosProduct::class)->constrained()->cascadeOnDelete();
+            $table->foreignId('product_id')->constrained('pos_products')->cascadeOnDelete();
             $table->decimal('base_price_old', 15, 2)->default(0);
             $table->decimal('base_price_new', 15, 2)->default(0);
             $table->decimal('leader_price_old', 15, 2)->default(0);
